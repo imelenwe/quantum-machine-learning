@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Credentials / secrets (e.g. IBM Quantum token)
+.env
+*.env
