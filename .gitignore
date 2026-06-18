@@ -4,6 +4,9 @@
 # Jupyter
 .ipynb_checkpoints/
 
+# Personal learning copy of the lab notebook (not for the repo)
+Variational_Quantum_Eigensolver.ipynb
+
 # Python
 __pycache__/
 *.py[cod]
