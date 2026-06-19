@@ -6,7 +6,7 @@ and implement both optimizers by hand. You write the code; this file is the map.
 
 ---
 
-## Status (last updated 2026-06-18)
+## Status (last updated 2026-06-19)
 
 Implemented and verified in `VQE.ipynb`:
 
@@ -17,10 +17,18 @@ Implemented and verified in `VQE.ipynb`:
 - ✅ `gradient_descent(init_params, cost_fn, step, eps, max_iters)` — symmetric
   finite-difference gradient, returns `(params, energy, trajectory)`, internal
   convergence threshold (`1e-6`) + `max_iters` guardrail.
-- ✅ §6 exact-vs-measure experiment for GD (see updated findings below).
+- ✅ `move_toward(start, target, factor)` — one affine step that powers all four
+  Nelder–Mead moves (reflect uses a negative factor = mirror).
+- ✅ `nelder_mead(init_simplex, cost_fn, max_iters)` — full reflect/expand/contract/
+  shrink decision tree, ranks by `np.argsort`, returns `(params, energy, trajectory)`.
+- ✅ §6 GD-vs-NM comparison on exact AND measure landscapes (four-way plot).
+  Both nail E₀ exactly; on the measure landscape NM converges with no `eps` to tune
+  (vs GD's `eps` fragility) but reports a mild shot-noise underestimate below E₀.
 
-Still to do: Nelder–Mead (§5b), the GD-vs-NM comparison on the measure landscape,
-and the 2-qubit capstone (§2b, §8.6).
+Still to do (optional polish / finale):
+
+- ⬜ NM geometric termination (stop when the simplex collapses, not just `max_iters`).
+- ⬜ 2-qubit capstone (§2b, §8.6) — `two_qubit_ansatz` + run NM on `{'XY':3,'ZZ':-2}`.
 
 ---
 
@@ -266,9 +274,9 @@ For the 2-qubit capstone, get `E₀` as the smallest eigenvalue of the assembled
    verified to agree within shot noise.
 3. ✅ `gradient_descent(...)` — returns `(params, energy, trajectory)`; convergence plot
    on the exact landscape lands on E₀.
-4. ⬜ `nelder_mead(...)` — same return shape (params, energy, trajectory).
-5. 🔶 **§6 experiment:** GD exact-vs-measure done (findings above). NM half pending —
-   add GD-vs-NM on the measure landscape once NM exists.
+4. ✅ `nelder_mead(...)` — same return shape (params, energy, trajectory).
+5. ✅ **§6 experiment:** GD-vs-NM on exact and measure landscapes, four-way plot
+   (findings above).
 6. ⬜ `two_qubit_ansatz(qc, q, params)` + run an optimizer on `{'XY':3,'ZZ':-2}`; compare
    to the exact eigenvalue.
 
