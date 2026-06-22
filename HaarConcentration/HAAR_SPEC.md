@@ -4,14 +4,39 @@ Follow-on to the VQE lab — reuses its Estimator/Sampler primitive patterns.
 
 ---
 
-## Status (last updated 2026-06-20)
+## Status (last updated 2026-06-22) — CORE COMPLETE
 
-⬜ Not started. Spec captured; pipeline to be built sim-first, then a single
-small `ibm_fez` run at fixed n = 10.
+Pivoted from the original circuit + hardware plan to an **exact classical
+statevector** study, which is where the real result lives. Implemented in
+`HaarConcentration.ipynb`:
+
+- ✅ Random-circuit state prep + depth sweep — finding: a feasible-depth circuit
+  (linear CZ ladder + Ry/Rz) does **not** reach a true Haar state at n = 10
+  (std 0.031 at depth 20 vs theory 0.0099). Preparable ≠ Haar.
+- ✅ True Haar baseline via `random_statevector` — std 0.00985 matches theory
+  1/√(n·2ⁿ) = 0.00988 exactly. (Haar states are entangled by construction and
+  have no efficient circuit, so this only works in simulation.)
+- ✅ Shot-noise limitation (Aer): at 500 shots the shot floor (~0.014) already
+  exceeds the concentration spread (~0.010) — can't distinguish the spread from
+  sampling noise. More shots recovers it at n = 10, but the needed shots grow ~2ⁿ.
+- ✅ **n-scaling figure (the deliverable):** spread falls as 1/√(2ⁿ) while the
+  shot floor (1/√shots) stays nearly flat; they cross at n ≈ log₂(shots). At
+  156 qubits the spread (~10⁻²⁵) is ~20 orders of magnitude below any realistic
+  floor.
+
+**Conclusion:** random states on a large machine are useless for finding
+low-energy states — every state gives ≈ the mean energy, and the differences
+that matter sit forever below the measurement floor (the barren-plateau wall,
+seen as a measurement problem).
+
+**Hardware: DROPPED.** Not run, and shouldn't be — a true Haar state cannot be
+prepared on hardware (exponential gate count), and even if it could, the spread
+is below the shot/device-noise floor. The RUN CONFIGURATION below is the
+original plan, kept for the record but **superseded**.
 
 ---
 
-## RUN CONFIGURATION (decided)
+## RUN CONFIGURATION (original plan — SUPERSEDED, hardware dropped)
 
 Fixed for the hardware run; Aer sim uses the **identical** N and shots.
 
