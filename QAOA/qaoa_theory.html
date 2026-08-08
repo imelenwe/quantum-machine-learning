@@ -1,0 +1,402 @@
+<style>
+  :root {
+    --bg: #12151b;
+    --surface: #1a1f28;
+    --surface-border: #2a3140;
+    --text: #eef1f6;
+    --text-dim: #8b96a8;
+    --team-a: #f2a541;
+    --team-b: #4fc3c9;
+    --node-label: #14171c;
+    --edge-live: #f4ede0;
+    --edge-dim: #3a4353;
+    --accent: #f2a541;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #eef1f5;
+    --surface: #ffffff;
+    --surface-border: #d8dee6;
+    --text: #1a1f28;
+    --text-dim: #5b6472;
+    --team-a: #d9820f;
+    --team-b: #1f8f96;
+    --node-label: #ffffff;
+    --edge-live: #1a1f28;
+    --edge-dim: #c3cad4;
+    --accent: #b8690a;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151b; --surface: #1a1f28; --surface-border: #2a3140;
+      --text: #eef1f6; --text-dim: #8b96a8; --team-a: #f2a541; --team-b: #4fc3c9;
+      --node-label: #14171c; --edge-live: #f4ede0; --edge-dim: #3a4353; --accent: #f2a541;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px 80px;
+  }
+
+  .page { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 40px; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim);
+  }
+  h1 { margin: 6px 0 0; font-size: 32px; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+  .lede { margin: 12px 0 0; font-size: 16.5px; line-height: 1.6; color: var(--text-dim); max-width: 60ch; }
+
+  section.act { display: flex; flex-direction: column; gap: 16px; padding-top: 10px; border-top: 1px solid var(--surface-border); }
+  .act .kicker {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim);
+  }
+  .act h2 { font-size: 23px; font-weight: 700; margin: 2px 0 0; letter-spacing: -0.005em; text-wrap: balance; }
+  .act p { font-size: 15.5px; line-height: 1.68; margin: 0; max-width: 62ch; }
+  .act p + p { margin-top: -6px; }
+
+  .formula {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 15.5px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    text-align: center;
+    line-height: 1.7;
+  }
+  .formula .translation {
+    display: block;
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 13.5px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    font-style: italic;
+  }
+
+  .keynote {
+    font-size: 15px;
+    line-height: 1.65;
+    background: var(--surface);
+    border-left: 3px solid var(--team-a);
+    border-radius: 6px;
+    padding: 12px 16px;
+  }
+  .keynote strong { color: var(--text); }
+
+  figure { margin: 4px 0 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  figure svg { width: 100%; max-width: 420px; height: auto; overflow: visible; }
+  figcaption { font-size: 13px; color: var(--text-dim); text-align: center; max-width: 50ch; line-height: 1.55; }
+
+  .node-fill-a { fill: var(--team-a); }
+  .node-fill-b { fill: var(--team-b); }
+  .node-label { font-family: ui-monospace, monospace; font-size: 16px; font-weight: 600; fill: var(--node-label); text-anchor: middle; dominant-baseline: central; }
+  .edge-line { stroke: var(--edge-dim); stroke-width: 2.5; }
+  .edge-tag { font-family: ui-monospace, monospace; font-size: 13px; fill: var(--text-dim); text-anchor: middle; }
+  .diagram-text { font-family: ui-monospace, monospace; font-size: 13px; fill: var(--text); text-anchor: middle; }
+  .diagram-text-dim { font-family: ui-monospace, monospace; font-size: 12px; fill: var(--text-dim); text-anchor: middle; }
+  .axis-label { font-family: ui-monospace, monospace; font-size: 12px; fill: var(--text-dim); }
+
+  table.worked {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  table.worked th, table.worked td {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    padding: 9px 8px;
+    border-bottom: 1px solid var(--surface-border);
+  }
+  table.worked th { color: var(--text-dim); font-weight: 600; font-size: 11.5px; letter-spacing: 0.04em; text-transform: uppercase; }
+  table.worked tr:last-child td { border-bottom: none; }
+  table.worked td.hi { color: var(--accent); font-weight: 600; }
+
+  .recap {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  .recap th, .recap td {
+    text-align: left;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--surface-border);
+    line-height: 1.5;
+    vertical-align: top;
+  }
+  .recap th { color: var(--text-dim); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+  .recap td:first-child {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    color: var(--accent);
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  .recap-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--surface-border); border-radius: 12px; padding: 4px 10px; }
+
+  .closing { border-top: 1px solid var(--surface-border); padding-top: 24px; display: flex; flex-direction: column; gap: 14px; }
+  .closing h2 { font-size: 20px; margin: 0; }
+  .closing p { font-size: 15px; line-height: 1.65; color: var(--text-dim); margin: 0; max-width: 62ch; }
+  .closing code {
+    font-family: ui-monospace, monospace; font-size: 13px; background: var(--surface);
+    border: 1px solid var(--surface-border); border-radius: 4px; padding: 1px 6px; color: var(--text);
+  }
+</style>
+
+<div class="page">
+  <div>
+    <div class="eyebrow">QAOA theory · from magnets to a working circuit</div>
+    <h1>Why every piece of the circuit is there</h1>
+    <p class="lede">
+      You already understand MaxCut, and the spec already lists the circuit's parts.
+      This page is the missing middle: the actual chain of reasoning that turns
+      "magnets touching each other" into that exact circuit — so every gate has a
+      reason, not just a name.
+    </p>
+  </div>
+
+  <section class="act">
+    <div>
+      <div class="kicker">Act 1 · Physics</div>
+      <h2>Give the magnet story a name and a formula</h2>
+    </div>
+    <p>
+      Recall the magnets: each one points up or down, and touching magnets are
+      calmest when they disagree. Let's write that down as a number instead of a
+      feeling.
+    </p>
+    <div class="formula">
+      H(s) &nbsp;=&nbsp; &Sigma;<sub>touching pairs</sub> &nbsp; s<sub>i</sub> &middot; s<sub>j</sub> &nbsp;&nbsp; where each s is +1 (up) or &minus;1 (down)
+      <span class="translation">For every touching pair, multiply their two directions. Same direction gives +1 (uncomfortable). Opposite directions give &minus;1 (comfortable). Add it all up — that total is called the <em>energy</em>, and physics always tries to make it as low as possible.</span>
+    </div>
+    <p>
+      This setup — spins, touching pairs, this add-em-up rule — has a name: the
+      <strong>Ising model</strong>. It's one of the most-studied objects in physics,
+      mostly because this simple magnet toy turns out to describe a surprising range
+      of real behavior, optimization problems included.
+    </p>
+    <figure>
+      <svg viewBox="0 0 400 150" role="img" aria-label="Four magnets alternating up and down, each touching pair labeled minus one, summing to H equals minus three">
+        <line class="edge-line" x1="84" y1="70" x2="136" y2="70" />
+        <line class="edge-line" x1="184" y1="70" x2="236" y2="70" />
+        <line class="edge-line" x1="284" y1="70" x2="336" y2="70" />
+        <text class="edge-tag" x="110" y="55">&minus;1</text>
+        <text class="edge-tag" x="210" y="55">&minus;1</text>
+        <text class="edge-tag" x="310" y="55">&minus;1</text>
+        <circle class="node-fill-a" cx="60" cy="70" r="24" /><text class="node-label" x="60" y="71">&#8593;</text>
+        <circle class="node-fill-b" cx="160" cy="70" r="24" /><text class="node-label" x="160" y="71">&#8595;</text>
+        <circle class="node-fill-a" cx="260" cy="70" r="24" /><text class="node-label" x="260" y="71">&#8593;</text>
+        <circle class="node-fill-b" cx="360" cy="70" r="24" /><text class="node-label" x="360" y="71">&#8595;</text>
+        <text class="diagram-text" x="200" y="130">H = (&minus;1) + (&minus;1) + (&minus;1) = &minus;3 &nbsp;—&nbsp; the lowest possible total for this row</text>
+      </svg>
+      <figcaption>Every touching pair disagrees, so every term is &minus;1. This is the calmest (lowest-energy) arrangement possible for four magnets in a row.</figcaption>
+    </figure>
+  </section>
+
+  <section class="act">
+    <div>
+      <div class="kicker">Act 2 · Translation</div>
+      <h2>The one-line algebra that turns magnets into MaxCut</h2>
+    </div>
+    <p>
+      Split every touching pair into two buckets: <strong>same</strong> (contributes
+      +1) or <strong>cut</strong>, i.e. disagreeing (contributes &minus;1). Then:
+    </p>
+    <div class="formula">
+      H(s) = (same pairs) &minus; (cut pairs) = (total pairs &minus; cut) &minus; cut = (total pairs) &minus; 2&middot;(cut)
+      <span class="translation">The total number of touching pairs never changes. So the <em>only</em> way to make H smaller is to make the cut count bigger. Minimizing energy and maximizing cuts are the same goal, wearing different clothes.</span>
+    </div>
+    <p>Solve that last line for the cut count and you get exactly the cost function already sitting in your spec file:</p>
+    <div class="formula">
+      C(z) = (total pairs &minus; H(s)) / 2 = &Sigma;<sub>(i,j)&isin;E</sub> (1 &minus; z<sub>i</sub>z<sub>j</sub>) / 2
+      <span class="translation">It didn't come from nowhere — it's just "solve the magnet equation for the number of cuts."</span>
+    </div>
+    <p>Check it on a tiny graph — three nodes, all pairwise touching (a triangle):</p>
+    <table class="worked">
+      <tr><th>Pair</th><th>s<sub>i</sub></th><th>s<sub>j</sub></th><th>s<sub>i</sub>s<sub>j</sub></th><th>same or cut?</th></tr>
+      <tr><td>1&ndash;2</td><td>+1</td><td>&minus;1</td><td class="hi">&minus;1</td><td>cut</td></tr>
+      <tr><td>2&ndash;3</td><td>&minus;1</td><td>+1</td><td class="hi">&minus;1</td><td>cut</td></tr>
+      <tr><td>1&ndash;3</td><td>+1</td><td>+1</td><td>+1</td><td>same</td></tr>
+    </table>
+    <p style="font-size:14px; color:var(--text-dim);">
+      H = &minus;1 &minus; 1 + 1 = &minus;1. Total pairs = 3. Formula gives
+      C(z) = (3 &minus; (&minus;1)) / 2 = <strong>2</strong>. Counting cut pairs directly in the table
+      also gives <strong>2</strong>. They agree — the formula isn't a leap of faith, it's arithmetic.
+    </p>
+  </section>
+
+  <section class="act">
+    <div>
+      <div class="kicker">Act 3 · The quantum swap</div>
+      <h2>Turning z into a quantum operator</h2>
+    </div>
+    <p>
+      Classically, z<sub>i</sub> is just a number sitting in a spreadsheet cell: +1
+      or &minus;1. To make it quantum, promote it to an <strong>operator</strong>
+      Z<sub>i</sub> — a tiny instruction that acts on one qubit and returns +1 if
+      that qubit is in state |0&rang;, or &minus;1 if it's in state |1&rang;.
+    </p>
+    <div class="keynote">
+      That's the entire quantum "trick," stated plainly: <strong>|0&rang; and |1&rang;
+      literally are the two spin directions.</strong> A row of n qubits, each sitting
+      in |0&rang; or |1&rang;, is exactly one specific magnet arrangement — one
+      specific coloring. Nothing exotic yet.
+    </div>
+    <p>
+      Here's where it gets genuinely different from a classical computer. A classical
+      machine can only hold <em>one</em> coloring in memory at a time — that's why
+      brute force means checking colorings one after another, 2&#8319; of them. A
+      quantum computer can hold a weighted mix — a <strong>superposition</strong> — of
+      all 2&#8319; colorings <em>at once</em>, as a single state. That's the actual
+      advantage on the table: not "a faster processor," but "every coloring's slot
+      exists simultaneously instead of one at a time."
+    </p>
+    <p>
+      Add up Z<sub>i</sub>Z<sub>j</sub> terms the same way as the magnet formula, and
+      you get an operator C, built purely from Z's. Applied to a superposition, C
+      doesn't move any probability around — but internally, it "remembers" each
+      coloring's own cut score. There's just one problem: C on its own isn't a valid
+      quantum operation (physical operations must preserve total probability; C, as
+      written, doesn't). The fix is a classic one:
+    </p>
+    <div class="formula">
+      U(C,&gamma;) = e<sup>&minus;i&gamma;C</sup>
+      <span class="translation">Any number shaped like e<sup>i&times;(real number)</sup> always has size exactly 1 — a fact about circles, not physics. So exponentiating turns each coloring's cost into a <em>phase</em> (a direction, not a size): automatically valid, and it tags every coloring in the superposition with its own cost, all at once, in one gate.</span>
+    </div>
+    <figure>
+      <svg viewBox="0 0 480 240" role="img" aria-label="Two qubits fanning out into four simultaneous colorings, each tagged with its own cost and phase arrow">
+        <line class="edge-line" x1="240" y1="46" x2="90" y2="150" />
+        <line class="edge-line" x1="240" y1="46" x2="196" y2="150" />
+        <line class="edge-line" x1="240" y1="46" x2="284" y2="150" />
+        <line class="edge-line" x1="240" y1="46" x2="390" y2="150" />
+        <circle class="node-fill-a" cx="240" cy="40" r="26" />
+        <text class="node-label" x="240" y="41" style="font-size:12px">all at once</text>
+        <g>
+          <rect x="55" y="160" width="70" height="52" rx="8" fill="var(--surface)" stroke="var(--surface-border)" />
+          <text class="diagram-text" x="90" y="180">00</text>
+          <text class="diagram-text-dim" x="90" y="198">cost 0</text>
+          <line x1="90" y1="205" x2="105" y2="205" stroke="var(--team-b)" stroke-width="2.5" marker-end="url(#arrowhead)" />
+        </g>
+        <g>
+          <rect x="161" y="160" width="70" height="52" rx="8" fill="var(--surface)" stroke="var(--surface-border)" />
+          <text class="diagram-text" x="196" y="180">01</text>
+          <text class="diagram-text-dim" x="196" y="198">cost 1</text>
+          <line x1="196" y1="205" x2="205" y2="215" stroke="var(--team-a)" stroke-width="2.5" marker-end="url(#arrowhead)" />
+        </g>
+        <g>
+          <rect x="249" y="160" width="70" height="52" rx="8" fill="var(--surface)" stroke="var(--surface-border)" />
+          <text class="diagram-text" x="284" y="180">10</text>
+          <text class="diagram-text-dim" x="284" y="198">cost 1</text>
+          <line x1="284" y1="205" x2="293" y2="215" stroke="var(--team-a)" stroke-width="2.5" marker-end="url(#arrowhead)" />
+        </g>
+        <g>
+          <rect x="355" y="160" width="70" height="52" rx="8" fill="var(--surface)" stroke="var(--surface-border)" />
+          <text class="diagram-text" x="390" y="180">11</text>
+          <text class="diagram-text-dim" x="390" y="198">cost 0</text>
+          <line x1="390" y1="205" x2="405" y2="205" stroke="var(--team-b)" stroke-width="2.5" marker-end="url(#arrowhead)" />
+        </g>
+        <defs>
+          <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <polygon points="0 0, 6 3, 0 6" fill="context-stroke" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>
+        Two qubits, one edge between them. All four colorings exist at once; U(C,&gamma;)
+        tags each with a phase (the small arrow) sized to its own cost — same cost,
+        same tag angle. Nothing about probabilities changed yet: phases are invisible
+        until something makes them interfere. That something is the mixer.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="act">
+    <div>
+      <div class="kicker">Act 4 · Why alternate</div>
+      <h2>The slow-dial idea</h2>
+    </div>
+    <p>
+      There are now two Hamiltonians in play: the <strong>cost</strong> one you just
+      built (hard — you don't know its lowest point in advance, that's the whole
+      problem), and a <strong>mixer</strong> one, built from X operators instead of
+      Z's, chosen specifically because it's <em>easy</em> — its own natural resting
+      configuration is exactly the equal superposition you start the circuit in.
+    </p>
+    <p>
+      Imagine a dial. At position 0, you're sitting in the easy mixer problem, whose
+      best answer you already know for free (equal superposition). At position 1,
+      you're sitting in the hard cost problem. Physics has a real theorem here: if
+      you turn the dial from 0 to 1 <em>slowly enough</em>, the system stays in its
+      best possible configuration the entire way — so by the time you reach position
+      1, you're sitting in the hard problem's best configuration too, without ever
+      having searched for it directly. (This is called the <strong>adiabatic
+      theorem</strong>, and the recipe built on it is <strong>adiabatic
+      optimization</strong> — the name is worth knowing even though we won't derive
+      it further here.)
+    </p>
+    <p>
+      A truly slow, continuous dial-turn needs an impractically long circuit. QAOA's
+      move is to fake it with a few big, deliberate jumps instead: a chunk of "hard"
+      (U(C,&gamma;)), then a chunk of "easy" (U(B,&beta;)), repeated p times. The size
+      of each jump — &gamma; and &beta; — isn't fixed by a slow schedule; it's left
+      free, and the classical optimizer's entire job is to find the p jump-sizes that
+      land closest to the hard problem's best configuration in just those few steps.
+    </p>
+    <figure>
+      <svg viewBox="0 0 480 210" role="img" aria-label="A smooth curve representing the ideal slow continuous dial turn, compared against a staircase representing QAOA's few discrete jumps">
+        <line x1="40" y1="170" x2="440" y2="170" stroke="var(--edge-dim)" stroke-width="1.5" />
+        <path d="M 40 150 Q 240 150 440 40" fill="none" stroke="var(--edge-dim)" stroke-width="2" stroke-dasharray="5 5" />
+        <polyline points="40,150 173,150 173,113 306,113 306,76 440,76 440,40" fill="none" stroke="var(--team-a)" stroke-width="3" />
+        <circle cx="40" cy="150" r="4" fill="var(--team-a)" />
+        <circle cx="173" cy="113" r="4" fill="var(--team-a)" />
+        <circle cx="306" cy="76" r="4" fill="var(--team-a)" />
+        <circle cx="440" cy="40" r="4" fill="var(--team-a)" />
+        <text class="axis-label" x="40" y="192">Easy (mixer), dial = 0</text>
+        <text class="axis-label" x="440" y="192" text-anchor="end">Hard (cost), dial = 1</text>
+        <text class="diagram-text-dim" x="330" y="130" text-anchor="start">ideal: infinitely slow &amp; smooth</text>
+        <text class="diagram-text" x="120" y="128" text-anchor="start" fill="var(--team-a)">QAOA: p = 3 jumps</text>
+      </svg>
+      <figcaption>
+        Same start, same end, same direction of travel — QAOA just takes it in a few
+        big careful steps instead of infinitely many tiny ones. More steps (bigger p)
+        is a closer imitation of the smooth curve, same reason a staircase with more
+        steps looks more like a ramp.
+      </figcaption>
+    </figure>
+  </section>
+
+  <div class="closing">
+    <h2>Recap — every gate, accounted for</h2>
+    <div class="recap-wrap">
+      <table class="recap">
+        <tr><th>Circuit piece</th><th>What it is</th><th>Why it's there</th></tr>
+        <tr><td>H&#8855;n on |0&hellip;0&rang;</td><td>equal superposition</td><td>the mixer Hamiltonian's own easy resting state — dial position 0</td></tr>
+        <tr><td>U(C,&gamma;)</td><td>e<sup>&minus;i&gamma;C</sup>, built from Z<sub>i</sub>Z<sub>j</sub> per edge</td><td>tags every coloring with a phase equal to its own cut score — a step toward "hard"</td></tr>
+        <tr><td>U(B,&beta;)</td><td>Rx(&beta;) on every qubit</td><td>lets those phase tags interfere and reshuffle probability — a step toward "easy," the other half of the dial</td></tr>
+        <tr><td>p repeats</td><td>alternate the two</td><td>approximates a slow continuous dial-turn with a few big discrete jumps</td></tr>
+        <tr><td>(&gamma;,&beta;) optimizer</td><td>scipy Nelder&ndash;Mead</td><td>since we're not running the literal (impractically slow) schedule, search numerically for the jump sizes that work best</td></tr>
+      </table>
+    </div>
+    <p>
+      That's the whole theory, start to finish: magnets give you an energy formula,
+      algebra turns that energy into a cut-count, promoting z to Z turns the cut-count
+      into an operator, exponentiating makes that operator a legal quantum gate, and
+      the adiabatic idea explains why you alternate it with a second, easy operator
+      instead of applying it once and measuring. Every line in <code>QAOA_SPEC.md</code>
+      is one of these five ideas wearing code.
+    </p>
+  </div>
+</div>

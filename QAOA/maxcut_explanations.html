@@ -1,0 +1,401 @@
+<style>
+  :root {
+    --bg: #12151b;
+    --surface: #1a1f28;
+    --surface-border: #2a3140;
+    --text: #eef1f6;
+    --text-dim: #8b96a8;
+    --team-a: #f2a541;
+    --team-b: #4fc3c9;
+    --node-label: #14171c;
+    --edge-live: #f4ede0;
+    --edge-dim: #3a4353;
+    --accent-line: #f4ede0;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #eef1f5;
+    --surface: #ffffff;
+    --surface-border: #d8dee6;
+    --text: #1a1f28;
+    --text-dim: #5b6472;
+    --team-a: #d9820f;
+    --team-b: #1f8f96;
+    --node-label: #ffffff;
+    --edge-live: #1a1f28;
+    --edge-dim: #c3cad4;
+    --accent-line: #1a1f28;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151b;
+      --surface: #1a1f28;
+      --surface-border: #2a3140;
+      --text: #eef1f6;
+      --text-dim: #8b96a8;
+      --team-a: #f2a541;
+      --team-b: #4fc3c9;
+      --node-label: #14171c;
+      --edge-live: #f4ede0;
+      --edge-dim: #3a4353;
+      --accent-line: #f4ede0;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px 72px;
+  }
+
+  .page {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+  }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  h1 {
+    margin: 6px 0 0;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .lede {
+    margin: 12px 0 0;
+    font-size: 16.5px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    max-width: 60ch;
+  }
+
+  .rule-box {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+  .rule-box .rule-label {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .rule-box strong { color: var(--text); }
+
+  section.example {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 8px;
+    border-top: 1px solid var(--surface-border);
+  }
+
+  .example h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+  .example .kicker {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .example p {
+    font-size: 15.5px;
+    line-height: 1.65;
+    margin: 0;
+    max-width: 62ch;
+  }
+
+  .keymap {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.9;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px 12px;
+  }
+  .keymap dt {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .keymap dd { margin: 0; }
+
+  figure {
+    margin: 8px 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  figure svg {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    overflow: visible;
+  }
+  figcaption {
+    font-size: 13px;
+    color: var(--text-dim);
+    text-align: center;
+    max-width: 46ch;
+    line-height: 1.55;
+  }
+
+  .node-fill-a { fill: var(--team-a); }
+  .node-fill-b { fill: var(--team-b); }
+  .node-label { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; font-size: 16px; font-weight: 600; fill: var(--node-label); text-anchor: middle; dominant-baseline: central; }
+  .edge-cut { stroke: var(--edge-live); stroke-width: 3.5; }
+  .edge-plain { stroke: var(--edge-dim); stroke-width: 2.5; }
+  .edge-gapmask { stroke: var(--surface); stroke-width: 8; }
+
+  .payoff {
+    font-size: 14px;
+    color: var(--text-dim);
+    background: var(--surface);
+    border-left: 3px solid var(--team-a);
+    border-radius: 6px;
+    padding: 10px 14px;
+    line-height: 1.6;
+  }
+
+  .closing {
+    border-top: 1px solid var(--surface-border);
+    padding-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .closing h2 { font-size: 19px; margin: 0; }
+  .closing p { font-size: 15px; line-height: 1.65; color: var(--text-dim); margin: 0; max-width: 62ch; }
+  .closing code {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 13px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--text);
+  }
+</style>
+
+<div class="page">
+  <div>
+    <div class="eyebrow">MaxCut · what the dots and lines stand for</div>
+    <h1>Same puzzle, three different costumes</h1>
+    <p class="lede">
+      The demo showed you the puzzle in its bare form: color the dots,
+      cut as many lines as you can. Nothing about dots and lines is
+      specific to graphs, though — the same exact game shows up wearing
+      very different clothes. Here are three real ones.
+    </p>
+  </div>
+
+  <div class="rule-box">
+    <span class="rule-label">The rule, unchanged from the demo</span>
+    Every node picks one of two colors. A line is <strong>cut</strong> when
+    its two ends land on different colors. The goal is to pick colors so
+    that as many lines as possible end up cut.
+  </div>
+
+  <section class="example">
+    <div>
+      <div class="kicker">Example 1 — Physics</div>
+      <h2>Magnets in a row</h2>
+    </div>
+    <p>
+      Picture four tiny magnets touching each other in a line. Each one
+      points either up or down. In some materials, touching magnets are
+      happiest when they point <em>opposite</em> ways — an up magnet next
+      to a down magnet is calm. Two magnets pointing the <em>same</em> way
+      while touching are fighting each other, straining to flip.
+    </p>
+    <dl class="keymap">
+      <dt>Node</dt><dd>one magnet</dd>
+      <dt>Edge</dt><dd>"these two magnets are touching"</dd>
+      <dt>Color</dt><dd>which way that magnet points, up or down</dd>
+      <dt>Cut</dt><dd>a touching pair pointing opposite ways — calm, stable</dd>
+      <dt>Not cut</dt><dd>a touching pair pointing the same way — straining</dd>
+    </dl>
+    <figure>
+      <svg viewBox="0 0 400 140" role="img" aria-label="Four magnets in a row, alternating up and down, with all three connecting lines cut">
+        <line class="edge-plain" x1="84" y1="70" x2="336" y2="70" style="visibility:hidden" />
+        <line class="edge-cut" x1="84" y1="70" x2="136" y2="70" />
+        <line class="edge-gapmask" x1="101" y1="70" x2="119" y2="70" />
+        <line class="edge-cut" x1="184" y1="70" x2="236" y2="70" />
+        <line class="edge-gapmask" x1="201" y1="70" x2="219" y2="70" />
+        <line class="edge-cut" x1="284" y1="70" x2="336" y2="70" />
+        <line class="edge-gapmask" x1="301" y1="70" x2="319" y2="70" />
+        <circle class="node-fill-a" cx="60" cy="70" r="24" />
+        <text class="node-label" x="60" y="71">&#8593;</text>
+        <circle class="node-fill-b" cx="160" cy="70" r="24" />
+        <text class="node-label" x="160" y="71">&#8595;</text>
+        <circle class="node-fill-a" cx="260" cy="70" r="24" />
+        <text class="node-label" x="260" y="71">&#8593;</text>
+        <circle class="node-fill-b" cx="360" cy="70" r="24" />
+        <text class="node-label" x="360" y="71">&#8595;</text>
+      </svg>
+      <figcaption>
+        Up, down, up, down — every touching pair disagrees, so every
+        connection is cut. This is the calmest possible arrangement for
+        this row of four.
+      </figcaption>
+    </figure>
+    <p class="payoff">
+      Finding the calmest arrangement for a whole grid of magnets (not just
+      four in a row) is exactly a MaxCut problem. It's also why the lab
+      notebook writes its cost function using "+1 / −1 spins" — that
+      language comes straight from physics, not from computer science.
+    </p>
+  </section>
+
+  <section class="example">
+    <div>
+      <div class="kicker">Example 2 — People</div>
+      <h2>Seating rivals apart</h2>
+    </div>
+    <p>
+      Four guests are coming to a party, and some pairs of them do not get
+      along at all — sit rivals at the same table and there's drama. You've
+      only got two tables. This is the same spirit as the family-photo
+      puzzle your lab notebook opened with, just with tables standing in
+      for "who ends up near who."
+    </p>
+    <dl class="keymap">
+      <dt>Node</dt><dd>one guest</dd>
+      <dt>Edge</dt><dd>"these two guests don't get along"</dd>
+      <dt>Color</dt><dd>which table that guest is seated at</dd>
+      <dt>Cut</dt><dd>a feuding pair split across two different tables — crisis avoided</dd>
+      <dt>Not cut</dt><dd>a feuding pair stuck at the same table — drama</dd>
+    </dl>
+    <figure>
+      <svg viewBox="0 0 320 320" role="img" aria-label="Four guests arranged so every rivalry is split across two tables">
+        <line class="edge-cut" x1="104" y1="80" x2="216" y2="80" />
+        <line class="edge-gapmask" x1="151" y1="80" x2="169" y2="80" />
+        <line class="edge-cut" x1="240" y1="104" x2="240" y2="216" />
+        <line class="edge-gapmask" x1="240" y1="151" x2="240" y2="169" />
+        <line class="edge-cut" x1="216" y1="240" x2="104" y2="240" />
+        <line class="edge-gapmask" x1="169" y1="240" x2="151" y2="240" />
+        <line class="edge-cut" x1="80" y1="216" x2="80" y2="104" />
+        <line class="edge-gapmask" x1="80" y1="169" x2="80" y2="151" />
+        <circle class="node-fill-a" cx="80" cy="80" r="24" />
+        <text class="node-label" x="80" y="81">A</text>
+        <circle class="node-fill-b" cx="240" cy="80" r="24" />
+        <text class="node-label" x="240" y="81">B</text>
+        <circle class="node-fill-a" cx="240" cy="240" r="24" />
+        <text class="node-label" x="240" y="241">C</text>
+        <circle class="node-fill-b" cx="80" cy="240" r="24" />
+        <text class="node-label" x="80" y="241">D</text>
+      </svg>
+      <figcaption>
+        A and C are at Table 1 (amber); B and D are at Table 2 (teal). Every
+        rivalry — A&ndash;B, B&ndash;C, C&ndash;D, D&ndash;A — lands at two
+        different tables. Zero drama: the best possible seating chart.
+      </figcaption>
+    </figure>
+    <p class="payoff">
+      Notice this one managed to cut every single edge — that won't always
+      be possible (the demo's six-guest graph topped out at 7 of 8). Whether
+      a perfect split exists at all depends on the exact shape of who
+      dislikes who.
+    </p>
+  </section>
+
+  <section class="example">
+    <div>
+      <div class="kicker">Example 3 — Engineering</div>
+      <h2>Routers that interfere</h2>
+    </div>
+    <p>
+      Three WiFi routers are placed close enough together that some pairs
+      interfere with each other if they broadcast on the same channel.
+      You've only got two channels to hand out.
+    </p>
+    <dl class="keymap">
+      <dt>Node</dt><dd>one router</dd>
+      <dt>Edge</dt><dd>"these two routers are close enough to interfere"</dd>
+      <dt>Color</dt><dd>which channel that router is set to, A or B</dd>
+      <dt>Cut</dt><dd>an interfering pair on different channels — no interference</dd>
+      <dt>Not cut</dt><dd>an interfering pair sharing a channel — still interferes</dd>
+    </dl>
+    <figure>
+      <svg viewBox="0 0 320 280" role="img" aria-label="Three routers that all interfere with each other, with two of the three connections cut and one left uncut">
+        <line class="edge-plain" x1="172" y1="71" x2="248" y2="199" />
+        <line class="edge-cut" x1="148" y1="71" x2="72" y2="199" />
+        <line class="edge-gapmask" x1="101" y1="129" x2="119" y2="141" />
+        <line class="edge-cut" x1="84" y1="220" x2="236" y2="220" />
+        <line class="edge-gapmask" x1="151" y1="220" x2="169" y2="220" />
+        <circle class="node-fill-a" cx="160" cy="50" r="24" />
+        <text class="node-label" x="160" y="51">R1</text>
+        <circle class="node-fill-b" cx="60" cy="220" r="24" />
+        <text class="node-label" x="60" y="221">R2</text>
+        <circle class="node-fill-a" cx="260" cy="220" r="24" />
+        <text class="node-label" x="260" y="221">R3</text>
+      </svg>
+      <figcaption>
+        R1 and R3 both land on Channel A (amber) — with only two channels
+        and all three routers interfering with each other, someone has to
+        double up. R1&ndash;R2 and R2&ndash;R3 get cut cleanly; R1&ndash;R3
+        stays stuck sharing.
+      </figcaption>
+    </figure>
+    <p class="payoff">
+      When every node is connected to every other node (a "triangle" of
+      conflict), two colors can never cut all of it — the best you can do
+      is 2 of 3. This is part of why real WiFi setups lean on three
+      non-overlapping channels (1, 6, 11) instead of two: a third color
+      would let every pair here separate cleanly.
+    </p>
+  </section>
+
+  <div class="closing">
+    <h2>Same game, different costumes</h2>
+    <p>
+      Magnets want to disagree with their neighbors to stay calm. Guests
+      want to be apart from their rivals. Routers want to avoid sharing a
+      channel with whoever they interfere with. Three different worlds,
+      one identical coloring game underneath — that's the flexibility that
+      makes MaxCut (and QAOA, which searches for the coloring
+      automatically) worth building.
+    </p>
+    <p>
+      Go build intuition by playing with the interactive puzzle
+      (<code>maxcut_demo.html</code> in this folder) — then come back here
+      whenever you want the plain-English reminder of what problem you're
+      actually solving.
+    </p>
+  </div>
+</div>

@@ -1,0 +1,304 @@
+<style>
+  :root {
+    --bg: #12151b; --surface: #1a1f28; --surface-border: #2a3140;
+    --text: #eef1f6; --text-dim: #8b96a8; --team-a: #f2a541; --team-b: #4fc3c9;
+    --node-label: #14171c; --edge-live: #f4ede0; --edge-dim: #3a4353; --accent: #f2a541;
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f5; --surface: #ffffff; --surface-border: #d8dee6;
+    --text: #1a1f28; --text-dim: #5b6472; --team-a: #d9820f; --team-b: #1f8f96;
+    --node-label: #ffffff; --edge-live: #1a1f28; --edge-dim: #c3cad4; --accent: #b8690a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151b; --surface: #1a1f28; --surface-border: #2a3140;
+      --text: #eef1f6; --text-dim: #8b96a8; --team-a: #f2a541; --team-b: #4fc3c9;
+      --node-label: #14171c; --edge-live: #f4ede0; --edge-dim: #3a4353; --accent: #f2a541;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    display: flex; justify-content: center; padding: 48px 20px 80px;
+  }
+  .page { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 38px; }
+  .eyebrow { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+  h1 { margin: 6px 0 0; font-size: 30px; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+  .lede { margin: 12px 0 0; font-size: 16px; line-height: 1.6; color: var(--text-dim); max-width: 60ch; }
+
+  .recap-box {
+    background: var(--surface); border: 1px solid var(--surface-border); border-radius: 12px;
+    padding: 16px 20px; font-family: ui-monospace, monospace; font-size: 14.5px; text-align: center; line-height: 1.7;
+  }
+  .recap-box .label { display:block; font-family: -apple-system, sans-serif; font-size: 12px; letter-spacing:0.08em; text-transform:uppercase; color: var(--text-dim); margin-bottom: 8px; }
+
+  section.step { display: flex; flex-direction: column; gap: 15px; padding-top: 10px; border-top: 1px solid var(--surface-border); }
+  .step .kicker { font-family: ui-monospace, monospace; font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+  .step h2 { font-size: 21px; font-weight: 700; margin: 2px 0 0; letter-spacing: -0.005em; text-wrap: balance; }
+  .step p { font-size: 15.5px; line-height: 1.68; margin: 0; max-width: 62ch; }
+
+  .formula {
+    font-family: ui-monospace, monospace; font-size: 15px; background: var(--surface);
+    border: 1px solid var(--surface-border); border-radius: 10px; padding: 15px 18px; text-align: center; line-height: 1.7;
+  }
+  .formula .translation { display: block; font-family: -apple-system, sans-serif; font-size: 13.5px; color: var(--text-dim); margin-top: 9px; font-style: italic; }
+
+  .matrix-block { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+  .matrix-name { font-family: ui-monospace, monospace; font-size: 15px; }
+  .bracket { width: 7px; align-self: stretch; min-height: 52px; border-top: 1.5px solid var(--text); border-bottom: 1.5px solid var(--text); }
+  .bracket.l { border-left: 1.5px solid var(--text); }
+  .bracket.r { border-right: 1.5px solid var(--text); }
+  .matrix-grid { display: grid; grid-template-columns: auto auto; gap: 10px 28px; font-family: ui-monospace, monospace; font-size: 14px; padding: 4px 2px; }
+  .matrix-grid span { text-align: center; }
+  .matrix-grid span.zero { color: var(--text-dim); }
+
+  .keynote { font-size: 14.5px; line-height: 1.6; background: var(--surface); border-left: 3px solid var(--team-a); border-radius: 6px; padding: 11px 15px; }
+  .keynote strong { color: var(--text); }
+
+  figure { margin: 4px 0 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  figure svg { width: 100%; height: auto; overflow: visible; }
+  figcaption { font-size: 12.5px; color: var(--text-dim); text-align: center; max-width: 50ch; line-height: 1.5; }
+
+  .wheel-row { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; }
+  .wheel-row figure svg { max-width: 130px; }
+
+  .circ-fig svg { max-width: 420px; }
+
+  .diagram-label { font-family: ui-monospace, monospace; font-size: 12px; fill: var(--text-dim); }
+  .diagram-text { font-family: ui-monospace, monospace; font-size: 13px; fill: var(--text); text-anchor: middle; }
+  .diagram-text-dim { font-family: ui-monospace, monospace; font-size: 11.5px; fill: var(--text-dim); text-anchor: middle; }
+
+  table.step-table {
+    width: 100%; border-collapse: collapse; font-size: 13.5px;
+    background: var(--surface); border: 1px solid var(--surface-border); border-radius: 10px; overflow: hidden;
+  }
+  table.step-table th, table.step-table td {
+    font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; text-align: center;
+    padding: 9px 7px; border-bottom: 1px solid var(--surface-border);
+  }
+  table.step-table th { color: var(--text-dim); font-weight: 600; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; }
+  table.step-table tr:last-child td { border-bottom: none; }
+  table.step-table td.hi { color: var(--accent); font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+
+  .closing { border-top: 1px solid var(--surface-border); padding-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .closing h2 { font-size: 19px; margin: 0; }
+  .closing p { font-size: 15px; line-height: 1.65; color: var(--text-dim); margin: 0; max-width: 62ch; }
+  .closing code { font-family: ui-monospace, monospace; font-size: 13px; background: var(--surface); border: 1px solid var(--surface-border); border-radius: 4px; padding: 1px 6px; color: var(--text); }
+</style>
+
+<div class="page">
+  <div>
+    <div class="eyebrow">QAOA proof · the phase gate, derived not asserted</div>
+    <h1>From the exponential to the exact gate</h1>
+    <p class="lede">
+      Last time we checked that a specific 3-gate circuit happens to match. This
+      time we go the other way: start from the operator you already built,
+      exponentiate it honestly, and watch this exact gate sequence fall out as
+      the only reasonable answer — six small steps, nothing skipped.
+    </p>
+  </div>
+
+  <div class="recap-box">
+    <span class="label">Where we're starting from</span>
+    C(Z) = &Sigma;<sub>edges</sub> (I &minus; Z<sub>i</sub>Z<sub>j</sub>) / 2 &nbsp;&nbsp;&nbsp; U(C,&gamma;) = e<sup>&minus;i&gamma;C(Z)</sup>
+  </div>
+
+  <section class="step">
+    <div>
+      <div class="kicker">Step 1 of 6</div>
+      <h2>A sum in the exponent becomes a product of gates</h2>
+    </div>
+    <div class="formula">
+      e<sup>&minus;i&gamma;(A+B)</sup> = e<sup>&minus;i&gamma;A</sup> &middot; e<sup>&minus;i&gamma;B</sup> &nbsp;&nbsp; <em>only when A and B commute (AB = BA)</em>
+      <span class="translation">In general, exponentiating a sum of matrices is NOT the same as multiplying the separate exponentials &mdash; matrices don't usually commute, so order matters and messy cross-terms appear. There's exactly one clean exception: if A and B commute, the split works perfectly, no correction needed.</span>
+    </div>
+    <p>
+      Every term in C(Z) is built purely from Z operators, on any qubits. Z
+      operators <strong>always</strong> commute with each other &mdash; even
+      Z<sub>i</sub>Z<sub>j</sub> and Z<sub>i</sub>Z<sub>k</sub>, which share
+      qubit i. So this split isn't an approximation for us &mdash; it's exact:
+    </p>
+    <div class="formula">
+      e<sup>&minus;i&gamma;C(Z)</sup> = e<sup>&minus;i&gamma; &Sigma;<sub>edges</sub> (I&minus;Z<sub>i</sub>Z<sub>j</sub>)/2</sup> = &prod;<sub>edges</sub> e<sup>&minus;i&gamma;(I&minus;Z<sub>i</sub>Z<sub>j</sub>)/2</sup>
+      <span class="translation">This is the single most important move in the whole proof: it means we never need one giant gate for the whole graph. We can build the circuit one edge at a time, in any order, and just multiply the small pieces together.</span>
+    </div>
+  </section>
+
+  <section class="step">
+    <div>
+      <div class="kicker">Step 2 of 6</div>
+      <h2>Zoom into one edge</h2>
+    </div>
+    <p>Take one factor from that product and split its exponent into two pieces:</p>
+    <div class="formula">
+      e<sup>&minus;i&gamma;(I&minus;Z<sub>i</sub>Z<sub>j</sub>)/2</sup> = e<sup>&minus;i&gamma;/2</sup> &middot; e<sup>+i&gamma;Z<sub>i</sub>Z<sub>j</sub>/2</sup>
+      <span class="translation">The first factor is just a plain number &mdash; identical for every possible state, since it doesn't depend on i or j at all. A phase that's the same everywhere is called a global phase, and it's invisible to any measurement &mdash; physically meaningless. Drop it.</span>
+    </div>
+    <div class="keynote">
+      This is the exact same move as dropping the constant when we turned the
+      Ising energy into the MaxCut cost formula, all the way back at the start.
+      It keeps showing up because it's a genuinely reusable trick, not a
+      one-off.
+    </div>
+    <p>What survives is the real work for this one edge:</p>
+    <div class="formula">e<sup>+i&gamma;Z<sub>i</sub>Z<sub>j</sub>/2</sup></div>
+  </section>
+
+  <section class="step">
+    <div>
+      <div class="kicker">Step 3 of 6</div>
+      <h2>What that surviving piece actually does</h2>
+    </div>
+    <p>
+      Z<sub>i</sub>Z<sub>j</sub> is diagonal &mdash; you already know its
+      eigenvalue on any state: +1 if i and j agree, &minus;1 if they disagree.
+      Exponentiating a diagonal matrix is easy: exponentiate each diagonal
+      entry on its own, nothing fancier.
+    </p>
+    <div class="table-wrap">
+      <table class="step-table">
+        <tr><th>i, j</th><th>eigenvalue of Z<sub>i</sub>Z<sub>j</sub></th><th>phase from e<sup>+i&gamma;Z<sub>i</sub>Z<sub>j</sub>/2</sup></th></tr>
+        <tr><td>agree&nbsp;(00, 11)</td><td>+1</td><td class="hi">e<sup>+i&gamma;/2</sup></td></tr>
+        <tr><td>disagree&nbsp;(01, 10)</td><td>&minus;1</td><td class="hi">e<sup>&minus;i&gamma;/2</sup></td></tr>
+      </table>
+    </div>
+    <figure>
+      <div class="wheel-row">
+        <svg viewBox="0 0 120 140" role="img" aria-label="Phase wheel showing agree states rotated by plus gamma over two, counterclockwise">
+          <circle cx="60" cy="60" r="40" fill="none" stroke="var(--edge-dim)" stroke-width="1.5" />
+          <line x1="90" y1="60" x2="98" y2="60" stroke="var(--edge-dim)" stroke-width="1.5" />
+          <line x1="60" y1="60" x2="88.28" y2="31.72" stroke="var(--team-a)" stroke-width="3" stroke-linecap="round" />
+          <circle cx="88.28" cy="31.72" r="4.5" fill="var(--team-a)" />
+          <text class="diagram-text" x="60" y="120">agree</text>
+          <text class="diagram-text-dim" x="60" y="135">+&gamma;/2</text>
+        </svg>
+        <svg viewBox="0 0 120 140" role="img" aria-label="Phase wheel showing disagree states rotated by minus gamma over two, clockwise">
+          <circle cx="60" cy="60" r="40" fill="none" stroke="var(--edge-dim)" stroke-width="1.5" />
+          <line x1="90" y1="60" x2="98" y2="60" stroke="var(--edge-dim)" stroke-width="1.5" />
+          <line x1="60" y1="60" x2="88.28" y2="88.28" stroke="var(--team-b)" stroke-width="3" stroke-linecap="round" />
+          <circle cx="88.28" cy="88.28" r="4.5" fill="var(--team-b)" />
+          <text class="diagram-text" x="60" y="120">disagree</text>
+          <text class="diagram-text-dim" x="60" y="135">&minus;&gamma;/2</text>
+        </svg>
+      </div>
+      <figcaption>The dim tick at 3 o'clock is "no phase." Agree states rotate one way by &gamma;/2, disagree states rotate the other way by the same amount.</figcaption>
+    </figure>
+    <div class="keynote">
+      <strong>This is the actual target now, stated in plain terms:</strong>
+      nudge every "agree" state by +&gamma;/2, and every "disagree" state by
+      &minus;&gamma;/2. The question becomes concrete: is there a real 2-qubit
+      circuit that does exactly this?
+    </div>
+  </section>
+
+  <section class="step">
+    <div>
+      <div class="kicker">Step 4 of 6</div>
+      <h2>Testing the candidate circuit</h2>
+    </div>
+    <p>Here's the candidate: a CNOT, a single-qubit Rz(&theta;) on the target only, then a second CNOT to undo the first.</p>
+    <figure class="circ-fig">
+      <svg viewBox="0 0 420 170" role="img" aria-label="Circuit diagram: CNOT from qubit i to qubit j, then Rz theta on qubit j, then CNOT again from qubit i to qubit j">
+        <text class="diagram-label" x="20" y="59">qubit i (control)</text>
+        <text class="diagram-label" x="20" y="129">qubit j (target)</text>
+        <line x1="150" y1="55" x2="400" y2="55" stroke="var(--edge-dim)" stroke-width="1.5" />
+        <line x1="150" y1="125" x2="400" y2="125" stroke="var(--edge-dim)" stroke-width="1.5" />
+
+        <line x1="180" y1="55" x2="180" y2="125" stroke="var(--text)" stroke-width="1.5" />
+        <circle cx="180" cy="55" r="5" fill="var(--text)" />
+        <circle cx="180" cy="125" r="14" fill="var(--surface)" stroke="var(--text)" stroke-width="1.5" />
+        <line x1="180" y1="112" x2="180" y2="138" stroke="var(--text)" stroke-width="1.5" />
+        <line x1="167" y1="125" x2="193" y2="125" stroke="var(--text)" stroke-width="1.5" />
+
+        <rect x="250" y="103" width="76" height="44" rx="6" fill="var(--surface)" stroke="var(--text)" stroke-width="1.5" />
+        <text class="diagram-text" x="288" y="129">Rz(&theta;)</text>
+
+        <line x1="370" y1="55" x2="370" y2="125" stroke="var(--text)" stroke-width="1.5" />
+        <circle cx="370" cy="55" r="5" fill="var(--text)" />
+        <circle cx="370" cy="125" r="14" fill="var(--surface)" stroke="var(--text)" stroke-width="1.5" />
+        <line x1="370" y1="112" x2="370" y2="138" stroke="var(--text)" stroke-width="1.5" />
+        <line x1="357" y1="125" x2="383" y2="125" stroke="var(--text)" stroke-width="1.5" />
+      </svg>
+      <figcaption>The first CNOT briefly lets qubit j "feel" qubit i's value; Rz(&theta;) tags a phase based on that borrowed value; the second CNOT gives qubit i its value back untouched.</figcaption>
+    </figure>
+    <div class="formula">
+      <div class="matrix-block">
+        <span class="matrix-name">Rz(&theta;) =</span>
+        <span class="bracket l"></span>
+        <span class="matrix-grid">
+          <span>e<sup>&minus;i&theta;/2</sup></span><span class="zero">0</span>
+          <span class="zero">0</span><span>e<sup>+i&theta;/2</sup></span>
+        </span>
+        <span class="bracket r"></span>
+      </div>
+      <span class="translation">Top-left acts on |0&rang;, bottom-right acts on |1&rang; &mdash; that's what "leave |0&rang; at e<sup>&minus;i&theta;/2</sup>, tag |1&rang; with e<sup>+i&theta;/2</sup>" actually means, read straight off the diagonal. The off-diagonal zeros are just as important: they mean Rz never mixes |0&rang; and |1&rang; into each other, it only ever multiplies each by its own phase.</span>
+    </div>
+    <p>Track all 4 starting states through the 3 gates using that matrix:</p>
+    <div class="table-wrap">
+      <table class="step-table">
+        <tr><th>start</th><th>after 1st CX</th><th>after Rz(&theta;) on j</th><th>after 2nd CX</th><th>net phase</th></tr>
+        <tr><td>|00&rang;</td><td>|00&rang;</td><td>e<sup>&minus;i&theta;/2</sup>|00&rang;</td><td>e<sup>&minus;i&theta;/2</sup>|00&rang;</td><td class="hi">e<sup>&minus;i&theta;/2</sup></td></tr>
+        <tr><td>|01&rang;</td><td>|01&rang;</td><td>e<sup>+i&theta;/2</sup>|01&rang;</td><td>e<sup>+i&theta;/2</sup>|01&rang;</td><td class="hi">e<sup>+i&theta;/2</sup></td></tr>
+        <tr><td>|10&rang;</td><td>|11&rang;</td><td>e<sup>+i&theta;/2</sup>|11&rang;</td><td>e<sup>+i&theta;/2</sup>|10&rang;</td><td class="hi">e<sup>+i&theta;/2</sup></td></tr>
+        <tr><td>|11&rang;</td><td>|10&rang;</td><td>e<sup>&minus;i&theta;/2</sup>|10&rang;</td><td>e<sup>&minus;i&theta;/2</sup>|11&rang;</td><td class="hi">e<sup>&minus;i&theta;/2</sup></td></tr>
+      </table>
+    </div>
+    <p>So this circuit gives: agree &rarr; e<sup>&minus;i&theta;/2</sup>, disagree &rarr; e<sup>+i&theta;/2</sup>. Compare to Step 3's target (agree &rarr; e<sup>+i&gamma;/2</sup>, disagree &rarr; e<sup>&minus;i&gamma;/2</sup>) and solve:</p>
+    <div class="formula">
+      &minus;&theta;/2 = +&gamma;/2 &nbsp;&nbsp;&Rightarrow;&nbsp;&nbsp; &theta; = &minus;&gamma;
+      <span class="translation">Both rows of the table agree on the same answer &mdash; one unknown, two consistent equations. The circuit matches the target exactly when the Rz angle is <strong>negative</strong> gamma, not gamma itself.</span>
+    </div>
+  </section>
+
+  <section class="step">
+    <div>
+      <div class="kicker">Step 5 of 6</div>
+      <h2>Confirming the match</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="step-table">
+        <tr><th></th><th>agree (00, 11)</th><th>disagree (01, 10)</th></tr>
+        <tr><td>target (Step 3)</td><td>e<sup>+i&gamma;/2</sup></td><td>e<sup>&minus;i&gamma;/2</sup></td></tr>
+        <tr><td>circuit with &theta;=&minus;&gamma;</td><td class="hi">e<sup>+i&gamma;/2</sup></td><td class="hi">e<sup>&minus;i&gamma;/2</sup></td></tr>
+      </table>
+    </div>
+    <p>
+      Exact match, both columns. This was also checked directly against
+      Qiskit's own circuit matrix (built the 3-gate circuit, compared it to
+      the hand-derived one numerically) &mdash; not just algebra on paper.
+    </p>
+    <div class="keynote">
+      Worth knowing: the original lab notebook uses Rz(+&gamma;) instead of
+      Rz(&minus;&gamma;). That's not a mistake &mdash; it builds a
+      sign-flipped version of the same idea, and since the classical
+      optimizer searches over every value of &gamma; anyway, it finds the
+      equivalent answer either way. We're using &minus;&gamma; because we
+      derived it ourselves and it's the version that matches our formula
+      exactly, not because +&gamma; would have failed.
+    </div>
+  </section>
+
+  <section class="step">
+    <div>
+      <div class="kicker">Step 6 of 6</div>
+      <h2>Reassembling the full operator</h2>
+    </div>
+    <p>Walk back up the chain: one edge's gadget, with the angle now pinned down, is:</p>
+    <div class="formula">e<sup>&minus;i&gamma;(I&minus;Z<sub>i</sub>Z<sub>j</sub>)/2</sup> &nbsp;&equiv;&nbsp; CX(i,j) &middot; Rz(&minus;&gamma;)<sub>j</sub> &middot; CX(i,j) &nbsp;&nbsp; <em>(up to the dropped global phase from Step 2)</em></div>
+    <p>And Step 1 said the whole operator is just the product of these, one per edge, in any order:</p>
+    <div class="formula">U(C,&gamma;) = e<sup>&minus;i&gamma;C(Z)</sup> = &prod;<sub>(i,j) &isin; edges</sub> &nbsp; CX(i,j) &middot; Rz(&minus;&gamma;)<sub>j</sub> &middot; CX(i,j)</div>
+  </section>
+
+  <div class="closing">
+    <h2>What this means for the code</h2>
+    <p>
+      The whole proof collapses into one sentence: <strong>for every edge in
+      the graph, apply CX, then Rz(&minus;&gamma;) on the second qubit of
+      that edge, then CX again</strong> &mdash; the exact same gadget, once
+      per edge, back to back. That's the entire content of the
+      <code>phase_operator</code> function we're about to write.
+    </p>
+  </div>
+</div>

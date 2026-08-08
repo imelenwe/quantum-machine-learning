@@ -1,0 +1,385 @@
+<style>
+  :root {
+    --bg: #12151b;
+    --surface: #1a1f28;
+    --surface-border: #2a3140;
+    --text: #eef1f6;
+    --text-dim: #8b96a8;
+    --team-a: #f2a541;
+    --team-b: #4fc3c9;
+    --node-label: #14171c;
+    --edge-live: #f4ede0;
+    --edge-dim: #3a4353;
+    --success: #8fd19e;
+    --focus: #f4ede0;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #eef1f5;
+    --surface: #ffffff;
+    --surface-border: #d8dee6;
+    --text: #1a1f28;
+    --text-dim: #5b6472;
+    --team-a: #d9820f;
+    --team-b: #1f8f96;
+    --node-label: #ffffff;
+    --edge-live: #1a1f28;
+    --edge-dim: #c3cad4;
+    --success: #1f7a3d;
+    --focus: #1a1f28;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151b;
+      --surface: #1a1f28;
+      --surface-border: #2a3140;
+      --text: #eef1f6;
+      --text-dim: #8b96a8;
+      --team-a: #f2a541;
+      --team-b: #4fc3c9;
+      --node-label: #14171c;
+      --edge-live: #f4ede0;
+      --edge-dim: #3a4353;
+      --success: #8fd19e;
+      --focus: #f4ede0;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px 64px;
+  }
+
+  .page {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  h1 {
+    margin: 6px 0 0;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .instruction {
+    margin: 10px 0 0;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--text-dim);
+    max-width: 56ch;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 16px;
+    padding: 28px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+  }
+
+  svg#graph {
+    width: 100%;
+    max-width: 380px;
+    height: auto;
+    overflow: visible;
+  }
+
+  .node {
+    cursor: pointer;
+    transition: transform 160ms ease;
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+  .node:hover { transform: scale(1.06); }
+  .node:focus-visible circle { outline: none; stroke: var(--focus); stroke-width: 3; }
+
+  .node circle { transition: fill 140ms ease; }
+  .node text {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 17px;
+    font-weight: 600;
+    fill: var(--node-label);
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+  }
+
+  .edge-line { stroke: var(--edge-dim); stroke-width: 2.5; transition: stroke 140ms ease, stroke-width 140ms ease; }
+  .edge-line.cut { stroke: var(--edge-live); stroke-width: 3.5; }
+  .edge-gap { stroke: var(--surface); stroke-width: 8; stroke-linecap: butt; opacity: 0; transition: opacity 100ms ease; }
+  .edge-gap.cut { opacity: 1; }
+
+  .scoreboard {
+    width: 100%;
+    display: flex;
+    border-top: 1px solid var(--surface-border);
+    padding-top: 18px;
+    gap: 8px;
+  }
+  .stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .stat + .stat { border-left: 1px solid var(--surface-border); }
+  .stat-label {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .stat-value {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 22px;
+    font-weight: 600;
+  }
+  .stat-value.is-max { color: var(--success); }
+
+  .message {
+    min-height: 20px;
+    font-size: 14px;
+    color: var(--success);
+    text-align: center;
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
+  .message.show { opacity: 1; }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+  button {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    padding: 10px 18px;
+    cursor: pointer;
+    transition: border-color 140ms ease;
+  }
+  button:hover { border-color: var(--text-dim); }
+  button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .caption {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    text-align: center;
+    max-width: 58ch;
+    margin: 0 auto;
+  }
+  .caption code {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .node, .node circle, .edge-line, .edge-gap, .message, button { transition: none; }
+  }
+</style>
+
+<div class="page">
+  <div>
+    <div class="eyebrow">Graph puzzle · 6 nodes, 8 edges</div>
+    <h1>MaxCut, by hand</h1>
+    <p class="instruction">
+      Click a node to switch its team. An edge counts as "cut" when its two
+      ends are on different teams — that's the line getting a visible gap in it.
+      Try to cut as many of the 8 edges as you can.
+    </p>
+  </div>
+
+  <div class="panel">
+    <svg id="graph" viewBox="0 0 400 400" role="img" aria-label="Interactive graph with 6 clickable nodes and 8 edges">
+      <g id="edges"></g>
+      <g id="nodes"></g>
+    </svg>
+
+    <div class="scoreboard">
+      <div class="stat">
+        <span class="stat-label">Cut edges</span>
+        <span class="stat-value" id="stat-cut">0 / 8</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Best found</span>
+        <span class="stat-value" id="stat-best">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Target</span>
+        <span class="stat-value">7</span>
+      </div>
+    </div>
+    <div class="message" id="message">That's the maximum possible cut for this graph.</div>
+  </div>
+
+  <div class="controls">
+    <button id="shuffle">Shuffle teams</button>
+    <button id="reset">Reset</button>
+  </div>
+
+  <p class="caption">
+    This is the exact graph from your lab's MaxCut section — <code>Vert = [0..5]</code>,
+    <code>Edge = [[0,1],[0,2],[0,5],[1,2],[1,3],[2,3],[2,4],[3,5]]</code>.
+    Its true maximum cut is 7, reached by exactly two team splits (one is the
+    other's mirror image). QAOA's whole job is to find a split like that
+    without you clicking through every combination by hand.
+  </p>
+</div>
+
+<script>
+  (function () {
+    var positions = {
+      0: [79, 130],
+      1: [321, 270],
+      2: [321, 130],
+      3: [200, 340],
+      4: [200, 60],
+      5: [79, 270]
+    };
+    var edges = [[0,1],[0,2],[0,5],[1,2],[1,3],[2,3],[2,4],[3,5]];
+    var NODE_R = 24;
+
+    var team = [0, 0, 0, 0, 0, 0];
+    var best = 0;
+
+    var edgesGroup = document.getElementById('edges');
+    var nodesGroup = document.getElementById('nodes');
+    var statCut = document.getElementById('stat-cut');
+    var statBest = document.getElementById('stat-best');
+    var message = document.getElementById('message');
+
+    function ns(tag) { return document.createElementNS('http://www.w3.org/2000/svg', tag); }
+
+    function edgeGeometry(a, b) {
+      var p1 = positions[a], p2 = positions[b];
+      var dx = p2[0] - p1[0], dy = p2[1] - p1[1];
+      var len = Math.sqrt(dx * dx + dy * dy);
+      var ux = dx / len, uy = dy / len;
+      var x1 = p1[0] + ux * NODE_R, y1 = p1[1] + uy * NODE_R;
+      var x2 = p2[0] - ux * NODE_R, y2 = p2[1] - uy * NODE_R;
+      var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      return { x1: x1, y1: y1, x2: x2, y2: y2, mx: mx, my: my, ux: ux, uy: uy };
+    }
+
+    var edgeEls = edges.map(function (e) {
+      var g = edgeGeometry(e[0], e[1]);
+      var line = ns('line');
+      line.setAttribute('class', 'edge-line');
+      line.setAttribute('x1', g.x1); line.setAttribute('y1', g.y1);
+      line.setAttribute('x2', g.x2); line.setAttribute('y2', g.y2);
+      edgesGroup.appendChild(line);
+
+      var gapHalf = 9;
+      var gap = ns('line');
+      gap.setAttribute('class', 'edge-gap');
+      gap.setAttribute('x1', g.mx - g.ux * gapHalf);
+      gap.setAttribute('y1', g.my - g.uy * gapHalf);
+      gap.setAttribute('x2', g.mx + g.ux * gapHalf);
+      gap.setAttribute('y2', g.my + g.uy * gapHalf);
+      edgesGroup.appendChild(gap);
+
+      return { a: e[0], b: e[1], line: line, gap: gap };
+    });
+
+    var nodeEls = Object.keys(positions).map(function (key) {
+      var i = Number(key);
+      var pos = positions[i];
+      var g = ns('g');
+      g.setAttribute('class', 'node');
+      g.setAttribute('tabindex', '0');
+      g.setAttribute('role', 'button');
+      g.setAttribute('aria-label', 'Node ' + i + ', click to switch team');
+
+      var circle = ns('circle');
+      circle.setAttribute('cx', pos[0]);
+      circle.setAttribute('cy', pos[1]);
+      circle.setAttribute('r', NODE_R);
+      g.appendChild(circle);
+
+      var text = ns('text');
+      text.setAttribute('x', pos[0]);
+      text.setAttribute('y', pos[1]);
+      text.textContent = i;
+      g.appendChild(text);
+
+      function toggle() {
+        team[i] = 1 - team[i];
+        render();
+      }
+      g.addEventListener('click', toggle);
+      g.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggle(); }
+      });
+
+      nodesGroup.appendChild(g);
+      return { circle: circle };
+    });
+
+    function render() {
+      var cutCount = 0;
+      edgeEls.forEach(function (e) {
+        var cut = team[e.a] !== team[e.b];
+        if (cut) cutCount++;
+        e.line.classList.toggle('cut', cut);
+        e.gap.classList.toggle('cut', cut);
+      });
+
+      nodeEls.forEach(function (n, i) {
+        n.circle.style.fill = team[i] === 0 ? 'var(--team-a)' : 'var(--team-b)';
+      });
+
+      statCut.textContent = cutCount + ' / 8';
+      if (cutCount > best) best = cutCount;
+      statBest.textContent = best;
+      statBest.classList.toggle('is-max', best === 7);
+      message.classList.toggle('show', best === 7);
+    }
+
+    document.getElementById('shuffle').addEventListener('click', function () {
+      team = team.map(function () { return Math.random() < 0.5 ? 0 : 1; });
+      render();
+    });
+    document.getElementById('reset').addEventListener('click', function () {
+      team = team.map(function () { return 0; });
+      render();
+    });
+
+    render();
+  })();
+</script>
