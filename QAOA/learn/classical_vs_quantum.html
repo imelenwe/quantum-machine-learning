@@ -1,0 +1,349 @@
+<style>
+  :root {
+    --bg: #12151b; --surface: #1a1f28; --surface-border: #2a3140;
+    --text: #eef1f6; --text-dim: #8b96a8; --team-a: #f2a541; --team-b: #4fc3c9;
+    --accent: #f2a541; --phase: #b98cf2; --cost-bar: #3a4356; --cost-bar-dim: #262c3a;
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f5; --surface: #ffffff; --surface-border: #d8dee6;
+    --text: #1a1f28; --text-dim: #5b6472; --team-a: #d9820f; --team-b: #1f8f96;
+    --accent: #b8690a; --phase: #7c4dbd; --cost-bar: #c7cedb; --cost-bar-dim: #e3e8ef;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151b; --surface: #1a1f28; --surface-border: #2a3140;
+      --text: #eef1f6; --text-dim: #8b96a8; --team-a: #f2a541; --team-b: #4fc3c9;
+      --accent: #f2a541; --phase: #b98cf2; --cost-bar: #3a4356; --cost-bar-dim: #262c3a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    display: flex; justify-content: center; padding: 52px 20px 80px;
+  }
+  .page { width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 48px; }
+  .eyebrow { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+  h1 { margin: 6px 0 0; font-size: 32px; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+  .lede { margin: 12px 0 0; font-size: 16px; line-height: 1.6; color: var(--text-dim); max-width: 68ch; }
+
+  section { display: flex; flex-direction: column; gap: 18px; }
+  .section-label {
+    display: flex; align-items: baseline; gap: 10px;
+    font-family: ui-monospace, monospace; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-dim); padding-bottom: 10px; border-bottom: 1px solid var(--surface-border);
+  }
+  .section-label b { color: var(--text); font-size: 20px; font-weight: 700; text-transform: none; letter-spacing: -0.005em; font-family: -apple-system, sans-serif; }
+  .quantum .section-label b { color: var(--phase); }
+
+  p { margin: 0; font-size: 15px; line-height: 1.65; color: var(--text); max-width: 68ch; }
+  p.dim { color: var(--text-dim); }
+  strong { color: var(--text); }
+  .quantum strong.q { color: var(--phase); }
+  code {
+    font-family: ui-monospace, monospace; font-size: 13px; background: var(--surface);
+    border: 1px solid var(--surface-border); border-radius: 4px; padding: 1px 6px; color: var(--text);
+  }
+
+  .card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
+  .card-row { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+  .figure-wrap { display: flex; flex-direction: column; gap: 8px; }
+  figcaption { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; max-width: 60ch; }
+
+  .snippet { background: var(--bg); border: 1px solid var(--surface-border); border-radius: 8px; padding: 14px 16px; font-family: ui-monospace, monospace; font-size: 12.5px; line-height: 1.7; color: var(--text-dim); overflow-x: auto; }
+  .snippet .kw { color: var(--phase); }
+  .snippet .num { color: var(--team-a); }
+
+  .stat-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .stat { background: var(--bg); border: 1px solid var(--surface-border); border-radius: 8px; padding: 10px 14px; min-width: 118px; }
+  .stat .k { font-family: ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
+  .stat .v { font-family: ui-monospace, monospace; font-size: 19px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .stat.hl .v { color: var(--accent); }
+  .stat.hl-q .v { color: var(--phase); }
+
+  .callout { border-radius: 10px; padding: 16px 18px; font-size: 14px; line-height: 1.6; border: 1px solid var(--surface-border); background: var(--bg); }
+  .callout.win { border-color: color-mix(in srgb, var(--team-a) 40%, var(--surface-border)); }
+  .callout.trait { color: var(--text-dim); font-family: ui-monospace, monospace; font-size: 12.5px; }
+
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+
+  svg { max-width: 100%; height: auto; display: block; }
+  .barchart-wrap svg { width: 100%; }
+
+  .slider-row { display: flex; align-items: center; gap: 14px; }
+  .slider-row input[type=range] { flex: 1; accent-color: var(--phase); }
+  .slider-row .p-label { font-family: ui-monospace, monospace; font-size: 13px; color: var(--phase); min-width: 60px; text-align: right; }
+
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.cmp th, table.cmp td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--surface-border); vertical-align: top; }
+  table.cmp th { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
+  table.cmp td.classical-col { color: var(--text); }
+  table.cmp td.quantum-col { color: var(--text); }
+  table.cmp tr:last-child td { border-bottom: none; }
+  .cmp-wrap { overflow-x: auto; }
+
+  .gotchas { display: flex; flex-direction: column; gap: 12px; }
+  .gotcha { display: grid; grid-template-columns: 26px 1fr; gap: 12px; }
+  .gotcha .n { font-family: ui-monospace, monospace; font-weight: 700; color: var(--phase); }
+  .gotcha p { font-size: 14px; }
+
+  .footer { border-top: 1px solid var(--surface-border); padding-top: 22px; font-size: 13.5px; line-height: 1.6; color: var(--text-dim); }
+  .footer a { color: var(--text-dim); }
+</style>
+
+<div class="page">
+  <div>
+    <div class="eyebrow">QAOA / MaxCut &middot; classical vs quantum</div>
+    <h1>Two ways to search the same 64 answers</h1>
+    <p class="lede">
+      Same graph, same cost formula, same 64 possible colorings. This page walks through
+      the classical way of solving it, then the quantum way, on their own terms &mdash;
+      then lines them up to see exactly where they agree, where they don't, and why
+      they're not really two different algorithms at all. Every number below came out of
+      <code>QAOA_MaxCut.ipynb</code>, nothing here is illustrative.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-row" style="align-items:center;">
+      <div class="figure-wrap">
+        <svg viewBox="0 0 300 300" width="220" role="img" aria-label="Six-node graph with eight rivalry edges, unsolved">
+          <g stroke="var(--text-dim)" stroke-width="1.6" opacity="0.55">
+            <line x1="150" y1="20" x2="263" y2="85"/>
+            <line x1="150" y1="20" x2="263" y2="215"/>
+            <line x1="150" y1="20" x2="37" y2="85"/>
+            <line x1="263" y1="85" x2="263" y2="215"/>
+            <line x1="263" y1="85" x2="150" y2="280"/>
+            <line x1="263" y1="215" x2="150" y2="280"/>
+            <line x1="263" y1="215" x2="37" y2="215"/>
+            <line x1="150" y1="280" x2="37" y2="85"/>
+          </g>
+          <g font-family="ui-monospace,monospace" font-size="13" font-weight="700" text-anchor="middle">
+            <g><circle cx="150" cy="20" r="16" fill="var(--surface)" stroke="var(--text-dim)" stroke-width="1.6"/><text x="150" y="25" fill="var(--text)">0</text></g>
+            <g><circle cx="263" cy="85" r="16" fill="var(--surface)" stroke="var(--text-dim)" stroke-width="1.6"/><text x="263" y="90" fill="var(--text)">1</text></g>
+            <g><circle cx="263" cy="215" r="16" fill="var(--surface)" stroke="var(--text-dim)" stroke-width="1.6"/><text x="263" y="220" fill="var(--text)">2</text></g>
+            <g><circle cx="150" cy="280" r="16" fill="var(--surface)" stroke="var(--text-dim)" stroke-width="1.6"/><text x="150" y="285" fill="var(--text)">3</text></g>
+            <g><circle cx="37" cy="215" r="16" fill="var(--surface)" stroke="var(--text-dim)" stroke-width="1.6"/><text x="37" y="220" fill="var(--text)">4</text></g>
+            <g><circle cx="37" cy="85" r="16" fill="var(--surface)" stroke="var(--text-dim)" stroke-width="1.6"/><text x="37" y="90" fill="var(--text)">5</text></g>
+          </g>
+        </svg>
+        <figcaption>6 nodes, 8 rivalry edges &mdash; <code>edges = [[0,1],[0,2],[0,5],[1,2],[1,3],[2,3],[2,4],[3,5]]</code>. Split the nodes into two teams so as many rivalries as possible cross the split.</figcaption>
+      </div>
+      <div style="flex:1; min-width:220px; display:flex; flex-direction:column; gap:10px;">
+        <p>6 nodes means 2 choices per node, so <strong>2⁶ = 64</strong> possible ways to split them into two teams. Each split "cuts" some number of the 8 rivalry edges &mdash; the ones where the two ends land on different teams. The question is the same for both approaches below: <strong>which of the 64 splits cuts the most edges?</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <section class="classical">
+    <div class="section-label">Part 1 <b>Classical &mdash; try everyone, one at a time</b></div>
+    <p>The brute-force answer is exactly what it sounds like: loop over all 64 splits, count how many edges each one cuts, keep the best. There's no cleverness to it &mdash; every single split gets visited and scored.</p>
+    <div class="snippet">
+      <span class="kw">for</span> state <span class="kw">in</span> range(<span class="num">64</span>):        <span style="opacity:.6"># every possible split, one by one</span><br>
+      &nbsp;&nbsp;z = split_into_teams(state)  <span style="opacity:.6"># e.g. [+1,-1,+1,+1,-1,-1]</span><br>
+      &nbsp;&nbsp;cost = sum((<span class="num">1</span> - z[i]*z[j]) / <span class="num">2</span> <span class="kw">for</span> i, j <span class="kw">in</span> edges)<br>
+      &nbsp;&nbsp;costs.append(cost)
+    </div>
+    <p class="dim"><code>(1 - z_i&middot;z_j)/2</code> is just a switch: it's <code>1</code> when nodes <code>i</code> and <code>j</code> land on different teams (that edge got cut &mdash; good), and <code>0</code> when they're on the same team (not cut). Summed over all 8 edges, that's the cut count for one split.</p>
+
+    <div class="figure-wrap">
+      <div class="barchart-wrap"><svg id="classicalChart" viewBox="0 0 640 140" role="img" aria-label="Bar chart of the cut count for all 64 possible splits, in index order"></svg></div>
+      <figcaption>All 64 real cut counts, split #0 through #63, read straight out of the loop above. Two bars &mdash; splits #25 and #38 &mdash; reach the top at <strong>7</strong>.</figcaption>
+    </div>
+
+    <div class="callout win">
+      <strong>The winner:</strong> split #25 (and its twin, #38) cut <strong>7 of the 8</strong> rivalries &mdash; team
+      <span class="swatch" style="background:var(--team-a)"></span><strong>{1, 2, 5}</strong> vs. team
+      <span class="swatch" style="background:var(--team-b)"></span><strong>{0, 3, 4}</strong>.
+      Only rivalry <code>1&ndash;2</code> stays uncut &mdash; those two ended up on the same team, no way around it.
+    </div>
+    <div class="figure-wrap">
+      <svg viewBox="0 0 300 300" width="220" role="img" aria-label="The winning split, with cut edges shown broken and the one uncut edge left whole">
+        <g stroke-width="1.8">
+          <line x1="150" y1="20" x2="197.5" y2="47.3" stroke="var(--text-dim)"/><line x1="215.5" y1="57.7" x2="263" y2="85" stroke="var(--text-dim)"/>
+          <line x1="150" y1="20" x2="197.5" y2="101.9" stroke="var(--text-dim)"/><line x1="215.5" y1="133.1" x2="263" y2="215" stroke="var(--text-dim)"/>
+          <line x1="150" y1="20" x2="102.5" y2="47.3" stroke="var(--text-dim)"/><line x1="84.5" y1="57.7" x2="37" y2="85" stroke="var(--text-dim)"/>
+          <line x1="263" y1="85" x2="215.5" y2="166.9" stroke="var(--text-dim)"/><line x1="197.5" y1="198.1" x2="150" y2="280" stroke="var(--text-dim)"/>
+          <line x1="263" y1="215" x2="215.5" y2="242.3" stroke="var(--text-dim)"/><line x1="197.5" y1="252.7" x2="150" y2="280" stroke="var(--text-dim)"/>
+          <line x1="263" y1="215" x2="168.1" y2="215" stroke="var(--text-dim)"/><line x1="131.9" y1="215" x2="37" y2="215" stroke="var(--text-dim)"/>
+          <line x1="150" y1="280" x2="102.5" y2="198.1" stroke="var(--text-dim)"/><line x1="84.5" y1="166.9" x2="37" y2="85" stroke="var(--text-dim)"/>
+          <line x1="263" y1="85" x2="263" y2="215" stroke="var(--text-dim)" opacity="0.55"/>
+        </g>
+        <g font-family="ui-monospace,monospace" font-size="13" font-weight="700" text-anchor="middle">
+          <g><circle cx="150" cy="20" r="16" fill="var(--surface)" stroke="var(--team-b)" stroke-width="2.4"/><text x="150" y="25" fill="var(--text)">0</text></g>
+          <g><circle cx="263" cy="85" r="16" fill="var(--surface)" stroke="var(--team-a)" stroke-width="2.4"/><text x="263" y="90" fill="var(--text)">1</text></g>
+          <g><circle cx="263" cy="215" r="16" fill="var(--surface)" stroke="var(--team-a)" stroke-width="2.4"/><text x="263" y="220" fill="var(--text)">2</text></g>
+          <g><circle cx="150" cy="280" r="16" fill="var(--surface)" stroke="var(--team-b)" stroke-width="2.4"/><text x="150" y="285" fill="var(--text)">3</text></g>
+          <g><circle cx="37" cy="215" r="16" fill="var(--surface)" stroke="var(--team-b)" stroke-width="2.4"/><text x="37" y="220" fill="var(--text)">4</text></g>
+          <g><circle cx="37" cy="85" r="16" fill="var(--surface)" stroke="var(--team-a)" stroke-width="2.4"/><text x="37" y="90" fill="var(--text)">5</text></g>
+        </g>
+      </svg>
+      <figcaption>Gaps in the lines mark the 7 cut rivalries; the one solid line (1&ndash;2) is the rivalry that couldn't be broken.</figcaption>
+    </div>
+
+    <div class="callout trait">
+      <strong style="color:var(--text); font-family:-apple-system,sans-serif; font-size:13px;">What this buys you:</strong>
+      exact and guaranteed &mdash; there is zero doubt #25/#38 are the true best, because every single split got checked. What it costs: the loop runs <strong>2ⁿ</strong> times. 64 iterations for 6 nodes is nothing; 60 nodes would be 2⁶⁰ &asymp; 10¹⁸ iterations &mdash; no computer finishes that loop.
+    </div>
+  </section>
+
+  <section class="quantum">
+    <div class="section-label">Part 2 <b>Quantum &mdash; tilt all 64 at once</b></div>
+    <p>The quantum circuit never loops over splits. It builds one 6-qubit state that represents <strong>all 64 splits simultaneously</strong>, then uses interference to lean that state's weight toward the good splits, without ever visiting them one at a time.</p>
+
+    <p><strong class="q">Step 1 &mdash; superposition.</strong> A layer of Hadamard gates puts the state into an equal mix of all 64 basis states. Every split starts out equally likely: probability <code>1/64</code> each.</p>
+    <div class="figure-wrap">
+      <div class="barchart-wrap"><svg id="uniformChart" viewBox="0 0 640 60" role="img" aria-label="Bar chart showing all 64 states with equal probability before any gates encode the cost"></svg></div>
+      <figcaption>Every split, equally likely, before the circuit has done anything with the cost function.</figcaption>
+    </div>
+
+    <p><strong class="q">Step 2 &mdash; the cost, written as phase.</strong> The exact same formula from Part 1 &mdash; <code>(1 - z_i&middot;z_j)/2</code> per edge &mdash; gets applied to the state through the CX&ndash;Rz(&minus;&gamma;)&ndash;CX gadget proven in <a href="qaoa_C%28x%29_to_operator_proof.html" style="color:var(--phase);">the phase-gate proof</a>. But it lands as an <strong>angle</strong> twisted into each split's amplitude, not a change in height. The bar chart above wouldn't move an inch here &mdash; a good split and a bad split still look equally likely, the difference is hidden in a phase you can't see by looking at probabilities alone.</p>
+
+    <p><strong class="q">Step 3 &mdash; the mixer turns phase into probability.</strong> A layer of X-rotations lets those hidden phase differences interfere &mdash; splits whose phases lined up favorably gain real probability weight, others lose it. This is the one step that actually reshapes the bar chart.</p>
+
+    <div class="card">
+      <p class="dim" style="font-size:13px;">Guessed values (&gamma;=1, &beta;=1), before any tuning:</p>
+      <div class="stat-row">
+        <div class="stat"><div class="k">expectation</div><div class="v" id="unoptExp">&mdash;</div></div>
+        <div class="stat"><div class="k">prob. on split #25</div><div class="v" id="unoptProb">&mdash;</div></div>
+      </div>
+      <p class="dim" style="font-size:13px;">Even here, before any optimizing, the single most likely outcome the circuit lands on is already <strong>split #25</strong> &mdash; the true best. It's just not confident yet: only ~8% of the weight sits there. Optimizing &gamma; and &beta; is what sharpens that confidence.</p>
+    </div>
+
+    <p><strong class="q">Step 4 &mdash; more rounds, more reshaping.</strong> One round of phase+mixer is <code>p=1</code>. Repeating it <code>p</code> times gives the optimizer more chances to pile weight onto the good splits. Drag the slider &mdash; this is the real probability distribution <code>QAOA_MaxCut.ipynb</code> produced at each depth, not a mockup.</p>
+
+    <div class="card">
+      <div class="slider-row">
+        <span class="dim" style="font-size:13px; font-family:ui-monospace,monospace;">p =</span>
+        <input type="range" id="pSlider" min="1" max="5" step="1" value="1">
+        <span class="p-label" id="pLabel">1</span>
+      </div>
+      <div class="barchart-wrap"><svg id="quantumChart" viewBox="0 0 640 140" role="img" aria-label="Bar chart of the quantum probability distribution over all 64 splits, changing with circuit depth p"></svg></div>
+      <figcaption>Same 64 splits as the classical chart, same x-axis position for split #25 and #38. Watch the mass climb onto them as <code>p</code> increases.</figcaption>
+      <div class="stat-row">
+        <div class="stat hl-q"><div class="k">expectation</div><div class="v" id="qExp">&mdash;</div></div>
+        <div class="stat hl-q"><div class="k">prob. on {#25, #38}</div><div class="v" id="qProb">&mdash;</div></div>
+        <div class="stat"><div class="k">circuit depth</div><div class="v" id="qDepth">&mdash;</div></div>
+      </div>
+    </div>
+
+    <div class="callout trait">
+      <strong style="color:var(--text); font-family:-apple-system,sans-serif; font-size:13px;">What this buys you:</strong>
+      a state that leans, more and more with each round, toward the true best split &mdash; without ever checking splits one at a time. What it costs: it's a <strong>heuristic</strong> &mdash; the expectation value climbs toward 7 but the run above never quite reaches full certainty even at <code>p=5</code>. The price for more rounds is <strong>circuit depth</strong>, not loop iterations: 20 &rarr; 84 gates deep across <code>p=1&hellip;5</code> here, and every extra gate is another chance for real hardware to introduce error.
+    </div>
+  </section>
+
+  <section>
+    <div class="section-label">Part 3 <b>Where they actually diverge</b></div>
+
+    <div class="cmp-wrap">
+      <table class="cmp">
+        <tr><th></th><th>Classical</th><th>Quantum</th></tr>
+        <tr><td>What comes out raw</td><td class="classical-col">The exact best split, directly &mdash; <code>#25, cost 7</code></td><td class="quantum-col">An <em>expectation value</em> &mdash; a probability-weighted average over all 64 costs</td></tr>
+        <tr><td>Guarantee</td><td class="classical-col">100% &mdash; every split was checked</td><td class="quantum-col">None built in &mdash; approaches 7, isn't promised to reach it</td></tr>
+        <tr><td>What grows with problem size</td><td class="classical-col">Loop iterations &mdash; <code>2ⁿ</code></td><td class="quantum-col">Circuit depth &amp; optimizer rounds &mdash; grows far slower than <code>2ⁿ</code></td></tr>
+        <tr><td>How you get an actual split out</td><td class="classical-col">Already have it &mdash; it's <code>costs.index(max)</code></td><td class="quantum-col">Measure (sample) the circuit many times and take the most frequent bitstring</td></tr>
+      </table>
+    </div>
+
+    <div class="gotchas">
+      <div class="gotcha"><div class="n">1</div><p><strong>The expectation value is not the answer.</strong> 6.72 at <code>p=5</code> isn't a split that cuts 6.72 edges &mdash; that number doesn't correspond to any real split. It's the average cost you'd get if you sampled the circuit's current state many times. The actual answer is still a specific bitstring, read out separately.</p></div>
+      <div class="gotcha"><div class="n">2</div><p><strong>Reading out that bitstring costs something too.</strong> This page peeked at the exact statevector to find <code>max_prob_index</code> &mdash; a simulator-only shortcut. Real hardware only gives you samples, one shot at a time, and needs enough of them to trust which bitstring is really the most frequent.</p></div>
+      <div class="gotcha"><div class="n">3</div><p><strong>#25 and #38 are the same answer wearing two labels.</strong> They're exact bit-flips of each other &mdash; team A and team B swapped. The cost formula can't tell them apart, so the circuit gives them identical probability at every single <code>p</code> above. Not a bug &mdash; the graph genuinely has no way to prefer one team-labeling over the other.</p></div>
+      <div class="gotcha"><div class="n">4</div><p><strong>This demo doesn't show quantum "winning."</strong> At 6 nodes, the classical loop finishes instantly and is certain; the quantum circuit is slower to build and only approximate. The actual argument for quantum here is about <em>scaling</em> &mdash; circuit depth growing far more gently than <code>2ⁿ</code> &mdash; which only starts to matter at problem sizes neither of us can brute-force by hand.</p></div>
+    </div>
+
+    <p><strong>They're the same landscape.</strong> Overlay the classical cost bars with the quantum probability at <code>p=5</code>, same x-axis, and the shape lines up: probability mass piles up exactly where the cost bars are tallest.</p>
+    <div class="figure-wrap">
+      <div class="barchart-wrap"><svg id="overlayChart" viewBox="0 0 640 150" role="img" aria-label="Overlay of the classical cost landscape and the quantum probability distribution at p=5, showing they peak at the same splits"></svg></div>
+      <figcaption><span class="swatch" style="background:var(--cost-bar)"></span>cost per split (Part 1) &mdash; <span class="swatch" style="background:var(--phase)"></span>quantum probability at p=5 (Part 2), scaled to fit the same chart.</figcaption>
+    </div>
+    <p class="dim">That's not a coincidence to explain away &mdash; it's the same <code>cut_count</code> formula underneath both charts. Classical evaluates it in a Python loop, one split at a time. Quantum exponentiates it into a phase, once, and lets interference evaluate all 64 at once. Different computation, identical cost function &mdash; which is exactly why the two charts above land on the same peaks.</p>
+  </section>
+
+  <div class="footer">
+    Real numbers throughout, generated straight from <code>QAOA_MaxCut.ipynb</code>.
+    Back to the <a href="index.html">reference index</a> &middot; the derivation lives in
+    <a href="qaoa_theory.html">QAOA Theory</a> and <a href="qaoa_C%28x%29_to_operator_proof.html">the phase-gate proof</a>.
+  </div>
+</div>
+
+<script>
+(function () {
+  const DATA = {"costs":[0.0,3.0,3.0,4.0,4.0,5.0,5.0,4.0,3.0,6.0,4.0,5.0,5.0,6.0,4.0,3.0,1.0,4.0,4.0,5.0,3.0,4.0,4.0,3.0,4.0,7.0,5.0,6.0,4.0,5.0,3.0,2.0,2.0,3.0,5.0,4.0,6.0,5.0,7.0,4.0,3.0,4.0,4.0,3.0,5.0,4.0,4.0,1.0,3.0,4.0,6.0,5.0,5.0,4.0,6.0,3.0,4.0,5.0,5.0,4.0,4.0,3.0,3.0,0.0],"bestIdx":25,"twinIdx":38,"unopt":{"expectation":4.7167,"probBest":0.0787,"depth":20},"sweep":[{"p":1,"exp":5.2956,"probBest":0.0889,"circDepth":20,"probs":[0.002244,0.001335,0.001612,0.01207,0.004072,0.028033,0.020704,0.013745,0.001335,0.034593,0.01207,0.020598,0.028033,0.054838,0.013745,0.000975,0.00357,0.000886,0.003143,0.029,0.001001,0.013745,0.008396,0.001813,0.000886,0.088855,0.029,0.039064,0.013745,0.009535,0.001813,0.005551,0.005551,0.001813,0.009535,0.013745,0.039064,0.029,0.088855,0.000886,0.001813,0.008396,0.013745,0.001001,0.029,0.003143,0.000886,0.00357,0.000975,0.013745,0.054838,0.028033,0.020598,0.01207,0.034593,0.001335,0.013745,0.020704,0.028033,0.004072,0.01207,0.001612,0.001335,0.002244]},{"p":2,"exp":6.0589,"probBest":0.1994,"circDepth":36,"probs":[0.002816,0.000168,0.001403,0.001576,0.010509,0.013076,0.000226,0.002414,0.000168,0.050049,0.001576,0.00463,0.013076,0.092244,0.002414,0.000362,0.002159,0.000332,0.004981,0.008785,0.000196,0.000615,0.002218,0.001195,0.000332,0.199373,0.008785,0.063432,0.000615,0.003973,0.001195,0.005109,0.005109,0.001195,0.003973,0.000615,0.063432,0.008785,0.199373,0.000332,0.001195,0.002218,0.000615,0.000196,0.008785,0.004981,0.000332,0.002159,0.000362,0.002414,0.092244,0.013076,0.00463,0.001576,0.050049,0.000168,0.002414,0.000226,0.013076,0.010509,0.001576,0.001403,0.000168,0.002816]},{"p":3,"exp":6.4362,"probBest":0.2846,"circDepth":52,"probs":[0.000499,0.000609,0.000504,0.000131,0.000243,0.006653,0.002239,0.000343,0.000609,0.053779,0.000131,0.002227,0.006653,0.078275,0.000343,0.000354,0.001114,0.000511,0.000637,0.002805,0.000375,0.000151,0.000313,0.000411,0.000511,0.284587,0.002805,0.043173,0.000151,0.005339,0.000411,0.003114,0.003114,0.000411,0.005339,0.000151,0.043173,0.002805,0.284587,0.000511,0.000411,0.000313,0.000151,0.000375,0.002805,0.000637,0.000511,0.001114,0.000354,0.000343,0.078275,0.006653,0.002227,0.000131,0.053779,0.000609,0.000343,0.002239,0.006653,0.000243,0.000131,0.000504,0.000609,0.000499]},{"p":4,"exp":6.6885,"probBest":0.3828,"circDepth":68,"probs":[0.000215,0.000083,0.000031,0.000685,0.000867,0.000648,0.003828,0.000349,0.000083,0.042872,0.000685,0.003386,0.000648,0.044501,0.000349,0.000281,0.000826,0.001066,0.000926,0.000904,0.000137,0.000014,0.000549,0.00005,0.001066,0.382818,0.000904,0.007819,0.000014,0.001953,0.00005,0.001393,0.001393,0.00005,0.001953,0.000014,0.007819,0.000904,0.382818,0.001066,0.00005,0.000549,0.000014,0.000137,0.000904,0.000926,0.001066,0.000826,0.000281,0.000349,0.044501,0.000648,0.003386,0.000685,0.042872,0.000083,0.000349,0.003828,0.000648,0.000867,0.000685,0.000031,0.000083,0.000215]},{"p":5,"exp":6.7214,"probBest":0.3933,"circDepth":84,"probs":[0.000251,0.000044,0.000013,0.000809,0.000306,0.000477,0.002152,0.000212,0.000044,0.032323,0.000809,0.003753,0.000477,0.054036,0.000212,0.000189,0.000883,0.000255,0.000444,0.000637,0.00029,0.000073,0.001163,0.000007,0.000255,0.393301,0.000637,0.002195,0.000073,0.002381,0.000007,0.001293,0.001293,0.000007,0.002381,0.000073,0.002195,0.000637,0.393301,0.000255,0.000007,0.001163,0.000073,0.00029,0.000637,0.000444,0.000255,0.000883,0.000189,0.000212,0.054036,0.000477,0.003753,0.000809,0.032323,0.000044,0.000212,0.002152,0.000477,0.000306,0.000809,0.000013,0.000044,0.000251]}]};
+
+  const svgNS = "http://www.w3.org/2000/svg";
+  function bars(svg, values, maxVal, highlightIdx, baseColor, hiColor) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    const W = 640, H = +svg.viewBox.baseVal.height, n = values.length, bw = W / n;
+    for (let i = 0; i < n; i++) {
+      const h = Math.max(1, (values[i] / maxVal) * (H - 10));
+      const rect = document.createElementNS(svgNS, "rect");
+      rect.setAttribute("x", (i * bw + 0.6).toFixed(2));
+      rect.setAttribute("y", (H - h).toFixed(2));
+      rect.setAttribute("width", Math.max(0.8, bw - 1.2).toFixed(2));
+      rect.setAttribute("height", h.toFixed(2));
+      rect.setAttribute("rx", 1);
+      rect.setAttribute("fill", highlightIdx.has(i) ? hiColor : baseColor);
+      svg.appendChild(rect);
+    }
+  }
+
+  const highlight = new Set([DATA.bestIdx, DATA.twinIdx]);
+  const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  function drawClassical() {
+    bars(document.getElementById("classicalChart"), DATA.costs, 7, highlight, cssVar("--cost-bar"), cssVar("--team-a"));
+  }
+  function drawUniform() {
+    bars(document.getElementById("uniformChart"), new Array(64).fill(1), 1, new Set(), cssVar("--phase"), cssVar("--phase"));
+  }
+  function drawOverlay() {
+    const svg = document.getElementById("overlayChart");
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    const W = 640, H = 150, n = 64, bw = W / n;
+    const probs = DATA.sweep[4].probs; // p = 5
+    const maxProb = Math.max(...probs);
+    for (let i = 0; i < n; i++) {
+      const ch = Math.max(1, (DATA.costs[i] / 7) * (H - 10));
+      const r = document.createElementNS(svgNS, "rect");
+      r.setAttribute("x", (i * bw + 0.6).toFixed(2));
+      r.setAttribute("y", (H - ch).toFixed(2));
+      r.setAttribute("width", Math.max(0.8, bw - 1.2).toFixed(2));
+      r.setAttribute("height", ch.toFixed(2));
+      r.setAttribute("rx", 1);
+      r.setAttribute("fill", cssVar("--cost-bar"));
+      svg.appendChild(r);
+    }
+    for (let i = 0; i < n; i++) {
+      const py = H - 8 - (probs[i] / maxProb) * (H - 24);
+      const c = document.createElementNS(svgNS, "circle");
+      c.setAttribute("cx", (i * bw + bw / 2).toFixed(2));
+      c.setAttribute("cy", py.toFixed(2));
+      c.setAttribute("r", highlight.has(i) ? 3 : 1.6);
+      c.setAttribute("fill", cssVar("--phase"));
+      svg.appendChild(c);
+    }
+  }
+
+  function updateQuantum(p) {
+    const s = DATA.sweep[p - 1];
+    bars(document.getElementById("quantumChart"), s.probs, DATA.sweep[4].probBest * 1.12, highlight, cssVar("--cost-bar-dim"), cssVar("--phase"));
+    document.getElementById("pLabel").textContent = p;
+    document.getElementById("qExp").textContent = s.exp.toFixed(4);
+    document.getElementById("qProb").textContent = (s.probBest * 2 * 100).toFixed(1) + "%";
+    document.getElementById("qDepth").textContent = s.circDepth;
+  }
+
+  document.getElementById("unoptExp").textContent = DATA.unopt.expectation.toFixed(4);
+  document.getElementById("unoptProb").textContent = (DATA.unopt.probBest * 100).toFixed(1) + "%";
+
+  const slider = document.getElementById("pSlider");
+  slider.addEventListener("input", () => updateQuantum(+slider.value));
+
+  drawClassical();
+  drawUniform();
+  drawOverlay();
+  updateQuantum(1);
+})();
+</script>
