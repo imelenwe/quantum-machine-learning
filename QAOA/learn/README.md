@@ -1,11 +1,11 @@
 # QAOA / MaxCut — reference pages
 
-Four standalone pages, meant to be read in this order the first time — each one
-assumes the one before it. Links go to the live rendered versions (GitHub shows
-raw `.html` files as source code, not as pages, so use these rather than the
-files above).
+**→ [Open the styled hub page](https://imelenwe.github.io/quantum-machine-learning/QAOA/learn/index.html)** to browse all four pages with descriptions and a suggested order.
 
-Or skip the list and use the [styled hub page](https://imelenwe.github.io/quantum-machine-learning/QAOA/learn/index.html) instead, which links to all four.
+Or use the plain list below: four standalone pages, meant to be read in this
+order the first time — each one assumes the one before it. Links go to the
+live rendered versions (GitHub shows raw `.html` files as source code, not as
+pages, so use these rather than the files above).
 
 ## Part 1 — Understanding the problem itself
 
