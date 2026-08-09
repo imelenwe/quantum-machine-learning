@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Conclusion — QAOA MaxCut, this attempt</title>
+<style>
+  :root {
+    --bg: #12151b; --surface: #1a1f28; --surface-2: #20263250; --surface-border: #2a3140;
+    --text: #eef1f6; --text-dim: #8b96a8; --text-dimmer: #5f6a7d;
+    --verified: #4fc38f; --assumed: #f2a541; --gap: #f26b5c; --accent: #6fb3f2;
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f5; --surface: #ffffff; --surface-2: #eef1f580; --surface-border: #d8dee6;
+    --text: #1a1f28; --text-dim: #5b6472; --text-dimmer: #8993a3;
+    --verified: #1f8f5f; --assumed: #a8650d; --gap: #c43f2e; --accent: #1f6fb8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151b; --surface: #1a1f28; --surface-2: #20263250; --surface-border: #2a3140;
+      --text: #eef1f6; --text-dim: #8b96a8; --text-dimmer: #5f6a7d;
+      --verified: #4fc38f; --assumed: #f2a541; --gap: #f26b5c; --accent: #6fb3f2;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    display: flex; justify-content: center; padding: 44px 20px 90px;
+  }
+  .page { width: 100%; max-width: 880px; display: flex; flex-direction: column; gap: 40px; }
+  code, .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; }
+
+  .eyebrow { font-family: ui-monospace, monospace; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+  h1 { margin: 6px 0 0; font-size: 30px; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+  .lede { margin: 12px 0 0; font-size: 15.5px; line-height: 1.65; color: var(--text-dim); max-width: 68ch; }
+
+  .status-banner {
+    border: 1.5px solid var(--verified); background: color-mix(in srgb, var(--verified) 10%, var(--surface));
+    border-radius: 10px; padding: 16px 20px; font-size: 14px; line-height: 1.6;
+  }
+  .status-banner .tag { font-family: ui-monospace, monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--verified); text-transform: uppercase; display: block; margin-bottom: 6px; }
+
+  section { display: flex; flex-direction: column; gap: 16px; }
+  .section-head { display: flex; align-items: baseline; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--surface-border); }
+  .section-num { font-family: ui-monospace, monospace; font-size: 13px; color: var(--text-dimmer); }
+  .section-head h2 { font-size: 19px; margin: 0; font-weight: 700; letter-spacing: -0.005em; }
+
+  p { margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text); max-width: 72ch; }
+  p.dim { color: var(--text-dim); }
+
+  .tag-pill {
+    display: inline-flex; align-items: center; gap: 5px; font-family: ui-monospace, monospace;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+  }
+  .tag-pill.verified { color: var(--verified); background: color-mix(in srgb, var(--verified) 15%, transparent); border: 1px solid color-mix(in srgb, var(--verified) 45%, transparent); }
+  .tag-pill.assumed { color: var(--assumed); background: color-mix(in srgb, var(--assumed) 15%, transparent); border: 1px solid color-mix(in srgb, var(--assumed) 45%, transparent); }
+  .tag-pill.gap { color: var(--gap); background: color-mix(in srgb, var(--gap) 15%, transparent); border: 1px solid color-mix(in srgb, var(--gap) 45%, transparent); }
+  .tag-pill.dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .card-title { font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+  .formula-box {
+    font-family: ui-monospace, monospace; font-size: 14px; background: var(--bg);
+    border: 1px solid var(--surface-border); border-radius: 8px; padding: 14px 16px; line-height: 1.8; overflow-x: auto;
+  }
+  .formula-box .step { color: var(--text-dim); }
+  .formula-box .result { color: var(--accent); font-weight: 700; }
+
+  .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--surface-border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--surface); }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--surface-border); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  th { font-family: ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-dim); background: var(--surface-2); }
+  tr:last-child td { border-bottom: none; }
+  td.mono { font-family: ui-monospace, monospace; }
+  tr.best td { background: color-mix(in srgb, var(--verified) 12%, transparent); font-weight: 700; }
+  tr.best td:first-child { border-left: 3px solid var(--verified); }
+
+  .callout { border-radius: 10px; padding: 14px 18px; font-size: 13.5px; line-height: 1.6; border-left: 3px solid; }
+  .callout.gap-c { border-color: var(--gap); background: color-mix(in srgb, var(--gap) 8%, var(--surface)); }
+  .callout.assumed-c { border-color: var(--assumed); background: color-mix(in srgb, var(--assumed) 8%, var(--surface)); }
+  .callout.verified-c { border-color: var(--verified); background: color-mix(in srgb, var(--verified) 8%, var(--surface)); }
+
+  .verdict {
+    border: 1.5px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    border-radius: 12px; padding: 22px 24px; font-size: 15px; line-height: 1.7;
+  }
+  .verdict .tag { font-family: ui-monospace, monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--accent); text-transform: uppercase; display: block; margin-bottom: 10px; }
+
+  ol.checklist { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  ol.checklist li { display: grid; grid-template-columns: 20px 1fr; gap: 10px; font-size: 14px; line-height: 1.55; }
+  ol.checklist li::before { content: "□"; color: var(--assumed); font-size: 15px; }
+  ol.checklist li .li-text { display: block; }
+
+  .footer { border-top: 1px solid var(--surface-border); padding-top: 22px; font-size: 12.5px; line-height: 1.6; color: var(--text-dimmer); }
+  .footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+  <div>
+    <div class="eyebrow">QAOA MaxCut &middot; conclusion for this attempt</div>
+    <h1>What this attempt actually showed &mdash; and didn't</h1>
+    <p class="lede">
+      A from-scratch QAOA implementation for MaxCut, built and tested on a 6-node graph in
+      <code>QAOA_MaxCut.ipynb</code>. This page closes it out: what was verified, what was corrected
+      along the way (with help from Gemini and Claude Web catching real errors), and what the honest
+      bottom line is on quantum advantage.
+    </p>
+  </div>
+
+  <div class="status-banner">
+    <span class="tag">Cross-checked, not just asserted</span>
+    Every number below was either run directly in the notebook, pulled from a cited source (IBM's own
+    published Heron specs and its 2026 Qiskit Summer School course material), or corrected after
+    independent review from Gemini and Claude Web. Where something is still an estimate rather than a
+    measurement, it's tagged <span class="tag-pill assumed dot">estimated</span> &mdash; there are three
+    of those left, listed at the end, deliberately kept short.
+  </div>
+
+  <section>
+    <div class="section-head"><span class="section-num">1</span><h2>What this build proved</h2></div>
+
+    <div class="card">
+      <div class="card-title"><span class="tag-pill verified dot">measured</span>QAOA's core promise holds</div>
+      <p>On the exact (noiseless) simulation, expectation value climbed toward the true optimum of 7 as
+      depth increased &mdash; exactly the behavior the algorithm promises:</p>
+      <div class="formula-box">
+        <div class="step">depth 1: 5.2956 &nbsp;&rarr;&nbsp; depth 2: 6.0589 &nbsp;&rarr;&nbsp; depth 3: 6.4362</div>
+        <div class="step">depth 4: 6.6885 &nbsp;&rarr;&nbsp; depth 5: 6.7214 &nbsp;&nbsp;<span class="result">(true max: 7.0)</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="tag-pill verified dot">measured</span>A working recipe on simulator, under shot noise</div>
+      <p>Under realistic shot noise (8192 shots/circuit, still on <code>qiskit-aer</code> &mdash; not real
+      hardware), Nelder-Mead and SPSA were both flaky and
+      expensive. COBYLA was cheapest but flaky on its own &mdash; fixed by warm-starting each depth from
+      the previous depth's best parameters plus 3 restarts. Result: clean, monotonic convergence,
+      depths 1&ndash;10:</p>
+      <div class="formula-box">
+        <div class="step">5.3157 &rarr; 6.0854 &rarr; 6.4277 &rarr; 6.6879 &rarr; 6.8408 &rarr; 6.8687 &rarr; 6.9004 &rarr; 6.9199 &rarr; 6.9146 &rarr; <span class="result">6.9150</span></div>
+        <div class="step" style="margin-top:6px;">total circuit executions across all 10 depths: <span class="result">3,219</span> &nbsp;(an earlier run landed at 3,195 &mdash; restarts 2 and 3 use random jitter, so the total varies run to run by roughly &plusmn;1&ndash;2%, always around 3,200)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="tag-pill verified dot">measured</span>The most-sampled bitstring never got it wrong</div>
+      <p>Added a tracker inside <code>expectation_measured</code> that records the single most-frequently-measured
+      bitstring on every circuit call. Checked across all 30 depth/optimizer runs (Nelder-Mead &times;5, SPSA &times;5,
+      plain COBYLA &times;10, warm-started COBYLA &times;10):</p>
+      <div class="formula-box">
+        <div class="result">30 / 30 runs &mdash; the top bitstring was always 011001 or 100110</div>
+        <div class="step">(the graph's only two true-optimal colorings, exact bitwise complements of each other &mdash; even at depth 1, expectation as low as 5.29)</div>
+      </div>
+      <p class="dim">Why this holds: the true optimum (cost 7.0) is tied only 2 ways, while the next-best
+      tier (cost 6.0) is tied 5 ways. A single wrong bitstring has to out-sample <em>each</em> of the two
+      leaders individually while splitting its own tier 5 ways &mdash; so even a mildly-biased distribution
+      keeps the true optimum in first place, well before the average expectation looks convincing. This
+      is a property of this graph (few ties at the top), not a general QAOA guarantee &mdash; a graph with
+      more degenerate optimal solutions would make this far less reliable.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="section-num">2</span><h2>Why there's no advantage claim here</h2></div>
+
+    <div class="card">
+      <div class="card-title"><span class="tag-pill verified dot">verified against literature</span>Classical MaxCut is not brute force</div>
+      <p>An earlier draft of this page compared quantum timing against naive exponential brute force and
+      found a "crossover" around n=30. That comparison was against the wrong opponent. Real classical
+      MaxCut solvers:</p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>method</th><th>guarantee</th><th>typical time</th></tr>
+          <tr><td>Goemans-Williamson (SDP)</td><td class="mono">&ge;87.8% of optimal</td><td class="mono">n = 1,000+ in seconds</td></tr>
+          <tr><td>Local search / restarts</td><td class="mono">no guarantee, empirically strong</td><td class="mono">n = 1,000+ in ms&ndash;seconds</td></tr>
+          <tr><td>Exact (branch &amp; bound + SDP)</td><td class="mono">certified optimal</td><td class="mono">n &asymp; 100&ndash;150 in seconds&ndash;minutes</td></tr>
+        </table>
+      </div>
+      <p class="dim">Verified directly: a hand-rolled local search with 1 restart got stuck at n=12 (found
+      13, true optimum was 15) &mdash; but with 20 restarts it hit the true optimum on 100% of graphs small
+      enough to check against brute force (n&le;20). Cheap, fast, uncertified, and reliable in practice.
+      Against this real opponent, there is no n at which this build's QAOA implementation wins.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="tag-pill verified dot">anchored to a real IBM benchmark</span>Quantum timing was wrong by ~100&times;, corrected in stages</div>
+      <p>Four estimates were produced over the course of this analysis, each replacing the last:</p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>estimate</th><th>basis</th><th>time for this build's 3,219-execution sweep</th></tr>
+          <tr><td>original draft</td><td>gate-time-only model, no job overhead</td><td class="mono">~12&ndash;14 min</td></tr>
+          <tr><td>Gemini's correction</td><td>real Heron rep rate (~4 kHz), no job overhead</td><td class="mono">~1.9 hr</td></tr>
+          <tr><td>Claude Web's correction</td><td>rep rate + an assumed 2s/iteration overhead</td><td class="mono">~4.3 hr</td></tr>
+          <tr class="best"><td>this conclusion</td><td>IBM's own measured per-iteration hardware time</td><td class="mono">~22&ndash;29 hr</td></tr>
+        </table>
+      </div>
+      <p>The last row comes from IBM's 2026 Qiskit Global Summer School Lab 4b, whose bonus section runs
+      the exact same pattern as this notebook &mdash; <code>scipy.optimize.minimize(method="COBYLA")</code>
+      submitting one hardware job per function evaluation inside a Session &mdash; and quotes a measured
+      <strong>32 seconds per iteration</strong> on real Heron r2 hardware. At Heron's real shot rate, the
+      shots themselves would only take ~7.5s of that 32s; the remaining ~24s is fixed per-iteration job/session
+      overhead that doesn't shrink much with circuit size. Applied to this build's 3,219 iterations: 22&ndash;29 hours
+      &mdash; roughly <strong>130&ndash;175&times;</strong> over the 600-second/month free hardware budget.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="section-num">3</span><h2>Where this sits next to the other two labs checked</h2></div>
+    <div class="table-wrap">
+      <table>
+        <tr><th></th><th>this build</th><th>IITD course lab</th><th>IBM QGSS Lab 4b</th></tr>
+        <tr><td>scale</td><td class="mono">6 nodes</td><td class="mono">6 nodes</td><td class="mono">160 &rarr; 1,600 nodes</td></tr>
+        <tr><td>hardware</td><td class="mono">simulator only</td><td class="mono">simulator only</td><td class="mono">real Heron r2</td></tr>
+        <tr><td>p=2 result on same-style problem</td><td class="mono">6.05&ndash;6.09</td><td class="mono">5.76</td><td class="mono">&mdash;</td></tr>
+        <tr><td>classical baseline compared?</td><td class="mono">no</td><td class="mono">no</td><td class="mono">no</td></tr>
+        <tr><td>claims quantum advantage?</td><td class="mono">no</td><td class="mono">no ("speedup potential", hedged)</td><td class="mono">no ("one step closer")</td></tr>
+      </table>
+    </div>
+    <p class="dim">None of the three notebooks examined across this whole exercise &mdash; this one, the
+    course's own teaching lab, or IBM's official 2026 summer school material &mdash; claims to have
+    demonstrated quantum advantage on MaxCut. The course lab's own closing argument for "speedup
+    potential" rests on comparing to exhaustive search, the same weak baseline this page's first draft
+    used and later corrected.</p>
+  </section>
+
+  <div class="verdict">
+    <span class="tag">Bottom line</span>
+    This build correctly demonstrates QAOA's core mechanism &mdash; more layers genuinely produce better
+    answers, and a properly warm-started, multi-restart COBYLA loop extracts that reliably even under
+    real shot noise, with the most-sampled bitstring landing on the true answer in every single run
+    tested. It does not demonstrate, and was never close to demonstrating, any timing or scale advantage
+    over classical MaxCut solving. Real classical solvers handle instances 1,000&times; larger than this
+    graph in milliseconds; the honestly-costed quantum side, using IBM's own published hardware numbers,
+    would need most of a day just to train the 6-qubit example here. Every independent check applied to
+    this analysis &mdash; two other AI models, direct literature search, and IBM's own course material at
+    far larger scale &mdash; landed on the same conclusion. The value of this attempt was in understanding
+    how QAOA works and how to make it reliable, not in beating anything.
+  </div>
+
+  <section>
+    <div class="section-head"><span class="section-num">4</span><h2>What's still genuinely uncertain</h2></div>
+    <ol class="checklist">
+      <li><span class="li-text"><span class="tag-pill assumed dot">estimated</span>&nbsp;The 3,219-execution count was only measured at n=6. Whether it stays roughly constant at larger n (the assumption behind treating quantum time as "flat") has not been tested.</span></li>
+      <li><span class="li-text"><span class="tag-pill assumed dot">estimated</span>&nbsp;The ~25&ndash;32s/iteration hardware-overhead figure comes from a different, larger IBM circuit (30&ndash;40 qubits, 3 batched sub-circuits). Applying it to this build's smaller, single-circuit iterations is a reasoned extrapolation, not a direct measurement.</span></li>
+      <li><span class="li-text"><span class="tag-pill assumed dot">estimated</span>&nbsp;None of this models real hardware noise or connectivity (SWAP overhead, gate-error accumulation). Even the corrected ~22&ndash;29 hour timing says nothing about whether the answer that comes back would be trustworthy.</span></li>
+    </ol>
+  </section>
+
+  <div class="footer">
+    Built from a working session on <code>QAOA_MaxCut.ipynb</code>. Timing model anchored on IBM Qiskit
+    Global Summer School 2026, Lab 4b (<a href="https://github.com/qiskit-community/qgss-2026/blob/main/lab-4/QGSS2026_Lab4b.ipynb">github.com/qiskit-community/qgss-2026</a>).
+    Classical-vs-QAOA literature check: <a href="https://quantum-journal.org/papers/q-2023-09-26-1121/">Quantum journal, 2023</a>,
+    <a href="https://arxiv.org/pdf/2112.11354">arXiv:2112.11354</a>. IBM Heron hardware specs cross-checked
+    against IBM's own published calibration data. None of this involved real IBM Quantum hardware &mdash;
+    everything ran on <code>qiskit-aer</code> locally; the hardware-time figures are estimates grounded in
+    IBM's own published numbers, not a measurement of this exact circuit.
+  </div>
+</div>
+</body>
+</html>

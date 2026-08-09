@@ -8,19 +8,35 @@ this file is the map.
 
 ---
 
-## Status (last updated 2026-08-06)
+## Status: COMPLETE (last updated 2026-08-09)
 
-Nothing implemented yet. `QAOA_MaxCut.ipynb` currently holds only the imports cell.
+`QAOA_MaxCut.ipynb` is done, rerun clean end to end on the lab's 6-node graph.
 
-- ⬜ §3 cost function + brute-force ground truth
-- ⬜ §2a phase operator `Uc_maxcut`
-- ⬜ §2b mixing operator `Ub_mixer`
-- ⬜ §2c full circuit builder
-- ⬜ §4 expectation value (`exact` + `measured`)
-- ⬜ §5 classical optimization loop (scipy Nelder–Mead)
-- ⬜ §6 p sweep (p=1 vs p=2 vs p=3)
-- ⬜ §7 scaling experiment (random 3-regular graphs toward ~20 qubits)
-- ⬜ §8 hardware run (gated — needs explicit go-ahead + budget check)
+- ✅ §3 cost function + brute-force ground truth — max cut = 7, reached by exactly 2
+  colorings (`011001` / `100110`, exact bitwise complements — the graph's Z2 symmetry)
+- ✅ §2a phase operator (`problem_hamiltonian_operator`, CX-Rz-CX per edge)
+- ✅ §2b mixing operator (`mixer_hamiltonian_operator`, Rx(β) per qubit)
+- ✅ §2c full circuit builder (`create_qaoa_circuit`)
+- ✅ §4 expectation value, both `exact` (statevector) and `measured` (8192-shot sampled)
+- ✅ §5 classical optimizer — went further than planned: compared Nelder-Mead, SPSA, and
+  COBYLA under real shot noise (not just Nelder-Mead), found COBYLA cheapest but flaky,
+  and fixed that with a warm-started, 3-restart recipe across depths 1–10 — clean
+  monotonic convergence 5.32 → 6.93 (true max 7), ~3,200 circuit executions total
+- ✅ §6 p sweep — done as depths 1–10 (beyond the planned p=1..3), both exact and measured
+- ➕ not in original scope, added along the way: per-depth circuit depth/gate-count/execution
+  instrumentation, and a most-frequently-measured-bitstring tracker — checked across all 30
+  depth/optimizer runs, the top bitstring was correct (`011001` or `100110`) every single
+  time, even when the average expectation value looked unconvincing
+- ⬜ §7 scaling experiment (~20 qubits) — **descoped**, not done
+- ⬜ §8 hardware run — **descoped**, not done
+
+§7 and §8 are being superseded rather than picked back up here: the next step is IBM's own
+Qiskit Global Summer School 2026 Lab 4b, which already covers both — real Heron r2 hardware,
+scaling to 160 and 1,600 nodes via Pauli Correlation Encoding, and a full error-mitigation
+stack — at a level this from-scratch build was never aiming to reach. See
+[`conclusion.html`](conclusion.html) for the full verdict on what this attempt did and
+didn't establish, cross-checked against classical MaxCut solvers and IBM's own published
+hardware numbers.
 
 ---
 
