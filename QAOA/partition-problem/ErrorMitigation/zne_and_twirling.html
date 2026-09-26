@@ -90,9 +90,10 @@
   </section>
 
   <section>
-    <h2>With Pauli twirling: a random walk</h2>
+    <h2>With Pauli twirling: a classical random walk</h2>
     <p>Twirling puts random Pauli gates (I, X, Y or Z) around each gate, and flips the result back afterwards so the ideal computation is unchanged. For this error, the effect is that <b>each gate's extra 12° goes forward or backward at random, 50/50</b>, like a coin flip.</p>
     <p>The tilts no longer pile up in one direction. Some steps cancel others, like a drunk person's walk: forward, back, forward, forward, back…</p>
+    <p>This is a <b>classical</b> random walk, not a quantum random walk. The coin flips are ordinary randomness chosen by a normal computer before each run. (A quantum random walk is a different thing: the walker goes both ways at once and the paths interfere like waves, which is closer to the untwirled, angles-add-up behaviour.)</p>
     <p>Averaged over many random twirls, the arrow <b>doesn't turn</b>: it points up on average, but it <b>gets shorter</b>. Each gate shrinks it by the same factor, cos 12° ≈ 0.978. The shrinks multiply, so the ⟨Z⟩ expectation value is <span class="formula">(cos 12°)<sup>k</sup></span>.</p>
     <div class="card caveat">
       <p><b>A caveat on "direction":</b> "Random direction" here means only that each twist randomly goes <b>forward or backward</b>. The end result is always the same: the average arrow <b>shrinks along the X, Y and Z axes</b> and never turns. If the original twist were around some tilted axis, twirling would split it into three independent random flips (X, Y and Z), each with its own probability. So the coin flips are the <i>mechanism</i>, and "noise lined up with X, Y, Z" is the <i>result</i>.</p>
@@ -154,7 +155,7 @@
   <section>
     <h2>Summary</h2>
     <div class="card key">
-      <p>A coherent error is a twist whose angles add up, so the result follows a cosine wave, <span class="formula">cos(k·θ)</span>: it swings and can even come back. Pauli twirling randomly flips each twist forward or backward (a random walk), and on average this turns it into a steady shrink along X, Y and Z that follows <span class="formula">(cos θ)<sup>k</sup></span>. That steady shrink is the only shape ZNE knows how to extend back to zero noise.</p>
+      <p>A coherent error is a twist whose angles add up, so the result follows a cosine wave, <span class="formula">cos(k·θ)</span>: it swings and can even come back. Pauli twirling randomly flips each twist forward or backward (a classical random walk), and on average this turns it into a steady shrink along X, Y and Z that follows <span class="formula">(cos θ)<sup>k</sup></span>. That steady shrink is the only shape ZNE knows how to extend back to zero noise.</p>
       <p>Twirling does <b>not</b> reduce the noise. It changes its <b>shape</b> so that ZNE can undo it.</p>
     </div>
   </section>
