@@ -48,21 +48,21 @@
 <main class="page">
 
   <header>
-    <h1>Why error mitigation pairs ZNE with Pauli twirling</h1>
+    <h1>Why Pauli twirling can make ZNE more effective</h1>
     <p class="lede">A walk-through using one qubit, one 12° gate error, and a bit of Bloch-sphere geometry.</p>
   </header>
 
   <section>
     <h2>The idea in one paragraph</h2>
     <p><b>ZNE (zero-noise extrapolation)</b> deliberately runs a circuit at several amplified noise levels, for example by repeating gates in a way that should cancel out. It measures the answer at each level, then extends the trend backward to guess the answer at <b>zero noise</b>.</p>
-    <p>That only works if the noise grows in a <b>predictable shape</b>. Pauli twirling is what gives it that shape.</p>
+    <p>ZNE works best when the answer changes in a <b>smooth, predictable way</b> as the noise is turned up. Some kinds of error make that change jumpy and hard to predict. Pauli twirling reshapes those errors so the change becomes much more regular. Twirling isn't required for ZNE, but it often makes ZNE far more reliable.</p>
   </section>
 
   <section>
     <h2>Two kinds of gate error</h2>
     <ul>
       <li><b>Coherent error:</b> a fixed, repeatable twist. For example, the gate always over-rotates by the same small angle. The Bloch arrow stays full length but points to the wrong place.</li>
-      <li><b>Incoherent error:</b> random kicks. On average, the Bloch arrow gets shorter.</li>
+      <li><b>Incoherent (stochastic) error:</b> random kicks. On average, the Bloch arrow gets shorter. ("Stochastic" just means random: each time, one of several possible errors happens, with set probabilities.)</li>
     </ul>
   </section>
 
@@ -95,8 +95,10 @@
     <p>The tilts no longer pile up in one direction. Some steps cancel others, like a drunk person's walk: forward, back, forward, forward, back…</p>
     <p>This is a <b>classical</b> random walk, not a quantum random walk. The coin flips are ordinary randomness chosen by a normal computer before each run. (A quantum random walk is a different thing: the walker goes both ways at once and the paths interfere like waves, which is closer to the untwirled, angles-add-up behaviour.)</p>
     <p>Averaged over many random twirls, the arrow <b>doesn't turn</b>: it points up on average, but it <b>gets shorter</b>. Each gate shrinks it by the same factor, cos 12° ≈ 0.978. The shrinks multiply, so the ⟨Z⟩ expectation value is <span class="formula">(cos 12°)<sup>k</sup></span>.</p>
+    <p>One important detail: this shrinking is an <b>average over many randomized copies</b> of the circuit. Each single copy still has its 12° twist, just pointing forward or backward. That's why using twirling means running many randomized copies and averaging their results.</p>
     <div class="card caveat">
-      <p><b>A caveat on "direction":</b> "Random direction" here means only that each twist randomly goes <b>forward or backward</b>. The end result is always the same: the average arrow <b>shrinks along the X, Y and Z axes</b> and never turns. If the original twist were around some tilted axis, twirling would split it into three independent random flips (X, Y and Z), each with its own probability. So the coin flips are the <i>mechanism</i>, and "noise lined up with X, Y, Z" is the <i>result</i>.</p>
+      <p><b>A caveat on "direction":</b> "Random direction" here means only that each twist randomly goes <b>forward or backward</b>. The end result is that the average arrow <b>never turns, it only shrinks</b>, and only along the X, Y and Z axes. Which axes shrink depends on the error: for our twist around X, the X part of the arrow is untouched and only the Y and Z parts shrink. Our arrow points along Z, which is why ⟨Z⟩ shrinks.</p>
+      <p>For a twist around a tilted axis, twirling turns it into <b>one random choice at each gate</b>: do nothing, or apply an X, Y or Z flip, each with its own probability. (It is one choice among four options, not three separate coin flips.) So the coin flips are the <i>mechanism</i>, and "noise lined up with X, Y, Z" is the <i>result</i>.</p>
     </div>
   </section>
 
@@ -138,25 +140,45 @@
 
   <section>
     <h2>What ZNE does with each column</h2>
-    <p>ZNE measures at 1×, 3× and 5× noise (k = 1, 3, 5), fits a smooth decay curve, and extends it back to k = 0. The right answer there is <b>1.000</b>.</p>
+    <p>ZNE measures at 1×, 3× and 5× noise (k = 1, 3, 5), fits a curve through those points, and extends it back to k = 0. The right answer there is <b>1.000</b>. A common choice of curve is an exponential decay.</p>
     <ul>
       <li><b>Twirled</b> (0.978, 0.936, 0.895): these follow a clean exponential, so the curve extends back to <span class="good">1.000 exactly ✓</span></li>
-      <li><b>Untwirled</b> (0.978, 0.809, 0.500): forcing the same curve through these points gives about <span class="bad">1.21 at k = 0 ✗</span>. That value is impossible, since "up" can't exceed 1. It is 21% off, while the plain 1× measurement was only about 2% off. ZNE made the answer <b>worse</b>.</li>
+      <li><b>Untwirled</b> (0.978, 0.809, 0.500): forcing an exponential curve through these points gives about <span class="bad">1.21 at k = 0 ✗</span>. That value is impossible, since "up" can't exceed 1. It is 21% off, while the plain 1× measurement was only about 2% off. Here ZNE made the answer <b>worse</b>.</li>
     </ul>
+    <div class="card caveat">
+      <p><b>A caveat: the choice of curve matters.</b> ZNE isn't tied to exponentials. It can also fit a straight line or a quadratic (a parabola-shaped curve). Here is what each choice gives:</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Curve fitted</th><th>Untwirled → k = 0</th><th>Twirled → k = 0</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Straight line</td><td class="bad">1.121</td><td class="good">0.999</td></tr>
+            <tr><td>Quadratic</td><td class="good">1.010</td><td class="good">1.000</td></tr>
+            <tr><td>Exponential</td><td class="bad">1.214</td><td class="good">1.000</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The quadratic rescues the untwirled data. That's because, over the first few gates, a small twist bends like a parabola, so a parabola fits it. The twirled data comes out right with <b>every</b> curve.</p>
+      <p>So the real lesson is: <b>ZNE works when the fitted curve matches the true shape of the noise.</b> On real hardware, twists and random kicks are mixed together, so without twirling you can't know which curve to trust. Twirling makes the shape predictable, so the choice of curve stops being a gamble.</p>
+    </div>
   </section>
 
   <section>
     <h2>One more trap: the noise-boosting can undo itself</h2>
     <p>ZNE often boosts noise by <b>folding</b>: gate → reverse gate → gate. The ideal result is the same as one gate, but you'd expect 3× the noise.</p>
-    <p>If the gate over-rotates by +12° and the reverse gate over-rotates by 12° in the opposite direction, those two cancel exactly. You think you ran at 3× noise, but the arrow only tilted 12°, which is 1× noise, so your data points sit at the wrong noise levels.</p>
-    <p>With twirling, the random forward/backward steps stop the errors from lining up to cancel, so 3× really is 3×.</p>
+    <p>If the gate over-rotates by +12° and the reverse gate over-rotates by 12° in the opposite direction, those two cancel exactly. You think you ran at 3× noise, but the arrow only tilted 12°, which is 1× noise, so your data points sit at the wrong noise levels. Whether this happens depends on how the hardware builds the reverse gate: on real chips, the errors can cancel, add up, or land somewhere in between.</p>
+    <p>With twirling, the twists become random forward/backward steps that no longer line up neatly, either to cancel or to add up, so the boosted noise grows much more regularly. It's still not a guaranteed, exact 3×, but it's far closer to what ZNE assumes.</p>
+    <div class="card caveat">
+      <p><b>Where twirling really is required:</b> IBM's ZNE can also boost noise a different way, called PEA (probabilistic error amplification). PEA first measures the hardware's noise as a list of random-flip probabilities, then adds extra noise by inserting more random flips. That list only describes the hardware after twirling, so for PEA, twirling isn't just helpful, it's required.</p>
+    </div>
   </section>
 
   <section>
     <h2>Summary</h2>
     <div class="card key">
-      <p>A coherent error is a twist whose angles add up, so the result follows a cosine wave, <span class="formula">cos(k·θ)</span>: it swings and can even come back. Pauli twirling randomly flips each twist forward or backward (a classical random walk), and on average this turns it into a steady shrink along X, Y and Z that follows <span class="formula">(cos θ)<sup>k</sup></span>. That steady shrink is the only shape ZNE knows how to extend back to zero noise.</p>
-      <p>Twirling does <b>not</b> reduce the noise. It changes its <b>shape</b> so that ZNE can undo it.</p>
+      <p>A coherent error is a twist whose angles add up, so the result follows a cosine wave, <span class="formula">cos(k·θ)</span>: it swings and can even come back. Pauli twirling randomly flips each twist forward or backward (a classical random walk). Averaged over many randomized copies, this turns the twist into a steady shrink that follows <span class="formula">(cos θ)<sup>k</sup></span>. A steady, predictable shrink is much easier for ZNE to extend back to zero noise.</p>
+      <p>Twirling doesn't lower the average amount of noise. It changes its <b>shape</b>: errors stop piling up in one direction, which makes ZNE's job far more reliable.</p>
     </div>
   </section>
 
