@@ -42,6 +42,13 @@
   tr:last-child td { border-bottom: none; }
   .good { color: var(--good); font-weight: 700; }
   .bad { color: var(--bad); font-weight: 700; }
+  h3 { margin: 18px 0 8px; font-size: 16px; }
+  details summary { cursor: pointer; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .math {
+    font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.9;
+    background: var(--bg); border: 1px solid var(--surface-border); border-radius: 8px;
+    padding: 12px 14px; margin: 0 0 12px; overflow-x: auto; white-space: nowrap;
+  }
 </style>
 </head>
 <body>
@@ -136,6 +143,83 @@
       <li>The untwirled column <b>drops fast, flips over, and comes back</b>, following a cosine wave.</li>
     </ul>
     <p class="lede">To turn a ⟨Z⟩ value into a probability: chance of measuring the correct 0 = (1 + ⟨Z⟩) / 2. For example, 0.809 means a 90.5% chance of the right answer.</p>
+  </section>
+
+  <section>
+    <h2>The maths behind the two formulas</h2>
+    <p class="lede">Optional. This shows where cos(k·θ) and (cos θ)<sup>k</sup> come from, using only rotations of the Bloch arrow. θ is the error angle per gate (12° in our example).</p>
+    <details>
+      <summary>Show the derivation</summary>
+
+      <h3>Step 1: what one twist does to the arrow</h3>
+      <p>Write the Bloch arrow as three numbers (x, y, z). Our starting arrow, pointing straight up, is (0, 0, 1), and ⟨Z⟩ is simply its z number. A twist by angle φ around the X axis leaves x alone and turns the (y, z) part like the hand of a clock:</p>
+      <div class="math">
+        x → x<br>
+        y → y·cos φ − z·sin φ<br>
+        z → y·sin φ + z·cos φ
+      </div>
+      <p>In quantum notation this twist is written R<sub>X</sub>(φ) = e<sup>−iφX/2</sup>.</p>
+
+      <h3>Step 2: without twirling, the angles add → cos(k·θ)</h3>
+      <p>Twisting by θ and then by θ again around the same axis is the same as one twist by 2θ. So k identical twists make one twist by k·θ:</p>
+      <div class="math">R<sub>X</sub>(θ) · R<sub>X</sub>(θ) · … · R<sub>X</sub>(θ) &nbsp;(k times)&nbsp; = R<sub>X</sub>(k·θ)</div>
+      <p>Put φ = k·θ and the starting arrow (0, 0, 1) into Step 1:</p>
+      <div class="math">
+        (0, 0, 1) → (0, −sin(k·θ), cos(k·θ))<br>
+        so ⟨Z⟩ = cos(k·θ)
+      </div>
+      <p>The arrow keeps its full length (sin² + cos² = 1); only its direction changes. With θ = 12° this gives the untwirled column: cos 12° = 0.978, cos 36° = 0.809, cos 60° = 0.500, and so on.</p>
+      <p class="lede">Check with probabilities: after k twists the state is cos(kθ/2)|0⟩ − i·sin(kθ/2)|1⟩, so P(0) = cos²(kθ/2) and P(1) = sin²(kθ/2). Then ⟨Z⟩ = P(0) − P(1) = cos²(kθ/2) − sin²(kθ/2) = cos(k·θ), by the double-angle rule.</p>
+
+      <h3>Step 3: what twirling does to one twist → +θ or −θ</h3>
+      <p>Twirling sandwiches the twist between a random Pauli and its undo. For a twist around X:</p>
+      <div class="math">
+        I · R<sub>X</sub>(θ) · I = R<sub>X</sub>(+θ)<br>
+        X · R<sub>X</sub>(θ) · X = R<sub>X</sub>(+θ)<br>
+        Y · R<sub>X</sub>(θ) · Y = R<sub>X</sub>(−θ)<br>
+        Z · R<sub>X</sub>(θ) · Z = R<sub>X</sub>(−θ)
+      </div>
+      <p>Why: X commutes with itself, so sandwiching with X changes nothing. Y and Z <i>anticommute</i> with X (swapping their order flips the sign: Y·X = −X·Y), so sandwiching with them reverses the twist. Two of the four choices keep +θ and two give −θ, so each gate's twist is +θ or −θ with 50/50 odds.</p>
+      <p>The same rule holds for twists around Y or Z: the matching Pauli keeps the sign, and the other two flip it.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Twist</th><th>I</th><th>X</th><th>Y</th><th>Z</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>around X</td><td>+θ</td><td>+θ</td><td>−θ</td><td>−θ</td></tr>
+            <tr><td>around Y</td><td>+θ</td><td>−θ</td><td>+θ</td><td>−θ</td></tr>
+            <tr><td>around Z</td><td>+θ</td><td>−θ</td><td>−θ</td><td>+θ</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Step 4: averaging +θ and −θ → the arrow shrinks by cos θ</h3>
+      <p>Apply Step 1 with φ = +θ and with φ = −θ (using sin(−θ) = −sin θ and cos(−θ) = cos θ):</p>
+      <div class="math">
+        twist +θ: &nbsp;(x, &nbsp;y·cos θ − z·sin θ, &nbsp;&nbsp;y·sin θ + z·cos θ)<br>
+        twist −θ: &nbsp;(x, &nbsp;y·cos θ + z·sin θ, &nbsp;−y·sin θ + z·cos θ)<br>
+        average: &nbsp;&nbsp;(x, &nbsp;y·cos θ, &nbsp;z·cos θ)
+      </div>
+      <p>The sin θ parts point opposite ways and cancel. What's left: x is untouched, and y and z are each multiplied by cos θ. The arrow doesn't turn; it shrinks. (Averaging the arrows is allowed because the final answer is an average over many randomized runs, and ⟨Z⟩ averages the same way.)</p>
+
+      <h3>Step 5: k twirled gates → (cos θ)<sup>k</sup></h3>
+      <p>Each gate is twirled with its own independent coin flip, so each gate multiplies z by another cos θ:</p>
+      <div class="math">
+        z: &nbsp;1 → cos θ → (cos θ)<sup>2</sup> → … → (cos θ)<sup>k</sup><br>
+        so ⟨Z⟩ = (cos θ)<sup>k</sup>
+      </div>
+      <p>With θ = 12°, cos 12° = 0.978, which gives the twirled column: 0.978, 0.978<sup>3</sup> = 0.936, 0.978<sup>5</sup> = 0.895, and so on.</p>
+      <p>This is an exponential decay: (cos θ)<sup>k</sup> = e<sup>k·ln(cos θ)</sup>, and ln(cos 12°) ≈ −0.022, so ⟨Z⟩ shrinks by about 2.2% with every gate.</p>
+
+      <h3>Step 6: why folding can cancel (one simple model)</h3>
+      <p>Let G be the hardware's version of an ideal gate U, with the twist attached: G = U · R<sub>X</sub>(θ). If the reverse gate is built as the exact reverse of G, it is G<sup>†</sup> = R<sub>X</sub>(−θ) · U<sup>†</sup> (the † means "reverse"). Folding then gives:</p>
+      <div class="math">
+        G · G<sup>†</sup> · G = U·R<sub>X</sub>(θ) · R<sub>X</sub>(−θ)·U<sup>†</sup> · U·R<sub>X</sub>(θ)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= U · R<sub>X</sub>(θ) = G
+      </div>
+      <p>The +θ and −θ cancel, and U<sup>†</sup>·U does nothing, so three gates carry the error of only one. Real hardware need not build the reverse gate this way, which is why the errors can also add up or only partly cancel.</p>
+    </details>
   </section>
 
   <section>
