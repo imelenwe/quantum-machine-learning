@@ -61,10 +61,9 @@
     <nav class="toc">
       <a href="#problem">1 · The problem</a>
       <a href="#quantum">2 · Turning it into a quantum circuit</a>
-      <a href="#hardware">3 · Running on real hardware</a>
-      <a href="#errors">4 · Handling errors</a>
-      <a href="#pce">5 · Scaling up with PCE</a>
-      <a href="#bonus">6 · The bonus tricks</a>
+      <a href="#errors">3 · Handling errors</a>
+      <a href="#pce">4 · Scaling up with PCE</a>
+      <a href="#bonus">5 · The bonus tricks</a>
     </nav>
   </header>
 
@@ -157,56 +156,7 @@
 
   <!-- ============================================================ -->
   <section>
-    <h2 id="hardware">3 · Running on real hardware</h2>
-    <p class="section-note">The words that appear around every hardware run.</p>
-    <div class="terms">
-
-      <div class="term" id="qpu">
-        <h3>QPU, Heron r2, QPU time</h3>
-        <p>The <b>QPU</b> is the quantum chip itself. <b>Heron r2</b> is the IBM chip model the lab was designed for. <b>QPU time</b> is how long the chip actually spends running your circuits, which is the scarce, paid-for resource.</p>
-        <p class="in-lab"><b>In the lab:</b> each hardware cell shows a usage estimate. For example, about 12 s for TREX, 16 s for ZNE and about 4.5 min for PEC.</p>
-      </div>
-
-      <div class="term" id="shots">
-        <h3>Shots</h3>
-        <p>How many times the circuit is run and measured. Each run gives one random outcome, so more shots give steadier averages. Four times the shots halves the random wobble.</p>
-        <p class="in-lab"><b>In the lab:</b> 1,000 shots per configuration.</p>
-      </div>
-
-      <div class="term" id="sampler-estimator">
-        <h3>Sampler vs Estimator <span class="aka">(the two "primitives")</span></h3>
-        <ul>
-          <li><b>Sampler</b> returns counts of measured bitstrings, for example "<code>011001</code> came up 87 times".</li>
-          <li><b>Estimator</b> returns <b>expectation values</b>, averaged numbers for chosen measurements (see next entry).</li>
-        </ul>
-        <p class="in-lab"><b>In the lab:</b> Section 2 uses the Sampler on the 6-number problem. Section 4 uses the Estimator on the 160-number problem.</p>
-      </div>
-
-      <div class="term" id="expectation">
-        <h3>Expectation value <span class="aka">(⟨Z⟩, ⟨XX⟩, …)</span></h3>
-        <p>The average result of a measurement over many shots, on a scale from −1 to +1. For ⟨Z⟩: +1 means always measured 0, −1 means always measured 1, and 0 means half and half.</p>
-        <p>This is <b>what error-mitigation methods like ZNE and TREX correct</b>: they work on these averaged numbers, not on single shots.</p>
-        <p class="in-lab"><b>In the lab:</b> with PCE, each of the 160 numbers gets its own expectation value. Its sign (+ or −) says which group the number goes in.</p>
-      </div>
-
-      <div class="term" id="job">
-        <h3>Job and job ID</h3>
-        <p>A <b>job</b> is one batch of circuits sent to the QPU, and the <b>job ID</b> is its receipt number. Results stay saved on IBM's side, so if your notebook crashes you can download them again using the ID, for free, without re-running on hardware.</p>
-        <p class="in-lab"><b>In the lab:</b> the "Retrieving Lost Jobs" cells, <code>service.job("…")</code>.</p>
-      </div>
-
-      <div class="term" id="loss">
-        <h3>Loss <span class="aka">(and "Iter 0")</span></h3>
-        <p>The lab's score for a proposed split. Lower is better, and negative is good. "Iter 0" just means "round 0"; it's the only round when the loss function is called once.</p>
-        <p class="more">More: <a href="reading_the_partition_score.html">Reading the partition score</a>.</p>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
-  <section>
-    <h2 id="errors">4 · Handling errors</h2>
+    <h2 id="errors">3 · Handling errors</h2>
     <p class="section-note">Real chips are noisy. The lab tries two families of fixes: <b>suppression</b> (stop errors while the circuit runs) and <b>mitigation</b> (correct the numbers afterwards).</p>
     <div class="terms">
 
@@ -306,7 +256,7 @@
 
   <!-- ============================================================ -->
   <section>
-    <h2 id="pce">5 · Scaling up with PCE</h2>
+    <h2 id="pce">4 · Scaling up with PCE</h2>
     <p class="section-note">How 160 numbers fit on just 11 qubits.</p>
     <div class="terms">
 
@@ -333,7 +283,7 @@
 
   <!-- ============================================================ -->
   <section>
-    <h2 id="bonus">6 · The bonus tricks</h2>
+    <h2 id="bonus">5 · The bonus tricks</h2>
     <p class="section-note">Extra steps for the 1,600-number bonus challenge (not required for the badge).</p>
     <div class="terms">
 
