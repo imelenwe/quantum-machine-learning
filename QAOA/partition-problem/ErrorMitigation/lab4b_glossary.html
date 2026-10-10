@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab 4b Glossary</title>
+<style>
+  :root {
+    --bg: #12151b; --surface: #1a1f28; --surface-border: #2a3140;
+    --text: #eef1f6; --text-dim: #8b96a8; --accent: #6fb3f2; --good: #4fc38f; --warn: #f2a541;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #eef1f5; --surface: #ffffff; --surface-border: #d8dee6;
+      --text: #1a1f28; --text-dim: #5b6472; --accent: #1f6fb8; --good: #1f8f5f; --warn: #a8650d;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    display: flex; justify-content: center; padding: 40px 16px 80px;
+  }
+  .page { width: 100%; max-width: 820px; display: flex; flex-direction: column; gap: 36px; }
+  a { color: var(--accent); }
+  .crumb { font-size: 13px; color: var(--text-dim); margin-bottom: 10px; }
+  h1 { margin: 0; font-size: 28px; }
+  h2 { margin: 0 0 6px; font-size: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--surface-border); scroll-margin-top: 16px; }
+  .lede { margin: 10px 0 0; font-size: 15px; line-height: 1.6; color: var(--text-dim); }
+  .section-note { margin: 4px 0 14px; font-size: 14px; color: var(--text-dim); line-height: 1.6; }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .toc a {
+    font-size: 13px; text-decoration: none; color: var(--text);
+    background: var(--surface); border: 1px solid var(--surface-border); border-radius: 999px; padding: 5px 12px;
+  }
+  .toc a:hover { border-color: var(--accent); }
+  .terms { display: flex; flex-direction: column; gap: 12px; }
+  .term {
+    background: var(--surface); border: 1px solid var(--surface-border); border-radius: 10px; padding: 14px 18px;
+    scroll-margin-top: 16px;
+  }
+  .term h3 { margin: 0 0 6px; font-size: 16px; }
+  .term h3 .aka { font-weight: 400; color: var(--text-dim); font-size: 14px; }
+  .term p, .term li { margin: 0 0 8px; font-size: 14.5px; line-height: 1.6; }
+  .term p:last-child { margin-bottom: 0; }
+  .term ol, .term ul { margin: 0 0 8px; padding-left: 22px; }
+  .in-lab { font-size: 13.5px !important; color: var(--text-dim); border-top: 1px dashed var(--surface-border); padding-top: 8px; margin-top: 4px !important; }
+  .in-lab b { color: var(--good); font-weight: 700; }
+  .caveat { font-size: 13.5px !important; border-left: 3px solid var(--warn); padding-left: 10px; }
+  .more { font-size: 13.5px !important; }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header>
+    <div class="crumb"><a href="../../../index.html">← All pages</a> · QGSS Lab 4b · Error mitigation explainers</div>
+    <h1>Lab 4b glossary</h1>
+    <p class="lede">Quick plain-English reminders for every idea in the QGSS 2026 Lab 4b notebook (QAOA for the partition problem). Grouped in the order the lab uses them. Each entry ends with where it shows up in the lab.</p>
+    <nav class="toc">
+      <a href="#problem">1 · The problem</a>
+      <a href="#quantum">2 · Turning it into a quantum circuit</a>
+      <a href="#hardware">3 · Running on real hardware</a>
+      <a href="#errors">4 · Handling errors</a>
+      <a href="#pce">5 · Scaling up with PCE</a>
+      <a href="#bonus">6 · The bonus tricks</a>
+    </nav>
+  </header>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2 id="problem">1 · The problem</h2>
+    <p class="section-note">What we are trying to solve, and why it is a good test for quantum computers.</p>
+    <div class="terms">
+
+      <div class="term" id="partition">
+        <h3>Partition problem</h3>
+        <p>Split a list of numbers into two groups so that both groups add up to the same total, or as close as possible.</p>
+        <p>The lab's example: pack items of 3, 5, 7, 9, 11 and 13 kg into two backpacks of equal weight. Answer: {3, 5, 7, 9} and {11, 13}, both 24 kg.</p>
+        <p class="in-lab"><b>In the lab:</b> 6 numbers in Sections 1–2, 160 numbers in Sections 3–4, and 1,600 numbers in the bonus.</p>
+      </div>
+
+      <div class="term" id="np-hard">
+        <h3>NP-hard</h3>
+        <p>A problem that is easy to <i>check</i> but very hard to <i>solve</i>. Checking a split only takes adding up two groups. Finding the best split is different: the number of possible splits doubles with every number you add, and no fast method is known.</p>
+      </div>
+
+      <div class="term" id="verifiable">
+        <h3>Classically verifiable problem</h3>
+        <p>A problem whose answer a normal computer can check quickly, even if finding it is hard. That makes it a good test for "quantum advantage": if a quantum computer claims a great answer, we can confirm it without needing an equally powerful computer.</p>
+      </div>
+
+      <div class="term" id="advantage">
+        <h3>Quantum advantage</h3>
+        <p>A quantum computer doing a useful task better (faster, cheaper or more accurately) than any normal computer can. Lab 4 is about the road towards it.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2 id="quantum">2 · Turning it into a quantum circuit</h2>
+    <p class="section-note">The chain of rewrites: list of numbers → yes/no choices → a score → a circuit.</p>
+    <div class="terms">
+
+      <div class="term" id="qubo">
+        <h3>QUBO <span class="aka">(quadratic unconstrained binary optimization)</span></h3>
+        <p>A standard way to write a problem so a quantum computer can attack it. Every choice is a 0-or-1 switch, and the score uses switches multiplied in pairs, with no extra rules on the side.</p>
+        <p>For the partition problem: switch x<sub>i</sub> = 0 puts number i in group 1, and x<sub>i</sub> = 1 puts it in group 2. The score is the <i>square</i> of the difference between the two group totals. Squaring gets rid of the minus sign, so "smaller is better" always holds.</p>
+      </div>
+
+      <div class="term" id="ising">
+        <h3>Ising spins and the cost Hamiltonian</h3>
+        <p>The same switches rewritten as +1 / −1 instead of 0 / 1, like tiny magnets pointing up or down. The score then becomes a sum over every pair of numbers: (number i × number j) × (spin i × spin j).</p>
+        <p>That sum, written with quantum operators, is the <b>cost Hamiltonian</b>: the recipe the circuit uses to "feel" which splits score well.</p>
+        <p class="more">More: <a href="reading_the_partition_score.html">Reading the partition score</a> works through this score with three numbers.</p>
+      </div>
+
+      <div class="term" id="maxcut">
+        <h3>Partition as MaxCut <span class="aka">(the graph picture)</span></h3>
+        <p>Draw each number as a dot, join every dot to every other dot, and give each line a weight of the two numbers multiplied. A good partition is one that <b>cuts</b> as much line weight as possible (most heavy lines run between the two groups). That turns the partition problem into a MaxCut problem.</p>
+        <p class="in-lab"><b>In the lab:</b> Exercise 1a, <code>build_partition_graph</code>. With 160 numbers that's 12,720 lines.</p>
+      </div>
+
+      <div class="term" id="qaoa">
+        <h3>QAOA <span class="aka">(quantum approximate optimization algorithm)</span></h3>
+        <p>A circuit recipe for problems like MaxCut. It alternates two kinds of layer:</p>
+        <ul>
+          <li>a <b>cost layer</b>, which nudges good answers based on the cost Hamiltonian, and</li>
+          <li>a <b>mixer layer</b>, which stirs the qubits so the circuit can explore other answers.</li>
+        </ul>
+        <p>Each layer has a dial (an angle). A normal computer tunes the dials; the quantum computer runs the circuit. "Approximate" means it aims for a good answer, not a guaranteed perfect one.</p>
+        <p class="in-lab"><b>In the lab:</b> Exercise 1b builds the circuit with <code>qiskit_addon_opt_mapper</code> and <code>qopt_best_practices</code>.</p>
+        <p class="more">More: the <a href="../../max-cut/index.html">MaxCut pages</a> explain QAOA step by step.</p>
+      </div>
+
+      <div class="term" id="ansatz">
+        <h3>Ansatz</h3>
+        <p>A circuit with adjustable dials (parameters) that gets tuned until it gives good answers. The QAOA circuit is the ansatz in this lab.</p>
+      </div>
+
+      <div class="term" id="params">
+        <h3>Training, parameters and pretrained parameters</h3>
+        <p><b>Training</b> means a normal computer repeatedly adjusting the circuit's dials, running the circuit, checking the score, and adjusting again. <b>Pretrained parameters</b> are dial settings someone already found, so you can skip training.</p>
+        <p class="in-lab"><b>In the lab:</b> <code>training=False</code> uses the pretrained dials as they are; <code>training=True</code> starts from them and keeps improving. The bonus warns that training on hardware costs about 32 s of QPU time per round.</p>
+      </div>
+
+      <div class="term" id="transpile">
+        <h3>Transpiling</h3>
+        <p>Rewriting a circuit into the exact gates and qubit connections a real chip supports. A circuit drawn on paper must be translated before the hardware can run it.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2 id="hardware">3 · Running on real hardware</h2>
+    <p class="section-note">The words that appear around every hardware run.</p>
+    <div class="terms">
+
+      <div class="term" id="qpu">
+        <h3>QPU, Heron r2, QPU time</h3>
+        <p>The <b>QPU</b> is the quantum chip itself. <b>Heron r2</b> is the IBM chip model the lab was designed for. <b>QPU time</b> is how long the chip actually spends running your circuits, which is the scarce, paid-for resource.</p>
+        <p class="in-lab"><b>In the lab:</b> each hardware cell shows a usage estimate. For example, about 12 s for TREX, 16 s for ZNE and about 4.5 min for PEC.</p>
+      </div>
+
+      <div class="term" id="shots">
+        <h3>Shots</h3>
+        <p>How many times the circuit is run and measured. Each run gives one random outcome, so more shots give steadier averages. Four times the shots halves the random wobble.</p>
+        <p class="in-lab"><b>In the lab:</b> 1,000 shots per configuration.</p>
+      </div>
+
+      <div class="term" id="sampler-estimator">
+        <h3>Sampler vs Estimator <span class="aka">(the two "primitives")</span></h3>
+        <ul>
+          <li><b>Sampler</b> returns counts of measured bitstrings, for example "<code>011001</code> came up 87 times".</li>
+          <li><b>Estimator</b> returns <b>expectation values</b>, averaged numbers for chosen measurements (see next entry).</li>
+        </ul>
+        <p class="in-lab"><b>In the lab:</b> Section 2 uses the Sampler on the 6-number problem. Section 4 uses the Estimator on the 160-number problem.</p>
+      </div>
+
+      <div class="term" id="expectation">
+        <h3>Expectation value <span class="aka">(⟨Z⟩, ⟨XX⟩, …)</span></h3>
+        <p>The average result of a measurement over many shots, on a scale from −1 to +1. For ⟨Z⟩: +1 means always measured 0, −1 means always measured 1, and 0 means half and half.</p>
+        <p>This is <b>what error-mitigation methods like ZNE and TREX correct</b>: they work on these averaged numbers, not on single shots.</p>
+        <p class="in-lab"><b>In the lab:</b> with PCE, each of the 160 numbers gets its own expectation value. Its sign (+ or −) says which group the number goes in.</p>
+      </div>
+
+      <div class="term" id="job">
+        <h3>Job and job ID</h3>
+        <p>A <b>job</b> is one batch of circuits sent to the QPU, and the <b>job ID</b> is its receipt number. Results stay saved on IBM's side, so if your notebook crashes you can download them again using the ID, for free, without re-running on hardware.</p>
+        <p class="in-lab"><b>In the lab:</b> the "Retrieving Lost Jobs" cells, <code>service.job("…")</code>.</p>
+      </div>
+
+      <div class="term" id="loss">
+        <h3>Loss <span class="aka">(and "Iter 0")</span></h3>
+        <p>The lab's score for a proposed split. Lower is better, and negative is good. "Iter 0" just means "round 0"; it's the only round when the loss function is called once.</p>
+        <p class="more">More: <a href="reading_the_partition_score.html">Reading the partition score</a>.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2 id="errors">4 · Handling errors</h2>
+    <p class="section-note">Real chips are noisy. The lab tries two families of fixes: <b>suppression</b> (stop errors while the circuit runs) and <b>mitigation</b> (correct the numbers afterwards).</p>
+    <div class="terms">
+
+      <div class="term" id="suppression-mitigation">
+        <h3>Error suppression vs error mitigation</h3>
+        <ul>
+          <li><b>Suppression</b> changes <i>how the circuit runs</i> so fewer errors build up in the first place. Examples: dynamical decoupling, Pauli twirling.</li>
+          <li><b>Mitigation</b> keeps the noisy results but <i>corrects the numbers afterwards</i> using extra runs or calculations. Examples: M3, TREX, ZNE, PEC.</li>
+        </ul>
+        <p>Neither is error <i>correction</i>, which needs many extra qubits and isn't used here.</p>
+      </div>
+
+      <div class="term" id="coherent">
+        <h3>Coherent vs stochastic (random) errors</h3>
+        <p>A <b>coherent</b> error is a fixed, repeatable twist: the gate over-rotates by the same small angle every time, so the errors pile up in one direction. A <b>stochastic</b> error is random: a different small kick each time, which on average shrinks the result towards zero.</p>
+        <p class="more">More: <a href="zne_and_twirling.html">Why Pauli twirling can make ZNE more effective</a>.</p>
+      </div>
+
+      <div class="term" id="readout">
+        <h3>Readout (measurement) error</h3>
+        <p>The chip mis-reports a qubit at the very end: it was 1 but got recorded as 0, or the other way round. It's often lopsided (1 → 0 is more common than 0 → 1), which pushes all the results in one direction.</p>
+      </div>
+
+      <div class="term" id="dd">
+        <h3>Dynamical decoupling (DD)</h3>
+        <p>While a qubit sits idle waiting for others, the chip gives it pairs of quick flips (for example X then X) that cancel each other out on paper. In reality they "echo away" slow drifting noise that builds up while the qubit waits, like turning a boat around so the current pushes it back to where it started.</p>
+        <p class="in-lab"><b>In the lab:</b> Exercise 2b, <code>dynamical_decoupling.enable = True</code>, <code>sequence_type = "XX"</code>.</p>
+      </div>
+
+      <div class="term" id="twirling">
+        <h3>Pauli twirling <span class="aka">(gate twirling and measurement twirling)</span></h3>
+        <p>Before each noisy gate, add a random Pauli gate (I, X, Y or Z); after it, add the matching gate that undoes it. The ideal answer doesn't change, but averaged over many random versions of the circuit, the gate's coherent twist turns into simple random flips.</p>
+        <ul>
+          <li><b>Gate twirling</b> does this around the 2-qubit gates.</li>
+          <li><b>Measurement twirling</b> randomly flips qubits just before reading them out and flips the recorded answer back, which makes lopsided readout errors even.</li>
+        </ul>
+        <p class="in-lab"><b>In the lab:</b> <code>twirling.enable_gates</code>, <code>twirling.enable_measure</code> and <code>num_randomizations</code> (how many random versions to run).</p>
+        <p class="more">More: <a href="zne_and_twirling.html">Why Pauli twirling can make ZNE more effective</a>.</p>
+      </div>
+
+      <div class="term" id="m3">
+        <h3>M3 <span class="aka">(matrix-free measurement mitigation)</span></h3>
+        <p>Fixes readout errors in the <b>counts</b> from a Sampler, after the run.</p>
+        <ol>
+          <li>Measure how often each qubit (and each pair of neighbours) is misread, using a few simple calibration circuits.</li>
+          <li>Use those small error tables to "un-mix" the counts you actually got.</li>
+        </ol>
+        <p>"Matrix-free" means it only works with the bitstrings that actually appeared, instead of a giant table covering every possible bitstring. That keeps it fast for many qubits.</p>
+        <p class="in-lab"><b>In the lab:</b> Exercises 2c and 2d.</p>
+      </div>
+
+      <div class="term" id="trex">
+        <h3>TREX <span class="aka">(twirled readout error extinction)</span></h3>
+        <p>Fixes readout errors in <b>expectation values</b> from an Estimator. It's the Estimator's counterpart to M3.</p>
+        <ol>
+          <li><b>Twirl the measurement:</b> randomly flip qubits just before readout and flip the answer back. Lopsided readout errors become even, so their only effect is to <b>shrink</b> every expectation value by a fixed factor.</li>
+          <li><b>Measure that factor:</b> run a simple calibration circuit whose ideal answer is known.</li>
+          <li><b>Divide it out:</b> divide your results by the factor to undo the shrinking.</li>
+        </ol>
+        <p class="in-lab"><b>In the lab:</b> Exercise 4b, <code>resilience.measure_mitigation = True</code> plus twirling. Score: −27,422.</p>
+      </div>
+
+      <div class="term" id="zne">
+        <h3>ZNE <span class="aka">(zero-noise extrapolation)</span></h3>
+        <p>You can't switch noise off, but you can turn it <b>up</b>. ZNE runs the circuit at several noise levels and uses the trend to guess the noise-free answer.</p>
+        <ol>
+          <li><b>Add noise on purpose with "folding".</b> Replace a gate U with <b>U → U<sup>†</sup> → U</b> (gate, its reverse, gate again). On paper U<sup>†</sup>·U does nothing, so the circuit still computes the same thing. On real hardware it runs 3 gates instead of 1, so it picks up about 3× the noise. Folding twice more (5 gates) gives about 5×.</li>
+          <li><b>Measure the expectation values</b> at each noise level: 1×, 3× and 5×. These are the averaged numbers from the Estimator, such as ⟨Z⟩, or in this lab each number's PCE value.</li>
+          <li><b>Plot</b> each value against the noise level. It drifts further from the truth as the noise goes up.</li>
+          <li><b>Extrapolate</b>: draw a curve through the points and follow it back to noise level 0. That's the estimate of the noise-free answer.</li>
+        </ol>
+        <p class="caveat"><b>The catch:</b> the guess is only as good as the curve you draw. IBM's default first tries an exponential curve, which fits well when the noise is simple random flips. Coherent twists make the points swing instead of decaying steadily, so the curve can mislead. That's why ZNE is run together with <b>Pauli twirling</b>, which turns twists into random flips. ZNE also has bigger error bars than TREX: following a curve back to zero magnifies any wobble in the points.</p>
+        <p class="in-lab"><b>In the lab:</b> Exercise 4c, <code>resilience.zne_mitigation = True</code> plus twirling. Score: −23,652. QPU time: 16 s, more than TREX because of the extra folded circuits.</p>
+        <p class="more">More: <a href="zne_and_twirling.html">Why Pauli twirling can make ZNE more effective</a>.</p>
+      </div>
+
+      <div class="term" id="pea">
+        <h3>PEA <span class="aka">(probabilistic error amplification)</span></h3>
+        <p>A more precise way for ZNE to turn the noise up. Instead of folding, it first <b>learns</b> each gate layer's (twirled) noise, then adds extra noise by inserting random Pauli flips at the learned rates. Gate twirling is always switched on with PEA.</p>
+        <p class="in-lab"><b>In the lab:</b> not used directly; it's an option for ZNE in the bonus.</p>
+      </div>
+
+      <div class="term" id="pec">
+        <h3>PEC <span class="aka">(probabilistic error cancellation)</span></h3>
+        <p>Instead of guessing the noise-free answer from a trend, PEC tries to <b>cancel</b> the noise directly. It learns each gate layer's noise, then runs many random variations of the circuit with extra gates chosen to undo that noise <i>on average</i>. Some variations are counted with a minus sign (a "quasi-probability"), which is how the noise gets subtracted out.</p>
+        <p class="caveat"><b>The catch:</b> it's in principle more accurate than ZNE, but the number of circuit runs needed grows very fast with the amount of noise, so it's expensive. The lab estimates about 4 min 26 s of QPU time for PEC, against 16 s for ZNE.</p>
+        <p class="in-lab"><b>In the lab:</b> Exercise 4d, <code>resilience.pec_mitigation = True</code> with ZNE switched off. There's an optional simulator cell if you want to save QPU time.</p>
+      </div>
+
+      <div class="term" id="resilience">
+        <h3>Resilience level</h3>
+        <p>A single shortcut setting on the Estimator that switches on bundles of mitigation: <b>0</b> = none, <b>1</b> = readout mitigation (TREX), <b>2</b> = level 1 plus ZNE and gate twirling. The lab sets each option one by one instead, so you can see what each does.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2 id="pce">5 · Scaling up with PCE</h2>
+    <p class="section-note">How 160 numbers fit on just 11 qubits.</p>
+    <div class="terms">
+
+      <div class="term" id="pce-term">
+        <h3>PCE <span class="aka">(Pauli correlation encoding)</span></h3>
+        <p>The usual approach gives each number its own qubit, so 160 numbers would need 160 qubits. PCE stores each number in a <b>pair</b> of qubits instead, measured a particular way.</p>
+        <ul>
+          <li>Pick 2 of the qubits and measure them together using X on both (XX), Y on both (YY), or Z on both (ZZ). Each such pairing is one "slot".</li>
+          <li>Each of the 160 numbers is given its own slot. The <b>sign</b> of that slot's expectation value (+ or −) decides which group the number goes in.</li>
+        </ul>
+        <p>With q qubits there are q·(q − 1)/2 possible pairs, and 3 measurement types (X, Y, Z) for each pair. For q = 11: 55 pairs × 3 = 165 slots, enough for 160 numbers. So the qubit count grows only like the square root of the problem size.</p>
+        <p class="in-lab"><b>In the lab:</b> Exercise 3a (<code>reduce_qubits_with_pce(160)</code> → 11 qubits, plus the <code>node_x</code>, <code>node_y</code>, <code>node_z</code> lists saying which numbers use XX, YY or ZZ slots), 3b (building those 2-qubit measurements), and 3c (combining them into the cost Hamiltonian and QAOA circuit).</p>
+      </div>
+
+      <div class="term" id="tanh">
+        <h3>The tanh "softener" and the regularization term</h3>
+        <p>PCE expectation values are small numbers between −1 and +1. The loss passes each one through <b>tanh</b> (a smooth S-shaped curve that turns a small value into a soft +1 or −1), after multiplying by a scale factor α, which equals 11 here. This lets the training nudge values smoothly instead of jumping between hard + and −.</p>
+        <p>The <b>regularization term</b> is a small extra penalty added to the loss. It discourages all the values from sitting near zero, where the group choice would be a coin toss.</p>
+        <p class="in-lab"><b>In the lab:</b> inside <code>loss_func_estimator</code>.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2 id="bonus">6 · The bonus tricks</h2>
+    <p class="section-note">Extra steps for the 1,600-number bonus challenge (not required for the badge).</p>
+    <div class="terms">
+
+      <div class="term" id="local-search">
+        <h3>Local search post-processing <span class="aka">(bit-flip correction)</span></h3>
+        <p>Noise can put a few numbers in the wrong group. After the quantum run, a normal computer starts from the best split found and tries <b>swapping numbers between the two groups</b> one at a time, keeping any swap that improves the score. This is a cheap classical clean-up of the quantum answer.</p>
+        <p class="in-lab"><b>In the lab:</b> bonus part (c), <code>swap_partitions</code>. It suggests Rustworkx (a faster graph library than NetworkX) and only sampling some of the lines to keep it quick.</p>
+      </div>
+
+      <div class="term" id="combined">
+        <h3>Combining mitigation methods</h3>
+        <p>The methods target different errors, so they can be stacked. For example: dynamical decoupling and twirling during the run, TREX for readout errors, and ZNE or PEC for gate errors. Each addition costs more QPU time, so the bonus asks you to find the best trade-off.</p>
+        <p class="in-lab"><b>In the lab:</b> bonus part (b), <code>est_options_bonus</code>.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="term">
+      <h3>Related pages</h3>
+      <p><a href="reading_the_partition_score.html"><b>Reading the partition score →</b></a> What the loss number means, from a three-number example.</p>
+      <p><a href="zne_and_twirling.html"><b>Why Pauli twirling can make ZNE more effective →</b></a> One qubit, one 12° error: cos(k·θ) vs (cos θ)<sup>k</sup>.</p>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

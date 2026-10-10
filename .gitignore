@@ -18,3 +18,6 @@ env/
 # Credentials / secrets (e.g. IBM Quantum token)
 .env
 *.env
+
+# QGSS Lab 4b helper files (functions.py + .npy data) — kept local, not for the repo
+QAOA/partition-problem/utils/
