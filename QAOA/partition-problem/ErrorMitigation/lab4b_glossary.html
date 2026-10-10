@@ -70,7 +70,7 @@
   <!-- ============================================================ -->
   <section>
     <h2 id="problem">1 · The problem</h2>
-    <p class="section-note">What we are trying to solve, and why it is a good test for quantum computers.</p>
+    <p class="section-note">What we are trying to solve.</p>
     <div class="terms">
 
       <div class="term" id="partition">
@@ -78,21 +78,6 @@
         <p>Split a list of numbers into two groups so that both groups add up to the same total, or as close as possible.</p>
         <p>The lab's example: pack items of 3, 5, 7, 9, 11 and 13 kg into two backpacks of equal weight. Answer: {3, 5, 7, 9} and {11, 13}, both 24 kg.</p>
         <p class="in-lab"><b>In the lab:</b> 6 numbers in Sections 1–2, 160 numbers in Sections 3–4, and 1,600 numbers in the bonus.</p>
-      </div>
-
-      <div class="term" id="np-hard">
-        <h3>NP-hard</h3>
-        <p>A problem that is easy to <i>check</i> but very hard to <i>solve</i>. Checking a split only takes adding up two groups. Finding the best split is different: the number of possible splits doubles with every number you add, and no fast method is known.</p>
-      </div>
-
-      <div class="term" id="verifiable">
-        <h3>Classically verifiable problem</h3>
-        <p>A problem whose answer a normal computer can check quickly, even if finding it is hard. That makes it a good test for "quantum advantage": if a quantum computer claims a great answer, we can confirm it without needing an equally powerful computer.</p>
-      </div>
-
-      <div class="term" id="advantage">
-        <h3>Quantum advantage</h3>
-        <p>A quantum computer doing a useful task better (faster, cheaper or more accurately) than any normal computer can. Lab 4 is about the road towards it.</p>
       </div>
 
     </div>
@@ -133,22 +118,6 @@
         <p>Each layer has a dial (an angle). A normal computer tunes the dials; the quantum computer runs the circuit. "Approximate" means it aims for a good answer, not a guaranteed perfect one.</p>
         <p class="in-lab"><b>In the lab:</b> Exercise 1b builds the circuit with <code>qiskit_addon_opt_mapper</code> and <code>qopt_best_practices</code>.</p>
         <p class="more">More: the <a href="../../max-cut/index.html">MaxCut pages</a> explain QAOA step by step.</p>
-      </div>
-
-      <div class="term" id="ansatz">
-        <h3>Ansatz</h3>
-        <p>A circuit with adjustable dials (parameters) that gets tuned until it gives good answers. The QAOA circuit is the ansatz in this lab.</p>
-      </div>
-
-      <div class="term" id="params">
-        <h3>Training, parameters and pretrained parameters</h3>
-        <p><b>Training</b> means a normal computer repeatedly adjusting the circuit's dials, running the circuit, checking the score, and adjusting again. <b>Pretrained parameters</b> are dial settings someone already found, so you can skip training.</p>
-        <p class="in-lab"><b>In the lab:</b> <code>training=False</code> uses the pretrained dials as they are; <code>training=True</code> starts from them and keeps improving. The bonus warns that training on hardware costs about 32 s of QPU time per round.</p>
-      </div>
-
-      <div class="term" id="transpile">
-        <h3>Transpiling</h3>
-        <p>Rewriting a circuit into the exact gates and qubit connections a real chip supports. A circuit drawn on paper must be translated before the hardware can run it.</p>
       </div>
 
     </div>
