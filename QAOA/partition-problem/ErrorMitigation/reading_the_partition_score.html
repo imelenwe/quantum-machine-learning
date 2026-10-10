@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading the Partition Score</title>
+<style>
+  :root {
+    --bg: #12151b; --surface: #1a1f28; --surface-border: #2a3140;
+    --text: #eef1f6; --text-dim: #8b96a8;
+    --good: #4fc38f; --bad: #f26b5c; --accent: #6fb3f2; --groupb: #f2a541;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #eef1f5; --surface: #ffffff; --surface-border: #d8dee6;
+      --text: #1a1f28; --text-dim: #5b6472;
+      --good: #1f8f5f; --bad: #c43f2e; --accent: #1f6fb8; --groupb: #a8650d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    display: flex; justify-content: center; padding: 40px 16px 80px;
+  }
+  .page { width: 100%; max-width: 780px; display: flex; flex-direction: column; gap: 32px; }
+  h1 { margin: 0; font-size: 28px; }
+  h2 { margin: 0 0 12px; font-size: 19px; padding-bottom: 8px; border-bottom: 1px solid var(--surface-border); }
+  p, li { font-size: 15px; line-height: 1.65; }
+  p { margin: 0 0 12px; }
+  ul { margin: 0 0 12px; padding-left: 22px; }
+  a { color: var(--accent); }
+  .crumb { font-size: 13px; color: var(--text-dim); margin-bottom: 10px; }
+  .lede { color: var(--text-dim); }
+  .card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 10px; padding: 16px 20px; }
+  .card p:last-child { margin-bottom: 0; }
+  .key { border-left: 3px solid var(--accent); }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--surface-border); border-radius: 10px; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); font-variant-numeric: tabular-nums; }
+  th, td { padding: 9px 12px; border-bottom: 1px solid var(--surface-border); text-align: left; font-size: 14px; }
+  th { color: var(--text-dim); font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  .good { color: var(--good); font-weight: 700; }
+  .bad { color: var(--bad); font-weight: 700; }
+
+  /* three-number diagrams */
+  .splits { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .split { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 10px; padding: 12px 14px; }
+  .split h3 { margin: 0 0 2px; font-size: 15px; }
+  .split .sub { margin: 0; font-size: 13px; color: var(--text-dim); }
+  .split svg { display: block; width: 100%; max-width: 220px; margin: 6px auto; }
+  .split .score { margin: 0; font-size: 15px; font-weight: 700; text-align: center; }
+  .dot-a { fill: var(--accent); }
+  .dot-b { fill: var(--groupb); }
+  .dot-label { fill: var(--bg); font: 700 15px -apple-system, Arial, sans-serif; text-anchor: middle; dominant-baseline: central; }
+  .line-together { stroke: var(--bad); stroke-width: 3; }
+  .line-apart { stroke: var(--good); stroke-width: 3; stroke-dasharray: 7 5; }
+  .w-together { fill: var(--bad); font: 700 14px -apple-system, Arial, sans-serif; text-anchor: middle; }
+  .w-apart { fill: var(--good); font: 700 14px -apple-system, Arial, sans-serif; text-anchor: middle; }
+  .legend { font-size: 13px; color: var(--text-dim); }
+  .legend span { white-space: nowrap; margin-right: 14px; }
+  .legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -1px; margin-right: 4px; }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header>
+    <div class="crumb"><a href="../../../index.html">← All pages</a> · QGSS Lab 4b · Error mitigation explainers</div>
+    <h1>Reading the partition score</h1>
+    <p class="lede">What the big "loss" number printed in Lab 4b Exercise 4 means, built up slowly from a three-number example.</p>
+  </header>
+
+  <section>
+    <h2>1. The problem we're solving</h2>
+    <p>You have a list of numbers. You want to <b>split them into two groups so both groups add up to the same total</b>, or as close as possible. This is called the <b>partition problem</b>.</p>
+    <p>In the lab:</p>
+    <ul>
+      <li>There are <b>160 numbers</b>, each between 0 and 99.</li>
+      <li>They add up to <b>7,853</b>, so the ideal is two groups of about 3,926 each.</li>
+      <li>The quantum computer's job is to suggest which group each number should go in.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2. How the lab scores a split, with 3 numbers</h2>
+    <p>Take just three numbers: <b>1, 2, 3</b>.</p>
+    <p>The lab draws each number as a dot and joins <b>every dot to every other dot</b> with a line. Each line gets a <b>weight</b>: the two numbers multiplied together. So the line from 1 to 2 weighs 1 × 2 = <b>2</b>, from 1 to 3 weighs <b>3</b>, and from 2 to 3 weighs <b>6</b>.</p>
+    <p>To score a split, go through each line:</p>
+    <ul>
+      <li>Its two dots are in the <b>same group</b> → <span class="bad">add</span> its weight.</li>
+      <li>Its two dots are in <b>different groups</b> → <span class="good">subtract</span> its weight.</li>
+    </ul>
+
+    <p class="legend">
+      <span><i class="sw" style="background:var(--accent)"></i>group A</span>
+      <span><i class="sw" style="background:var(--groupb)"></i>group B</span>
+      <span><b class="bad">solid line</b> = same group, add</span>
+      <span><b class="good">dashed line</b> = different groups, subtract</span>
+    </p>
+
+    <div class="splits">
+      <div class="split">
+        <h3>Split 1: {1, 2} and {3}</h3>
+        <p class="sub">Sums 3 and 3: perfect</p>
+        <svg viewBox="0 0 180 165" role="img" aria-label="Dots 1 and 2 in group A, dot 3 in group B">
+          <line x1="40" y1="125" x2="140" y2="125" class="line-together"/>
+          <line x1="40" y1="125" x2="90" y2="38" class="line-apart"/>
+          <line x1="140" y1="125" x2="90" y2="38" class="line-apart"/>
+          <text x="90" y="155" class="w-together">+2</text>
+          <text x="44" y="78" class="w-apart">−3</text>
+          <text x="136" y="78" class="w-apart">−6</text>
+          <circle cx="40" cy="125" r="15" class="dot-a"/><text x="40" y="125" class="dot-label">1</text>
+          <circle cx="140" cy="125" r="15" class="dot-a"/><text x="140" y="125" class="dot-label">2</text>
+          <circle cx="90" cy="38" r="15" class="dot-b"/><text x="90" y="38" class="dot-label">3</text>
+        </svg>
+        <p class="score">Score = +2 − 3 − 6 = <span class="good">−7</span></p>
+      </div>
+
+      <div class="split">
+        <h3>Split 2: {1, 3} and {2}</h3>
+        <p class="sub">Sums 4 and 2: a bit off</p>
+        <svg viewBox="0 0 180 165" role="img" aria-label="Dots 1 and 3 in group A, dot 2 in group B">
+          <line x1="40" y1="125" x2="140" y2="125" class="line-apart"/>
+          <line x1="40" y1="125" x2="90" y2="38" class="line-together"/>
+          <line x1="140" y1="125" x2="90" y2="38" class="line-apart"/>
+          <text x="90" y="155" class="w-apart">−2</text>
+          <text x="44" y="78" class="w-together">+3</text>
+          <text x="136" y="78" class="w-apart">−6</text>
+          <circle cx="40" cy="125" r="15" class="dot-a"/><text x="40" y="125" class="dot-label">1</text>
+          <circle cx="140" cy="125" r="15" class="dot-b"/><text x="140" y="125" class="dot-label">2</text>
+          <circle cx="90" cy="38" r="15" class="dot-a"/><text x="90" y="38" class="dot-label">3</text>
+        </svg>
+        <p class="score">Score = +3 − 2 − 6 = <span class="good">−5</span></p>
+      </div>
+
+      <div class="split">
+        <h3>Split 3: everything in one group</h3>
+        <p class="sub">Sums 6 and 0: terrible</p>
+        <svg viewBox="0 0 180 165" role="img" aria-label="All three dots in group A">
+          <line x1="40" y1="125" x2="140" y2="125" class="line-together"/>
+          <line x1="40" y1="125" x2="90" y2="38" class="line-together"/>
+          <line x1="140" y1="125" x2="90" y2="38" class="line-together"/>
+          <text x="90" y="155" class="w-together">+2</text>
+          <text x="44" y="78" class="w-together">+3</text>
+          <text x="136" y="78" class="w-together">+6</text>
+          <circle cx="40" cy="125" r="15" class="dot-a"/><text x="40" y="125" class="dot-label">1</text>
+          <circle cx="140" cy="125" r="15" class="dot-a"/><text x="140" y="125" class="dot-label">2</text>
+          <circle cx="90" cy="38" r="15" class="dot-a"/><text x="90" y="38" class="dot-label">3</text>
+        </svg>
+        <p class="score">Score = +2 + 3 + 6 = <span class="bad">+11</span></p>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Split</th><th>Difference between groups</th><th>Score</th></tr></thead>
+        <tbody>
+          <tr><td>{1, 2} vs {3}</td><td>0 (perfect)</td><td class="good">−7 (lowest)</td></tr>
+          <tr><td>{1, 3} vs {2}</td><td>2</td><td>−5</td></tr>
+          <tr><td>everything in one group</td><td>6</td><td class="bad">+11 (highest)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card key">
+      <p><b>The more equal the two groups, the lower the score.</b> That's why lower is better, and why a negative score is good news. It isn't luck: multiplying the two numbers on each line is exactly what makes the score follow how equal the two sums are.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Why the real score is so big</h2>
+    <p>Now go from 3 numbers to 160.</p>
+    <ul>
+      <li><b>Many more lines.</b> Every dot joins every other dot, so each of the 160 numbers has 159 lines going out. That makes 160 × 159 ÷ 2 = <b>12,720 lines</b>, compared with 3 in the small example.</li>
+      <li><b>Much heavier lines.</b> The numbers go up to 99, so one line can weigh as much as 99 × 99 ≈ 10,000. A typical line weighs around 50 × 50 = 2,500.</li>
+    </ul>
+    <p>So the score adds or subtracts <b>12,720 amounts, many of them worth thousands</b>. Most of the pluses and minuses cancel each other out, but what's left over is still in the tens of thousands. A score like −23,652 is a normal size for a problem this large.</p>
+    <p class="lede">The lab's real formula softens each step slightly and adds a small penalty term, but the idea is the same as the three-number example.</p>
+  </section>
+
+  <section>
+    <h2>4. Two things in the printout that confuse people</h2>
+    <ul>
+      <li><b>"Loss"</b> is just the lab's name for this score. Lower is better.</li>
+      <li><b>"Iter 0"</b> means "round 0". The same scoring function is used in the training part of the lab, where it runs many times in a loop and counts the rounds: Iter 0, Iter 1, Iter 2, … In Exercise 4 it runs only once, so you only ever see Iter 0. No training happens there.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5. The three results from Exercise 4</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Run</th><th>Score</th><th>What the split looked like</th></tr></thead>
+        <tbody>
+          <tr><td>No error mitigation</td><td class="bad">+157,420</td><td>Lopsided: 4,802 vs 3,051. Like split 3, too much in one group.</td></tr>
+          <tr><td>TREX</td><td class="good">−27,422</td><td>Close to even: 3,773 vs 4,080</td></tr>
+          <tr><td>ZNE</td><td class="good">−23,652</td><td>Close to even: 3,857 vs 3,996</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Without error mitigation, the noise pushed too many numbers into one group, so the score is big and positive. With TREX or ZNE, the groups come out nearly even, so the score is negative. TREX and ZNE scored close to each other.</p>
+  </section>
+
+  <section>
+    <h2>Related page</h2>
+    <div class="card">
+      <p><a href="zne_and_twirling.html"><b>Why Pauli twirling can make ZNE more effective →</b></a></p>
+      <p class="lede">How ZNE works and why it is run together with Pauli twirling, using one qubit and a 12° gate error.</p>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

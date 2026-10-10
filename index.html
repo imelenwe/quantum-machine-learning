@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quantum Machine Learning Index</title>
+<style>
+  :root {
+    --bg: #12151b; --surface: #1a1f28; --surface-border: #2a3140;
+    --text: #eef1f6; --text-dim: #8b96a8; --accent: #6fb3f2;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #eef1f5; --surface: #ffffff; --surface-border: #d8dee6;
+      --text: #1a1f28; --text-dim: #5b6472; --accent: #1f6fb8;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    display: flex; justify-content: center; padding: 40px 16px 80px;
+  }
+  .page { width: 100%; max-width: 860px; display: flex; flex-direction: column; gap: 36px; }
+  .eyebrow { font-family: ui-monospace, Menlo, monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+  h1 { margin: 6px 0 0; font-size: 30px; }
+  h2 { margin: 0 0 6px; font-size: 20px; }
+  .lede { margin: 10px 0 0; font-size: 15px; line-height: 1.6; color: var(--text-dim); max-width: 68ch; }
+  .group-note { margin: 0 0 14px; font-size: 14px; line-height: 1.6; color: var(--text-dim); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  a.card {
+    display: block; text-decoration: none; color: var(--text);
+    background: var(--surface); border: 1px solid var(--surface-border); border-radius: 10px; padding: 14px 16px;
+  }
+  a.card:hover { border-color: var(--accent); }
+  a.card.hub { border-left: 3px solid var(--accent); }
+  .card-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .card-title .arrow { color: var(--accent); }
+  .card-desc { font-size: 13.5px; line-height: 1.55; color: var(--text-dim); }
+  .tag { display: inline-block; font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); border: 1px solid var(--surface-border); border-radius: 999px; padding: 1px 8px; margin-bottom: 6px; }
+  .footer { font-size: 13px; line-height: 1.6; color: var(--text-dim); border-top: 1px solid var(--surface-border); padding-top: 14px; }
+  .footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header>
+    <div class="eyebrow">imelenwe / quantum-machine-learning</div>
+    <h1>All explainer pages, in one place</h1>
+    <p class="lede">All the explainer pages in this repository. Each project keeps its pages next to its notebook; this page just points to all of them.</p>
+  </header>
+
+  <section>
+    <h2>QAOA: MaxCut</h2>
+    <p class="group-note">From-scratch QAOA build. Read the pages in order the first time; each builds on the one before.</p>
+    <div class="cards">
+      <a class="card hub" href="QAOA/max-cut/index.html">
+        <div class="tag">hub</div>
+        <div class="card-title">MaxCut reading guide <span class="arrow">→</span></div>
+        <div class="card-desc">All six MaxCut pages with descriptions and a suggested order.</div>
+      </a>
+      <a class="card" href="QAOA/max-cut/maxcut_demo.html">
+        <div class="tag">1 · interactive</div>
+        <div class="card-title">MaxCut, by hand</div>
+        <div class="card-desc">Click nodes, cut edges, try to beat 7.</div>
+      </a>
+      <a class="card" href="QAOA/max-cut/maxcut_example_usecases.html">
+        <div class="tag">2 · reference</div>
+        <div class="card-title">MaxCut: three real representations</div>
+        <div class="card-desc">Magnets, party guests and WiFi routers: the same problem in three costumes.</div>
+      </a>
+      <a class="card" href="QAOA/max-cut/qaoa_theory.html">
+        <div class="tag">3 · theory</div>
+        <div class="card-title">QAOA theory: from magnets to circuit</div>
+        <div class="card-desc">From Ising energy to the alternating "hard" and "easy" steps.</div>
+      </a>
+      <a class="card" href="QAOA/max-cut/qaoa_C%28x%29_to_operator_proof.html">
+        <div class="tag">4 · proof</div>
+        <div class="card-title">The phase gate proof</div>
+        <div class="card-desc">Deriving the CNOT–Rz–CNOT gate from the cost operator.</div>
+      </a>
+      <a class="card" href="QAOA/max-cut/classical_vs_quantum.html">
+        <div class="tag">5 · interactive</div>
+        <div class="card-title">Classical vs quantum, side by side</div>
+        <div class="card-desc">Brute force next to the quantum circuit, with real notebook numbers.</div>
+      </a>
+      <a class="card" href="QAOA/max-cut/conclusion.html">
+        <div class="tag">6 · verdict</div>
+        <div class="card-title">Conclusion: what this attempt showed</div>
+        <div class="card-desc">What the notebook proved, and what it didn't.</div>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <h2>QAOA: partition problem and error mitigation</h2>
+    <p class="group-note">Explainers from the QGSS 2026 Lab 4b notebook.</p>
+    <div class="cards">
+      <a class="card" href="QAOA/partition-problem/ErrorMitigation/reading_the_partition_score.html">
+        <div class="tag">start here</div>
+        <div class="card-title">Reading the partition score</div>
+        <div class="card-desc">What the big "loss" number means, from a three-number example, and how No-mitigation, TREX and ZNE compare.</div>
+      </a>
+      <a class="card" href="QAOA/partition-problem/ErrorMitigation/zne_and_twirling.html">
+        <div class="tag">explainer</div>
+        <div class="card-title">Why Pauli twirling can make ZNE more effective</div>
+        <div class="card-desc">One qubit, one 12° gate error: cos(k·θ) without twirling vs (cos θ)<sup>k</sup> with it.</div>
+      </a>
+    </div>
+  </section>
+
+  <footer class="footer">
+    Source code: <a href="https://github.com/imelenwe/quantum-machine-learning">github.com/imelenwe/quantum-machine-learning</a>
+  </footer>
+
+</main>
+</body>
+</html>

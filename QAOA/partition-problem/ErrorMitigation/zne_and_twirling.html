@@ -55,6 +55,7 @@
 <main class="page">
 
   <header>
+    <div style="font-size: 13px; color: var(--text-dim); margin-bottom: 10px;"><a href="../../../index.html" style="color: var(--accent);">← All pages</a> · QGSS Lab 4b · Error mitigation explainers</div>
     <h1>Why Pauli twirling can make ZNE more effective</h1>
     <p class="lede">A walk-through using one qubit, one 12° gate error, and a bit of Bloch-sphere geometry.</p>
   </header>
@@ -263,6 +264,14 @@
     <div class="card key">
       <p>A coherent error is a twist whose angles add up, so the result follows a cosine wave, <span class="formula">cos(k·θ)</span>: it swings and can even come back. Pauli twirling randomly flips each twist forward or backward (a classical random walk). Averaged over many randomized copies, this turns the twist into a steady shrink that follows <span class="formula">(cos θ)<sup>k</sup></span>. A steady, predictable shrink is much easier for ZNE to extend back to zero noise.</p>
       <p>Twirling doesn't lower the average amount of noise. It changes its <b>shape</b>: errors stop piling up in one direction, which makes ZNE's job far more reliable.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Related page</h2>
+    <div class="card">
+      <p><a href="reading_the_partition_score.html" style="color: var(--accent);"><b>Reading the partition score →</b></a></p>
+      <p class="lede">What the big "loss" number printed in Lab 4b Exercise 4 means, and how the No-mitigation, TREX and ZNE runs compare.</p>
     </div>
   </section>
 
