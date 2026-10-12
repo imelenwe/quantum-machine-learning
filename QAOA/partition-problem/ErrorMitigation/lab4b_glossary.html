@@ -213,6 +213,7 @@
         <p>Instead of guessing the noise-free answer from a trend, PEC tries to <b>cancel</b> the noise directly. It learns each gate layer's noise, then runs many random variations of the circuit with extra gates chosen to undo that noise <i>on average</i>. Some variations are counted with a minus sign (a "quasi-probability"), which is how the noise gets subtracted out.</p>
         <p class="caveat"><b>The catch:</b> it's in principle more accurate than ZNE, but the number of circuit runs needed grows very fast with the amount of noise, so it's expensive. The lab estimates about 4 min 26 s of QPU time for PEC, against 16 s for ZNE.</p>
         <p class="in-lab"><b>In the lab:</b> Exercise 4d, <code>resilience.pec_mitigation = True</code> with ZNE switched off. There's an optional simulator cell if you want to save QPU time.</p>
+        <p class="more">More: <a href="pec_step_by_step.html">PEC, step by step</a> derives it from one noisy qubit.</p>
       </div>
 
       <div class="term" id="resilience">

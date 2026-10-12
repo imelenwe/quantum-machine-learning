@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PEC Step by Step</title>
+<style>
+  :root {
+    --bg: #12151b; --surface: #1a1f28; --surface-border: #2a3140;
+    --text: #eef1f6; --text-dim: #8b96a8;
+    --good: #4fc38f; --bad: #f26b5c; --accent: #6fb3f2; --warn: #f2a541;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #eef1f5; --surface: #ffffff; --surface-border: #d8dee6;
+      --text: #1a1f28; --text-dim: #5b6472;
+      --good: #1f8f5f; --bad: #c43f2e; --accent: #1f6fb8; --warn: #a8650d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    display: flex; justify-content: center; padding: 40px 16px 80px;
+  }
+  .page { width: 100%; max-width: 780px; display: flex; flex-direction: column; gap: 32px; }
+  a { color: var(--accent); }
+  .crumb { font-size: 13px; color: var(--text-dim); margin-bottom: 10px; }
+  h1 { margin: 0; font-size: 28px; }
+  h2 { margin: 0 0 12px; font-size: 19px; padding-bottom: 8px; border-bottom: 1px solid var(--surface-border); }
+  h3 { margin: 18px 0 8px; font-size: 16px; }
+  p, li { font-size: 15px; line-height: 1.65; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  .lede { color: var(--text-dim); }
+  .card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; }
+  .card p:last-child, .card ul:last-child, .card ol:last-child { margin-bottom: 0; }
+  .key { border-left: 3px solid var(--accent); }
+  .caveat { border-left: 3px solid var(--warn); }
+  .math {
+    font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.9;
+    background: var(--surface); border: 1px solid var(--surface-border); border-radius: 8px;
+    padding: 12px 14px; margin: 0 0 12px; overflow-x: auto; white-space: nowrap;
+  }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--surface-border); border-radius: 10px; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); font-variant-numeric: tabular-nums; }
+  th, td { padding: 9px 12px; border-bottom: 1px solid var(--surface-border); text-align: left; font-size: 14px; }
+  th { color: var(--text-dim); font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  .good { color: var(--good); font-weight: 700; }
+  .bad { color: var(--bad); font-weight: 700; }
+  .step-tag { display: inline-block; font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--text-dim); border: 1px solid var(--surface-border); border-radius: 999px; padding: 1px 9px; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header>
+    <div class="crumb"><a href="../../../index.html">← All pages</a> · QGSS Lab 4b · Error mitigation explainers</div>
+    <h1>PEC, step by step</h1>
+    <p class="lede">Probabilistic error cancellation, built up from one noisy qubit, with every number worked out by hand.</p>
+  </header>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>What PEC is trying to achieve</h2>
+    <div class="card key">
+      <p><b>The goal:</b> get the <b>noise-free answer</b> from a noisy quantum computer. Not a noise-free circuit (the circuits stay noisy), but the number you would have measured if there were no noise.</p>
+    </div>
+    <ul>
+      <li><b>The problem.</b> Noise pulls your measured answer away from the truth. You get 0.8 when the truth is 1.</li>
+      <li><b>What PEC can't do.</b> It can't remove the noise from the chip, and it can't build a gate that undoes the noise. As we'll see, such a gate is impossible.</li>
+      <li><b>What PEC does instead.</b> It runs <b>a few slightly changed versions</b> of your circuit. Each one is pulled away from the truth in a different, known way. Some results are <b>added</b> and some are <b>subtracted</b>, in just the right amounts, so the pulls cancel. What's left is the true answer.</li>
+      <li><b>The price.</b> Subtracting makes the final number <b>shakier</b>, so you need many more shots. Every extra gate makes it shakier still, which is why PEC gets expensive for big circuits.</li>
+    </ul>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>The process, start to finish</h2>
+    <p>This is what happens when you switch PEC on (in the lab: <code>resilience.pec_mitigation = True</code>). IBM's software does all five steps automatically.</p>
+    <ol>
+      <li><b>Learn the noise.</b> Before your circuit, run short test circuits to measure how noisy each gate is, for example "this gate flips the qubit 10% of the time."</li>
+      <li><b>Work out the undo</b> (on a normal computer). From that noise level, calculate a recipe: which versions of the circuit to run, how often, and which results get a minus sign.</li>
+      <li><b>Build the versions.</b> For each run, "roll a dice" for each gate: usually leave it alone, sometimes insert an extra gate (such as an X) right after it.</li>
+      <li><b>Run them on the chip.</b> Every version is an ordinary circuit. Nothing special happens on the hardware.</li>
+      <li><b>Combine the results</b> (on a normal computer). Flip the sign of the results marked "minus", average everything, and multiply by one number, called <b>γ</b> (gamma).</li>
+    </ol>
+    <p>The rest of this page shows <b>why</b> that recipe gives the noise-free answer, and where the cost comes from.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>The example we'll use, and why</h2>
+    <div class="card">
+      <ul>
+        <li><b>One qubit</b>, starting at |0⟩.</li>
+        <li><b>One gate that should do nothing.</b> So the ideal answer is ⟨Z⟩ = 1: the qubit should still be measured as 0 every time.</li>
+        <li><b>The noise:</b> 10% of the time, the gate accidentally flips the qubit (an X flip).</li>
+      </ul>
+    </div>
+    <p><b>Why this example:</b> it's the smallest case that still shows everything PEC does. There's only one kind of error, so every step can be done by hand with simple fractions, and we always know the right answer (1) to check against. Real hardware just has more gates and more kinds of flips. The steps stay the same.</p>
+    <p class="lede">Two symbols, used throughout: <b>I</b> means "do nothing" and <b>X</b> means "flip the qubit". One rule: flipping twice is the same as not flipping, so <b>X then X = I</b>.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>The derivation</h2>
+
+    <div class="step-tag">Step 1</div>
+    <h3>Write the noise as a mix</h3>
+    <p>"90% of the time do nothing, 10% of the time flip" is written as:</p>
+    <div class="math">noise = 0.9·I + 0.1·X</div>
+    <p>Applying two of these one after the other works like multiplying brackets in algebra, because the chances multiply:</p>
+    <div class="math">
+      (0.9·I + 0.1·X) × (0.9·I + 0.1·X)<br>
+      = 0.81·I + 0.09·X + 0.09·X + 0.01·(X then X)<br>
+      = 0.82·I + 0.18·X
+    </div>
+    <p>A real mix always adds up to 1 (0.82 + 0.18 = 1). Two noisy steps give 18% flips, not 20%, because the cases that flip twice end up back where they started.</p>
+
+    <div class="card">
+      <p><b>The proper notation</b> (what the shorthand stands for). A channel says what happens to the qubit's state ρ:</p>
+      <div class="math">noise(ρ) = 0.9·ρ + 0.1·XρX</div>
+      <p>"0.9·I + 0.1·X" is just this with ρ left out. Multiplying out brackets is allowed because channels are <b>linear</b> in ρ. "X then X = I" holds because X·X = I, so X(XρX)X = ρ.</p>
+    </div>
+
+    <div class="step-tag">Step 2</div>
+    <h3>Solve for the "undo", and find a negative number</h3>
+    <p>We want a recipe that cancels the noise. Call it <b>undo = a·I + b·X</b>, where a and b are unknown. We need "noise, then undo" to be perfect, which means 1·I + 0·X. Multiplying out and matching the I parts and the X parts gives two equations:</p>
+    <div class="math">
+      I part: &nbsp;0.9·a + 0.1·b = 1<br>
+      X part: &nbsp;0.1·a + 0.9·b = 0
+    </div>
+    <p>Solving them:</p>
+    <div class="math">a = 9/8 = 1.125 &nbsp;&nbsp;&nbsp;&nbsp; b = −1/8 = −0.125</div>
+    <div class="card caveat">
+      <p><b>b is negative.</b> A real recipe can't say "flip −12.5% of the time." So the undo <b>cannot be built</b> on any hardware. It exists only on paper.</p>
+      <p>The numbers still add to 1 (9/8 − 1/8 = 1), so it's a "sort-of probability", called a <b>quasi-probability</b>.</p>
+    </div>
+
+    <div class="step-tag">Step 3</div>
+    <h3>Turn the undo into circuits we can run</h3>
+    <p>If we follow the noisy gate with the undo, the noise cancels:</p>
+    <div class="math">
+      ideal gate = noisy gate, then undo<br>
+      = (9/8) × (noisy gate) − (1/8) × (noisy gate, then an extra X)
+    </div>
+    <p>Both pieces are things the hardware <b>can</b> run:</p>
+    <ul>
+      <li><b>Circuit 1:</b> run the noisy gate normally.</li>
+      <li><b>Circuit 2:</b> run the noisy gate, then add one extra X gate on purpose.</li>
+    </ul>
+    <p>The impossible undo has been spread over two possible circuits. What's left is the job of combining them.</p>
+
+    <div class="step-tag">Step 4</div>
+    <h3>Combine the measured answers, not the circuits</h3>
+    <p>You can't "run a combination" of circuits. You can only run one circuit at a time and measure it. But the <b>measured answers</b> combine in the same way, because an expectation value is a trace, and the trace is linear:</p>
+    <div class="math">
+      ⟨Z⟩ = Tr(Z·ρ) &nbsp;&nbsp;and&nbsp;&nbsp; Tr(Z·(a·ρ₁ + b·ρ₂)) = a·Tr(Z·ρ₁) + b·Tr(Z·ρ₂)
+    </div>
+    <p>So the ideal answer follows the same recipe:</p>
+    <div class="math">⟨Z⟩ ideal = (9/8)·⟨Z⟩ from circuit 1 − (1/8)·⟨Z⟩ from circuit 2</div>
+    <p><b>Circuit 1.</b> The state after the noisy gate holds the chances: 90% still |0⟩, 10% flipped to |1⟩. Z gives +1 for |0⟩ and −1 for |1⟩.</p>
+    <div class="math">
+      ρ₁ = 0.9·|0⟩⟨0| + 0.1·|1⟩⟨1|<br>
+      ⟨Z⟩₁ = Tr(Z·ρ₁) = 0.9 − 0.1 = 0.8
+    </div>
+    <p><b>Circuit 2.</b> The extra X swaps |0⟩ and |1⟩. A gate acts on a state from both sides (X·ρ·X); a measurement goes inside the trace once (Tr(Z·ρ)).</p>
+    <div class="math">
+      ρ₂ = X·ρ₁·X = 0.9·|1⟩⟨1| + 0.1·|0⟩⟨0|<br>
+      ⟨Z⟩₂ = Tr(Z·ρ₂) = −0.9 + 0.1 = −0.8
+    </div>
+    <p><b>Combine:</b></p>
+    <div class="math">(9/8)·(0.8) − (1/8)·(−0.8) = 0.9 + 0.1 = <span class="good">1</span> &nbsp;✓ the noise-free answer</div>
+    <p>This is the heart of PEC: <b>two noisy answers, combined with the right weights, give exactly the noise-free answer.</b> The ideal state is never built; only its measured value is reconstructed.</p>
+
+    <div class="step-tag">Step 5</div>
+    <h3>Make the negative weight runnable: γ appears</h3>
+    <p>On hardware you choose <b>how often</b> to run each circuit, and "how often" can't be negative. So each weight is split into three parts:</p>
+    <div class="math">weight = γ × chance × sign</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Weight</th><th>= γ</th><th>× chance</th><th>× sign</th></tr></thead>
+        <tbody>
+          <tr><td>Circuit 1</td><td>9/8</td><td>10/8</td><td>0.9</td><td>+1</td></tr>
+          <tr><td>Circuit 2</td><td>−1/8</td><td>10/8</td><td>0.1</td><td>−1</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul>
+      <li><b>γ</b> = the sizes of the weights added up (ignoring signs): 9/8 + 1/8 = 10/8 = 1.25.</li>
+      <li><b>Chance</b> = each size divided by γ. The chances 0.9 and 0.1 are ordinary probabilities: positive, adding to 1. They decide <i>which circuit to run</i>.</li>
+      <li><b>Sign</b> = where the minus went. It's no longer on "how often"; it's applied to <i>the number you write down</i>.</li>
+    </ul>
+    <p>So the recipe the hardware actually follows is:</p>
+    <ol>
+      <li>90% of the runs: run circuit 1 and write down its result as it is.</li>
+      <li>10% of the runs: run circuit 2 and write down its result <b>with the sign flipped</b>.</li>
+      <li>Average everything written down, then multiply by γ.</li>
+    </ol>
+    <div class="math">
+      average = 0.9 × (0.8) + 0.1 × (+0.8) = 0.8<br>
+      × γ = 0.8 × 1.25 = <span class="good">1</span> &nbsp;✓
+    </div>
+    <p>The average alone is still 0.8. <b>Multiplying by γ</b> is what lifts it back to the true answer.</p>
+
+    <div class="step-tag">Step 6</div>
+    <h3>Two gates in a row: γ multiplies</h3>
+    <p>Real circuits have many gates, and each noisy gate needs its own undo. Take two gates in a row, both with the same 10% flip, so each has the same recipe. For each gate there are two choices: plain (weight 9/8) or with an extra X after it (weight −1/8). Two gates × two choices = four circuits:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Gate 1</th><th>Gate 2</th><th>Weight</th></tr></thead>
+        <tbody>
+          <tr><td>Circuit 1</td><td>plain</td><td>plain</td><td>(9/8)·(9/8) = 81/64</td></tr>
+          <tr><td>Circuit 2</td><td>plain</td><td>+ extra X</td><td>(9/8)·(−1/8) = −9/64</td></tr>
+          <tr><td>Circuit 3</td><td>+ extra X</td><td>plain</td><td>(−1/8)·(9/8) = −9/64</td></tr>
+          <tr><td>Circuit 4</td><td>+ extra X</td><td>+ extra X</td><td>(−1/8)·(−1/8) = +1/64</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>These are the four terms you get by multiplying out the two brackets. Here "multiply" means "do one channel, then the other", since we're combining channels, not gate matrices. Each weight is the two gates' weights multiplied, so the signs multiply too.</p>
+    <div class="math">γ for the circuit = 81/64 + 9/64 + 9/64 + 1/64 = 100/64 = (10/8) × (10/8)</div>
+    <p><b>The γ's multiply.</b> 2 gates give γ², 10 gates give γ¹⁰, and t gates give γ<sup>t</sup>.</p>
+
+    <div class="step-tag">Step 7</div>
+    <h3>Why a big γ is costly: shots</h3>
+    <p><b>A shot</b> is one run of the circuit plus one measurement. A single shot gives only +1 or −1. ⟨Z⟩ is the <b>average over many shots</b>, so with a limited number of shots the average wobbles a little around the truth.</p>
+    <p><b>Why the wobble shrinks slowly.</b> Think of a fair coin: heads = +1, tails = −1, true average 0.</p>
+    <ul>
+      <li>Toss it 100 times. Ideally 50 heads and 50 tails, so the total is 0. In real life you might get 55 heads, so the total is +10. That +10 is how far the total landed from where it should be.</li>
+      <li>This is a random walk: each toss is a step forward or back. Over many runs, the <b>squared</b> distance averages exactly the number of steps. For 3 steps: (9 + 1 + 1 + 1 + 1 + 1 + 1 + 9) / 8 = 3. So the total typically ends about <b>√N</b> away (√100 = 10).</li>
+      <li>The average divides the total by N, so it's off by about √N ÷ N:</li>
+    </ul>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Shots</th><th>Total typically off by</th><th>Average off by</th></tr></thead>
+        <tbody>
+          <tr><td>100</td><td>√100 = 10</td><td>10 ÷ 100 = 0.10</td></tr>
+          <tr><td>10,000</td><td>√10,000 = 100</td><td>100 ÷ 10,000 = 0.01</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><b>100× more shots only makes the answer 10× more accurate.</b> To make the wobble k times smaller, you need k² times more shots.</p>
+    <p><b>Where γ comes in.</b> PEC's last step multiplies the average by γ, and that multiplies the wobble by γ too. To shrink it back down you need <b>γ² times more shots</b>.</p>
+    <div class="math">
+      10 gates at 10% noise: &nbsp;γ = 1.25¹⁰ ≈ 9.3 &nbsp;→&nbsp; shots needed ≈ 9.3² ≈ <span class="bad">87×</span> more
+    </div>
+    <p>Real hardware has much less noise per gate, but real circuits have hundreds of gates, so the cost still grows very fast. That's why the lab estimates about 4.5 minutes of QPU time for PEC, against 16 seconds for ZNE.</p>
+
+    <div class="step-tag">Any noise level</div>
+    <h3>The same recipe for any flip chance p</h3>
+    <p>Solving Step 2's equations with a general flip chance p instead of 0.1 gives:</p>
+    <div class="math">
+      a = (1 − p) / (1 − 2p) &nbsp;&nbsp;&nbsp;&nbsp; b = −p / (1 − 2p) &nbsp;&nbsp;&nbsp;&nbsp; γ = |a| + |b| = 1 / (1 − 2p)
+    </div>
+    <p>With p = 0.1 this gives back 9/8, −1/8 and 10/8. <b>The weights come straight from how noisy the gate is:</b> a noisier gate gives bigger weights, a bigger γ, and more shots.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section>
+    <h2>Summary</h2>
+    <div class="card key">
+      <p><b>PEC doesn't fix the noisy circuit. It runs several noisy versions and combines their results with pluses and minuses, so the noise cancels out in the final answer.</b></p>
+      <ul>
+        <li>The perfect "undo" needs a negative amount, so it can't be built. It's used only on paper.</li>
+        <li>On paper, the ideal gate becomes a combination of circuits the hardware <i>can</i> run.</li>
+        <li>The measured answers combine the same way (the trace is linear), so the noise-free answer can be computed from noisy runs.</li>
+        <li>Negative weights become chance × sign × γ: run versions by chance, flip some results, average, and multiply by γ.</li>
+        <li>γ multiplies gate by gate, and the cost is γ² times more shots.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Related pages</h2>
+    <div class="card">
+      <p><a href="lab4b_glossary.html"><b>Lab 4b glossary →</b></a> Plain-English reminders for every idea in the lab.</p>
+      <p><a href="zne_and_twirling.html"><b>Why Pauli twirling can make ZNE more effective →</b></a> The other main mitigation method, and the random walk it relies on.</p>
+      <p><a href="reading_the_partition_score.html"><b>Reading the partition score →</b></a> What the loss number in Exercise 4 means.</p>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>
