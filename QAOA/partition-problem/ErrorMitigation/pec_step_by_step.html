@@ -127,13 +127,47 @@
 
     <div class="step-tag">Step 2</div>
     <h3>Solve for the "undo", and find a negative number</h3>
-    <p>We want a recipe that cancels the noise. Call it <b>undo = a·I + b·X</b>, where a and b are unknown. We need "noise, then undo" to be perfect, which means 1·I + 0·X. Multiplying out and matching the I parts and the X parts gives two equations:</p>
+    <p><b>2a. What we want.</b> Our gate should do nothing, so the <b>ideal</b> gate is I. The hardware gives us the <b>noisy</b> gate instead. We want something that, applied after the noisy gate, gives back the ideal:</p>
+    <div class="math">ideal = noisy, then undo</div>
+
+    <p><b>2b. Fill in what we know.</b> Ideal = I. Noisy = 0.9·I + 0.1·X (from Step 1). The undo is unknown, but it can only be built from the same two pieces, "do nothing" and "flip", so guess it has the same shape with unknown weights a and b:</p>
+    <div class="math">undo = a·I + b·X</div>
+    <p>Put all three into 2a:</p>
+    <div class="math">I = (0.9·I + 0.1·X) then (a·I + b·X)</div>
+
+    <p><b>2c. Multiply out the brackets</b>, exactly as in Step 1: every piece of the first bracket meets every piece of the second.</p>
     <div class="math">
-      I part: &nbsp;0.9·a + 0.1·b = 1<br>
-      X part: &nbsp;0.1·a + 0.9·b = 0
+      0.9·I then a·I = 0.9a·I<br>
+      0.9·I then b·X = 0.9b·X<br>
+      0.1·X then a·I = 0.1a·X<br>
+      0.1·X then b·X = 0.1b·(X then X) = 0.1b·I &nbsp;&nbsp;← because X then X = I
     </div>
-    <p>Solving them:</p>
-    <div class="math">a = 9/8 = 1.125 &nbsp;&nbsp;&nbsp;&nbsp; b = −1/8 = −0.125</div>
+    <p>Add the four pieces, putting the I's together and the X's together:</p>
+    <div class="math">I = (0.9a + 0.1b)·I + (0.1a + 0.9b)·X</div>
+
+    <p><b>2d. Match both sides.</b> The left side is 1·I + 0·X. For the two sides to be equal, the amount of I must match and the amount of X must match. That gives two equations:</p>
+    <div class="math">
+      I part: 0.9a + 0.1b = 1<br>
+      X part: 0.1a + 0.9b = 0
+    </div>
+
+    <p><b>2e. Solve.</b> Start with the X part, because its right side is 0:</p>
+    <div class="math">
+      0.1a + 0.9b = 0<br>
+      0.1a = −0.9b<br>
+      a = −9b
+    </div>
+    <p>Put a = −9b into the I part:</p>
+    <div class="math">
+      0.9·(−9b) + 0.1b = 1<br>
+      −8.1b + 0.1b = 1<br>
+      −8b = 1<br>
+      b = −1/8
+    </div>
+    <p>And back into a = −9b:</p>
+    <div class="math">a = −9 × (−1/8) = 9/8</div>
+    <p>So:</p>
+    <div class="math">undo = (9/8)·I − (1/8)·X &nbsp;&nbsp;&nbsp;(a = 1.125, b = −0.125)</div>
     <div class="card caveat">
       <p><b>b is negative.</b> A real recipe can't say "flip −12.5% of the time." So the undo <b>cannot be built</b> on any hardware. It exists only on paper.</p>
       <p>The numbers still add to 1 (9/8 − 1/8 = 1), so it's a "sort-of probability", called a <b>quasi-probability</b>.</p>
@@ -141,11 +175,14 @@
 
     <div class="step-tag">Step 3</div>
     <h3>Turn the undo into circuits we can run</h3>
-    <p>If we follow the noisy gate with the undo, the noise cancels:</p>
+    <p>Go back to 2a and put in the undo we just found:</p>
     <div class="math">
-      ideal gate = noisy gate, then undo<br>
-      = (9/8) × (noisy gate) − (1/8) × (noisy gate, then an extra X)
+      ideal = noisy, then undo<br>
+      = noisy, then ((9/8)·I − (1/8)·X)<br>
+      = (9/8)·(noisy, then I) − (1/8)·(noisy, then X)<br>
+      = (9/8)·(noisy) − (1/8)·(noisy, then an extra X)
     </div>
+    <p>The last line uses "noisy, then I" = "noisy", because I does nothing.</p>
     <p>Both pieces are things the hardware <b>can</b> run:</p>
     <ul>
       <li><b>Circuit 1:</b> run the noisy gate normally.</li>
@@ -250,9 +287,24 @@
 
     <div class="step-tag">Any noise level</div>
     <h3>The same recipe for any flip chance p</h3>
-    <p>Solving Step 2's equations with a general flip chance p instead of 0.1 gives:</p>
+    <p>Repeat Step 2 with flip chance p instead of 0.1. The noisy gate is (1 − p)·I + p·X. Multiplying out and matching, exactly as in 2c and 2d, gives:</p>
     <div class="math">
-      a = (1 − p) / (1 − 2p) &nbsp;&nbsp;&nbsp;&nbsp; b = −p / (1 − 2p) &nbsp;&nbsp;&nbsp;&nbsp; γ = |a| + |b| = 1 / (1 − 2p)
+      I part: (1 − p)·a + p·b = 1<br>
+      X part: p·a + (1 − p)·b = 0
+    </div>
+    <p>From the X part:</p>
+    <div class="math">a = −(1 − p)·b / p</div>
+    <p>Put that into the I part:</p>
+    <div class="math">
+      −(1 − p)²·b / p + p·b = 1<br>
+      b·(p² − (1 − p)²) / p = 1<br>
+      b·(2p − 1) / p = 1 &nbsp;&nbsp;← because p² − (1 − p)² = p² − 1 + 2p − p² = 2p − 1<br>
+      b = p / (2p − 1) = −p / (1 − 2p)
+    </div>
+    <p>Back into a, then add the sizes to get γ:</p>
+    <div class="math">
+      a = (1 − p) / (1 − 2p)<br>
+      γ = |a| + |b| = (1 − p + p) / (1 − 2p) = 1 / (1 − 2p)
     </div>
     <p>With p = 0.1 this gives back 9/8, −1/8 and 10/8. <b>The weights come straight from how noisy the gate is:</b> a noisier gate gives bigger weights, a bigger γ, and more shots.</p>
   </section>
