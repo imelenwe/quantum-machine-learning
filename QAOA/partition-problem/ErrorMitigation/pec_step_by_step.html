@@ -9,26 +9,75 @@
     --bg: #12151b; --surface: #1a1f28; --surface-border: #2a3140;
     --text: #eef1f6; --text-dim: #8b96a8;
     --good: #4fc38f; --bad: #f26b5c; --accent: #6fb3f2; --warn: #f2a541;
+    --step: #b9a2f5; --step-bg: rgba(185,162,245,0.12);
+    --sub: #5fd0c8;
+    --part: #6fb3f2;
   }
   @media (prefers-color-scheme: light) {
     :root {
       --bg: #eef1f5; --surface: #ffffff; --surface-border: #d8dee6;
       --text: #1a1f28; --text-dim: #5b6472;
       --good: #1f8f5f; --bad: #c43f2e; --accent: #1f6fb8; --warn: #a8650d;
+      --step: #6a45c9; --step-bg: rgba(106,69,201,0.08);
+      --sub: #0b7d76;
+      --part: #1f6fb8;
     }
   }
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
     font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    display: flex; justify-content: center; padding: 40px 16px 80px;
+    padding: 40px 16px 80px;
   }
-  .page { width: 100%; max-width: 780px; display: flex; flex-direction: column; gap: 32px; }
+  .layout { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 44px; }
+  .page { min-width: 0; max-width: 780px; display: flex; flex-direction: column; gap: 40px; }
   a { color: var(--accent); }
+  section { scroll-margin-top: 20px; }
+
+  /* ---------- reading map (left) ---------- */
+  .toc { position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; font-size: 13.5px; }
+  .toc-title { font-family: ui-monospace, Menlo, monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+  .toc ol { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 0; }
+  .toc .group { font-size: 11px; font-family: ui-monospace, Menlo, monospace; letter-spacing: 0.08em; text-transform: uppercase; color: var(--part); margin: 14px 0 4px; }
+  .toc a { display: block; text-decoration: none; color: var(--text-dim); padding: 4px 10px; border-left: 2px solid var(--surface-border); line-height: 1.4; }
+  .toc a .n { color: var(--step); font-weight: 700; margin-right: 6px; }
+  .toc a:hover { color: var(--text); }
+  .toc a.active { color: var(--text); border-left-color: var(--step); background: var(--step-bg); font-weight: 600; }
+
+  /* phone: map becomes a sticky bar at the top */
+  .mobile-map { display: none; }
+  @media (max-width: 980px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .toc { display: none; }
+    .mobile-map { display: block; position: sticky; top: 0; z-index: 5; margin: -40px -16px 0; padding: 0 16px; background: var(--bg); border-bottom: 1px solid var(--surface-border); }
+    .mobile-map summary { cursor: pointer; padding: 10px 0; font-size: 13.5px; color: var(--text-dim); list-style: none; }
+    .mobile-map summary::-webkit-details-marker { display: none; }
+    .mobile-map summary b { color: var(--step); }
+    .mobile-map .toc-mobile-list { max-height: 60vh; overflow-y: auto; padding-bottom: 10px; }
+    .mobile-map .toc-mobile-list a { display: block; padding: 5px 0; text-decoration: none; color: var(--text-dim); font-size: 14px; }
+    .mobile-map .toc-mobile-list a .n { color: var(--step); font-weight: 700; margin-right: 6px; }
+    .page { padding-top: 24px; }
+  }
+
+  /* ---------- headings ---------- */
   .crumb { font-size: 13px; color: var(--text-dim); margin-bottom: 10px; }
-  h1 { margin: 0; font-size: 28px; }
-  h2 { margin: 0 0 12px; font-size: 19px; padding-bottom: 8px; border-bottom: 1px solid var(--surface-border); }
-  h3 { margin: 18px 0 8px; font-size: 16px; }
+  h1 { margin: 0; font-size: 30px; }
+  h2 { margin: 0 0 14px; font-size: 22px; color: var(--part); padding-bottom: 8px; border-bottom: 2px solid var(--part); }
+  .step-head { display: flex; align-items: baseline; gap: 12px; margin: 0 0 12px; }
+  .step-num { flex: none; font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; font-weight: 700; color: var(--step); background: var(--step-bg); border: 1px solid var(--step); border-radius: 999px; padding: 2px 10px; }
+  h3 { margin: 0; font-size: 19px; color: var(--step); }
+  h4 { margin: 22px 0 8px; font-size: 15.5px; color: var(--sub); }
+  h4 .sn { font-family: ui-monospace, Menlo, monospace; margin-right: 8px; }
+  .step { border-left: 3px solid var(--step); padding-left: 20px; }
+
+  /* "where we are" recap at the start of each step */
+  .from { font-size: 14px; line-height: 1.6; color: var(--text-dim); background: var(--surface); border: 1px dashed var(--surface-border); border-radius: 8px; padding: 10px 14px; margin: 0 0 14px; }
+  .from b { color: var(--text); }
+  .next { font-size: 14px; color: var(--text-dim); font-style: italic; margin-top: 4px; }
+
+  /* ---------- body ---------- */
   p, li { font-size: 15px; line-height: 1.65; }
   p { margin: 0 0 12px; }
   ul, ol { margin: 0 0 12px; padding-left: 22px; }
@@ -37,11 +86,13 @@
   .card p:last-child, .card ul:last-child, .card ol:last-child { margin-bottom: 0; }
   .key { border-left: 3px solid var(--accent); }
   .caveat { border-left: 3px solid var(--warn); }
+  .caveat b:first-child { color: var(--warn); }
   .math {
     font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.9;
     background: var(--surface); border: 1px solid var(--surface-border); border-radius: 8px;
     padding: 12px 14px; margin: 0 0 12px; overflow-x: auto; white-space: nowrap;
   }
+  .math .c { color: var(--text-dim); }
   .table-wrap { overflow-x: auto; border: 1px solid var(--surface-border); border-radius: 10px; margin-bottom: 12px; }
   table { width: 100%; border-collapse: collapse; background: var(--surface); font-variant-numeric: tabular-nums; }
   th, td { padding: 9px 12px; border-bottom: 1px solid var(--surface-border); text-align: left; font-size: 14px; }
@@ -49,34 +100,64 @@
   tr:last-child td { border-bottom: none; }
   .good { color: var(--good); font-weight: 700; }
   .bad { color: var(--bad); font-weight: 700; }
-  .step-tag { display: inline-block; font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--text-dim); border: 1px solid var(--surface-border); border-radius: 999px; padding: 1px 9px; margin-bottom: 6px; }
 </style>
 </head>
 <body>
+
+<details class="mobile-map" id="mobile-map">
+  <summary>You are reading: <b id="mobile-current">The goal</b> ▾</summary>
+  <div class="toc-mobile-list" id="mobile-list"></div>
+</details>
+
+<div class="layout">
+
+<nav class="toc" aria-label="Reading map">
+  <div class="toc-title">Reading map</div>
+  <ol id="toc-list">
+    <li class="group">Before we start</li>
+    <li><a href="#goal">The goal</a></li>
+    <li><a href="#process">The process</a></li>
+    <li><a href="#example">The example, and why</a></li>
+    <li class="group">The derivation</li>
+    <li><a href="#step1"><span class="n">1</span>Noise as a mix</a></li>
+    <li><a href="#step2"><span class="n">2</span>Solve for the undo</a></li>
+    <li><a href="#step3"><span class="n">3</span>Undo → two circuits</a></li>
+    <li><a href="#step4"><span class="n">4</span>Combine the answers</a></li>
+    <li><a href="#step5"><span class="n">5</span>Two gates in a row</a></li>
+    <li><a href="#step6"><span class="n">6</span>Pick at random: γ</a></li>
+    <li><a href="#step7"><span class="n">7</span>γ multiplies</a></li>
+    <li><a href="#step8"><span class="n">8</span>The cost: shots</a></li>
+    <li><a href="#anyp"><span class="n">+</span>Any noise level p</a></li>
+    <li class="group">Wrap-up</li>
+    <li><a href="#summary">Summary</a></li>
+    <li><a href="#related">Related pages</a></li>
+  </ol>
+</nav>
+
 <main class="page">
 
   <header>
     <div class="crumb"><a href="../../../index.html">← All pages</a> · QGSS Lab 4b · Error mitigation explainers</div>
     <h1>PEC, step by step</h1>
-    <p class="lede">Probabilistic error cancellation, built up from one noisy qubit, with every number worked out by hand.</p>
+    <p class="lede">Probabilistic error cancellation, built up from one noisy qubit, with every number worked out by hand. Each step starts with a short "where we are" box, so you always know what the previous step gave us.</p>
   </header>
 
   <!-- ============================================================ -->
-  <section>
+  <section id="goal" data-label="The goal">
     <h2>What PEC is trying to achieve</h2>
     <div class="card key">
       <p><b>The goal:</b> get the <b>noise-free answer</b> from a noisy quantum computer. Not a noise-free circuit (the circuits stay noisy), but the number you would have measured if there were no noise.</p>
     </div>
     <ul>
       <li><b>The problem.</b> Noise pulls your measured answer away from the truth. You get 0.8 when the truth is 1.</li>
-      <li><b>What PEC can't do.</b> It can't remove the noise from the chip, and it can't build a gate that undoes the noise. As we'll see, such a gate is impossible.</li>
+      <li><b>What PEC can't do.</b> It can't remove the noise from the chip, and it can't build a gate that undoes the noise. As we'll see in Step 2, such a gate is impossible.</li>
       <li><b>What PEC does instead.</b> It runs <b>a few slightly changed versions</b> of your circuit. Each one is pulled away from the truth in a different, known way. Some results are <b>added</b> and some are <b>subtracted</b>, in just the right amounts, so the pulls cancel. What's left is the true answer.</li>
       <li><b>The price.</b> Subtracting makes the final number <b>shakier</b>, so you need many more shots. Every extra gate makes it shakier still, which is why PEC gets expensive for big circuits.</li>
     </ul>
   </section>
 
   <!-- ============================================================ -->
-  <section>
+  <section id="process" data-label="The process">
     <h2>The process, start to finish</h2>
     <p>This is what happens when you switch PEC on (in the lab: <code>resilience.pec_mitigation = True</code>). IBM's software does all five steps automatically.</p>
     <ol>
@@ -86,11 +167,11 @@
       <li><b>Run them on the chip.</b> Every version is an ordinary circuit. Nothing special happens on the hardware.</li>
       <li><b>Combine the results</b> (on a normal computer). Flip the sign of the results marked "minus", average everything, and multiply by one number, called <b>γ</b> (gamma).</li>
     </ol>
-    <p>The rest of this page shows <b>why</b> that recipe gives the noise-free answer, and where the cost comes from.</p>
+    <p>The derivation below shows <b>why</b> that recipe gives the noise-free answer, and where the cost comes from. Steps 1–4 explain "work out the undo" and "combine". Steps 5–7 explain the dice and γ. Step 8 explains the cost.</p>
   </section>
 
   <!-- ============================================================ -->
-  <section>
+  <section id="example" data-label="The example">
     <h2>The example we'll use, and why</h2>
     <div class="card">
       <ul>
@@ -104,54 +185,81 @@
   </section>
 
   <!-- ============================================================ -->
-  <section>
-    <h2>The derivation</h2>
+  <section id="step1" class="step" data-label="Step 1 · Noise as a mix">
+    <div class="step-head"><span class="step-num">Step 1</span><h3>Write the noise as a mix</h3></div>
+    <div class="from"><b>Where we are:</b> we have a gate that should do nothing, but flips the qubit 10% of the time. Before we can undo that, we need a way to <b>write it down</b> and a way to <b>calculate</b> with it.</div>
 
-    <div class="step-tag">Step 1</div>
-    <h3>Write the noise as a mix</h3>
+    <h4><span class="sn">1a</span>Write it down</h4>
     <p>"90% of the time do nothing, 10% of the time flip" is written as:</p>
     <div class="math">noise = 0.9·I + 0.1·X</div>
-    <p>Applying two of these one after the other works like multiplying brackets in algebra, because the chances multiply:</p>
-    <div class="math">
-      (0.9·I + 0.1·X) × (0.9·I + 0.1·X)<br>
-      = 0.81·I + 0.09·X + 0.09·X + 0.01·(X then X)<br>
-      = 0.82·I + 0.18·X
+    <p>Read "0.9·I" as "with weight 0.9, do I". The weights are the chances, so they add up to 1.</p>
+
+    <h4><span class="sn">1b</span>Calculate with it: two noisy steps in a row</h4>
+    <p><b>Why we do this:</b> Step 2 will need to put "one thing, then another" together. The simplest place to learn how is two noisy steps in a row.</p>
+    <p>Each step either flips or doesn't, so there are four paths. On each path, the chances multiply:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>First step</th><th>Second step</th><th>Chance</th><th>Overall</th></tr></thead>
+        <tbody>
+          <tr><td>no flip (I)</td><td>no flip (I)</td><td>0.9 × 0.9 = 0.81</td><td>I</td></tr>
+          <tr><td>no flip (I)</td><td>flip (X)</td><td>0.9 × 0.1 = 0.09</td><td>X</td></tr>
+          <tr><td>flip (X)</td><td>no flip (I)</td><td>0.1 × 0.9 = 0.09</td><td>X</td></tr>
+          <tr><td>flip (X)</td><td>flip (X)</td><td>0.1 × 0.1 = 0.01</td><td>X then X = I</td></tr>
+        </tbody>
+      </table>
     </div>
-    <p>A real mix always adds up to 1 (0.82 + 0.18 = 1). Two noisy steps give 18% flips, not 20%, because the cases that flip twice end up back where they started.</p>
+    <p>Those four rows are exactly what you get by <b>multiplying out the brackets</b>, as in school algebra: every piece of the first bracket meets every piece of the second.</p>
+    <div class="math">
+      (0.9·I + 0.1·X) then (0.9·I + 0.1·X)<br>
+      = 0.81·I + 0.09·X + 0.09·X + 0.01·(X then X)<br>
+      = 0.81·I + 0.09·X + 0.09·X + 0.01·I &nbsp;&nbsp;<span class="c">← X then X = I</span><br>
+      = 0.82·I + 0.18·X &nbsp;&nbsp;<span class="c">← collect the I's and the X's</span>
+    </div>
+    <p>Two noisy steps give 18% flips, not 20%, because the path that flips twice ends up back where it started.</p>
+    <p><b>The rule we take forward:</b> to put "one mix, then another" together, multiply out the brackets and use X then X = I.</p>
 
     <div class="card">
-      <p><b>The proper notation</b> (what the shorthand stands for). A channel says what happens to the qubit's state ρ:</p>
+      <p><b>The proper notation</b> (what the shorthand stands for). A channel says what happens to the qubit's state ρ (its density matrix; Step 4 works with it in detail):</p>
       <div class="math">noise(ρ) = 0.9·ρ + 0.1·XρX</div>
       <p>"0.9·I + 0.1·X" is just this with ρ left out. Multiplying out brackets is allowed because channels are <b>linear</b> in ρ. "X then X = I" holds because X·X = I, so X(XρX)X = ρ.</p>
     </div>
+  </section>
 
-    <div class="step-tag">Step 2</div>
-    <h3>Solve for the "undo", and find a negative number</h3>
-    <p><b>2a. What we want.</b> Our gate should do nothing, so the <b>ideal</b> gate is I. The hardware gives us the <b>noisy</b> gate instead. We want something that, applied after the noisy gate, gives back the ideal:</p>
+  <!-- ============================================================ -->
+  <section id="step2" class="step" data-label="Step 2 · Solve for the undo">
+    <div class="step-head"><span class="step-num">Step 2</span><h3>Solve for the "undo", and find a negative number</h3></div>
+    <div class="from"><b>From Step 1:</b> noisy = 0.9·I + 0.1·X, and "one thing, then another" is worked out by multiplying out the brackets. Now we use that to find what would cancel the noise.</div>
+
+    <h4><span class="sn">2a</span>What we want</h4>
+    <p>Our gate should do nothing, so the <b>ideal</b> gate is I. The hardware gives us the <b>noisy</b> gate instead. We want something that, applied after the noisy gate, gives back the ideal:</p>
     <div class="math">ideal = noisy, then undo</div>
 
-    <p><b>2b. Fill in what we know.</b> Ideal = I. Noisy = 0.9·I + 0.1·X (from Step 1). The undo is unknown, but it can only be built from the same two pieces, "do nothing" and "flip", so guess it has the same shape with unknown weights a and b:</p>
+    <h4><span class="sn">2b</span>Fill in what we know</h4>
+    <p>Ideal = I. Noisy = 0.9·I + 0.1·X (from Step 1). The undo is unknown, but it can only be built from the same two pieces, "do nothing" and "flip", so guess it has the same shape with unknown weights a and b:</p>
     <div class="math">undo = a·I + b·X</div>
     <p>Put all three into 2a:</p>
     <div class="math">I = (0.9·I + 0.1·X) then (a·I + b·X)</div>
 
-    <p><b>2c. Multiply out the brackets</b>, exactly as in Step 1: every piece of the first bracket meets every piece of the second.</p>
+    <h4><span class="sn">2c</span>Multiply out the brackets</h4>
+    <p>Exactly as in Step 1: every piece of the first bracket meets every piece of the second.</p>
     <div class="math">
       0.9·I then a·I = 0.9a·I<br>
       0.9·I then b·X = 0.9b·X<br>
       0.1·X then a·I = 0.1a·X<br>
-      0.1·X then b·X = 0.1b·(X then X) = 0.1b·I &nbsp;&nbsp;← because X then X = I
+      0.1·X then b·X = 0.1b·(X then X) = 0.1b·I &nbsp;&nbsp;<span class="c">← because X then X = I</span>
     </div>
     <p>Add the four pieces, putting the I's together and the X's together:</p>
     <div class="math">I = (0.9a + 0.1b)·I + (0.1a + 0.9b)·X</div>
 
-    <p><b>2d. Match both sides.</b> The left side is 1·I + 0·X. For the two sides to be equal, the amount of I must match and the amount of X must match. That gives two equations:</p>
+    <h4><span class="sn">2d</span>Match both sides</h4>
+    <p>The left side is 1·I + 0·X. For the two sides to be equal, the amount of I must match and the amount of X must match. That gives two equations:</p>
     <div class="math">
       I part: 0.9a + 0.1b = 1<br>
       X part: 0.1a + 0.9b = 0
     </div>
 
-    <p><b>2e. Solve.</b> Start with the X part, because its right side is 0:</p>
+    <h4><span class="sn">2e</span>Solve</h4>
+    <p>Start with the X part, because its right side is 0:</p>
     <div class="math">
       0.1a + 0.9b = 0<br>
       0.1a = −0.9b<br>
@@ -167,164 +275,361 @@
     <p>And back into a = −9b:</p>
     <div class="math">a = −9 × (−1/8) = 9/8</div>
     <p>So:</p>
-    <div class="math">undo = (9/8)·I − (1/8)·X &nbsp;&nbsp;&nbsp;(a = 1.125, b = −0.125)</div>
+    <div class="math">undo = (9/8)·I − (1/8)·X &nbsp;&nbsp;&nbsp;<span class="c">(a = 1.125, b = −0.125)</span></div>
+
     <div class="card caveat">
-      <p><b>b is negative.</b> A real recipe can't say "flip −12.5% of the time." So the undo <b>cannot be built</b> on any hardware. It exists only on paper.</p>
+      <p><b>b is negative.</b> The undo would have to say "flip −12.5% of the time". A chance can't be negative, so the undo <b>cannot be built</b> on any hardware. It exists only on paper.</p>
       <p>The numbers still add to 1 (9/8 − 1/8 = 1), so it's a "sort-of probability", called a <b>quasi-probability</b>.</p>
     </div>
+  </section>
 
-    <div class="step-tag">Step 3</div>
-    <h3>Turn the undo into circuits we can run</h3>
-    <p>Go back to 2a and put in the undo we just found:</p>
+  <!-- ============================================================ -->
+  <section id="step3" class="step" data-label="Step 3 · Undo → two circuits">
+    <div class="step-head"><span class="step-num">Step 3</span><h3>Turn the undo into circuits we can run</h3></div>
+    <div class="from"><b>From Step 2:</b> undo = (9/8)·I − (1/8)·X, and it can't be built. But its two pieces, I and X, are ordinary gates. So we split the undo into its pieces.</div>
+
+    <h4><span class="sn">3a</span>Put the undo into 2a</h4>
     <div class="math">
       ideal = noisy, then undo<br>
-      = noisy, then ((9/8)·I − (1/8)·X)<br>
-      = (9/8)·(noisy, then I) − (1/8)·(noisy, then X)<br>
-      = (9/8)·(noisy) − (1/8)·(noisy, then an extra X)
+      = noisy, then ((9/8)·I − (1/8)·X)
     </div>
-    <p>The last line uses "noisy, then I" = "noisy", because I does nothing.</p>
+
+    <h4><span class="sn">3b</span>Split it</h4>
+    <p>"Noisy, then (a bracket)" is multiplied out just like in Step 1: the noisy gate meets each piece of the bracket in turn, and each piece keeps its weight:</p>
+    <div class="math">
+      = (9/8)·(noisy, then I) − (1/8)·(noisy, then X)<br>
+      = (9/8)·(noisy) − (1/8)·(noisy, then an extra X) &nbsp;&nbsp;<span class="c">← "then I" does nothing</span>
+    </div>
+
+    <h4><span class="sn">3c</span>Read off the circuits</h4>
     <p>Both pieces are things the hardware <b>can</b> run:</p>
     <ul>
-      <li><b>Circuit 1:</b> run the noisy gate normally.</li>
-      <li><b>Circuit 2:</b> run the noisy gate, then add one extra X gate on purpose.</li>
+      <li><b>Circuit 1:</b> run the noisy gate normally. Weight +9/8.</li>
+      <li><b>Circuit 2:</b> run the noisy gate, then add one extra X gate on purpose. Weight −1/8. The extra X is the X piece of the undo, now run as a real gate.</li>
     </ul>
-    <p>The impossible undo has been spread over two possible circuits. What's left is the job of combining them.</p>
+    <p>The impossible undo has been spread over two possible circuits. The minus sign is now on a <b>weight</b>, not on a gate.</p>
+    <p class="next">Next: we can't run "9/8 of a circuit minus 1/8 of another", so Step 4 works out how to use the weights.</p>
+  </section>
 
-    <div class="step-tag">Step 4</div>
-    <h3>Combine the measured answers, not the circuits</h3>
-    <p>You can't "run a combination" of circuits. You can only run one circuit at a time and measure it. But the <b>measured answers</b> combine in the same way, because an expectation value is a trace, and the trace is linear:</p>
+  <!-- ============================================================ -->
+  <section id="step4" class="step" data-label="Step 4 · Combine the answers">
+    <div class="step-head"><span class="step-num">Step 4</span><h3>Combine the measured answers, not the circuits</h3></div>
+    <div class="from"><b>From Step 3:</b> ideal = (9/8)·(circuit 1) − (1/8)·(circuit 2). We can run each circuit, but only one at a time. This step shows the weights can be applied to the <b>measured numbers</b> instead.</div>
+
+    <h4><span class="sn">4a</span>Name things</h4>
+    <p>Call the state at the end of each circuit, and the number we measure from it:</p>
     <div class="math">
-      ⟨Z⟩ = Tr(Z·ρ) &nbsp;&nbsp;and&nbsp;&nbsp; Tr(Z·(a·ρ₁ + b·ρ₂)) = a·Tr(Z·ρ₁) + b·Tr(Z·ρ₂)
+      circuit 1 (noisy gate) &nbsp;&nbsp;→ end state ρ₁ &nbsp;→ measured answer ⟨Z⟩₁<br>
+      circuit 2 (noisy gate, then extra X) &nbsp;&nbsp;→ end state ρ₂ &nbsp;→ measured answer ⟨Z⟩₂
     </div>
-    <p>So the ideal answer follows the same recipe:</p>
-    <div class="math">⟨Z⟩ ideal = (9/8)·⟨Z⟩ from circuit 1 − (1/8)·⟨Z⟩ from circuit 2</div>
-    <p><b>Circuit 1.</b> The state after the noisy gate holds the chances: 90% still |0⟩, 10% flipped to |1⟩. Z gives +1 for |0⟩ and −1 for |1⟩.</p>
+    <p>Step 3 says the ideal state is the same mix of the two end states:</p>
+    <div class="math">ρ ideal = (9/8)·ρ₁ − (1/8)·ρ₂</div>
+
+    <h4><span class="sn">4b</span>Why the answers combine the same way</h4>
+    <p>A measured answer is a trace: ⟨Z⟩ = Tr(Z·ρ). The trace is <b>linear</b>, which means weights can be pulled out of it: Tr(c·A + d·B) = c·Tr(A) + d·Tr(B). So:</p>
     <div class="math">
-      ρ₁ = 0.9·|0⟩⟨0| + 0.1·|1⟩⟨1|<br>
-      ⟨Z⟩₁ = Tr(Z·ρ₁) = 0.9 − 0.1 = 0.8
+      ⟨Z⟩ ideal = Tr(Z·ρ ideal)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= Tr(Z·((9/8)·ρ₁ − (1/8)·ρ₂))<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= (9/8)·Tr(Z·ρ₁) − (1/8)·Tr(Z·ρ₂) &nbsp;&nbsp;<span class="c">← pull the weights out</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= (9/8)·⟨Z⟩₁ − (1/8)·⟨Z⟩₂
     </div>
-    <p><b>Circuit 2.</b> The extra X swaps |0⟩ and |1⟩. A gate acts on a state from both sides (X·ρ·X); a measurement goes inside the trace once (Tr(Z·ρ)).</p>
+    <p>So we need two numbers, <b>⟨Z⟩₁</b> and <b>⟨Z⟩₂</b>. Each is found the same way: start from the input state, push it through the circuit to get the end state (ρ₁ or ρ₂), then measure Z with Tr(Z·end state). The next three parts do exactly that.</p>
+
+    <h4><span class="sn">4c</span>The input, and the facts we'll use</h4>
+    <p>The qubit starts in |0⟩ (ket zero). As a density matrix, a state |ψ⟩ is written |ψ⟩⟨ψ| (ket times bra), so the input is:</p>
+    <div class="math">ρ = |0⟩⟨0|</div>
     <div class="math">
-      ρ₂ = X·ρ₁·X = 0.9·|1⟩⟨1| + 0.1·|0⟩⟨0|<br>
-      ⟨Z⟩₂ = Tr(Z·ρ₂) = −0.9 + 0.1 = −0.8
+      X|0⟩ = |1⟩ &nbsp;and&nbsp; X|1⟩ = |0⟩ &nbsp;&nbsp;<span class="c">← X flips</span><br>
+      ⟨0|X = ⟨1| &nbsp;and&nbsp; ⟨1|X = ⟨0| &nbsp;&nbsp;<span class="c">← the same flip, on the bra side</span><br>
+      Z|0⟩ = +|0⟩ &nbsp;and&nbsp; Z|1⟩ = −|1⟩ &nbsp;&nbsp;<span class="c">← Z reads 0 as +1 and 1 as −1</span><br>
+      Tr(Z·|ψ⟩⟨ψ|) = ⟨ψ|Z|ψ⟩ &nbsp;&nbsp;<span class="c">← so Tr(Z·|0⟩⟨0|) = +1 and Tr(Z·|1⟩⟨1|) = −1</span>
     </div>
-    <p><b>Combine:</b></p>
-    <div class="math">(9/8)·(0.8) − (1/8)·(−0.8) = 0.9 + 0.1 = <span class="good">1</span> &nbsp;✓ the noise-free answer</div>
+
+    <h4><span class="sn">4d</span>Calculating ⟨Z⟩₁, from circuit 1 (just the noisy gate)</h4>
+    <p><i>First the end state ρ₁.</i> Circuit 1 is only the noisy gate, so apply the channel from Step 1, noise(ρ) = 0.9·ρ + 0.1·XρX, to the input ρ = |0⟩⟨0|:</p>
+    <div class="math">
+      ρ₁ = 0.9·|0⟩⟨0| + 0.1·X|0⟩⟨0|X<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= 0.9·|0⟩⟨0| + 0.1·|1⟩⟨1| &nbsp;&nbsp;<span class="c">← X|0⟩ = |1⟩ and ⟨0|X = ⟨1|</span>
+    </div>
+    <p>In words: 90% still |0⟩, 10% flipped to |1⟩.</p>
+    <p><i>Then measure Z on ρ₁.</i> The trace is linear, so it goes through each piece:</p>
+    <div class="math">
+      ⟨Z⟩₁ = Tr(Z·ρ₁)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= 0.9·Tr(Z·|0⟩⟨0|) + 0.1·Tr(Z·|1⟩⟨1|)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= 0.9·(+1) + 0.1·(−1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= <b>0.8</b>
+    </div>
+
+    <h4><span class="sn">4e</span>Calculating ⟨Z⟩₂, from circuit 2 (noisy gate, then an extra X)</h4>
+    <p><i>First the end state ρ₂.</i> Circuit 2 is circuit 1 with one more gate, X, at the end. So we don't start over: take ρ₁ (what comes out of the noisy gate) and apply X to it. A gate acts on a density matrix from both sides, X·ρ·X:</p>
+    <div class="math">
+      ρ₂ = X·ρ₁·X<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= 0.9·X|0⟩⟨0|X + 0.1·X|1⟩⟨1|X<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= 0.9·|1⟩⟨1| + 0.1·|0⟩⟨0| &nbsp;&nbsp;<span class="c">← X swaps 0 and 1 on both sides</span>
+    </div>
+    <p>In words: the extra X swapped the chances, so now 90% is |1⟩ and 10% is |0⟩.</p>
+    <p><i>Then measure Z on ρ₂:</i></p>
+    <div class="math">
+      ⟨Z⟩₂ = Tr(Z·ρ₂)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= 0.9·Tr(Z·|1⟩⟨1|) + 0.1·Tr(Z·|0⟩⟨0|)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= 0.9·(−1) + 0.1·(+1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= <b>−0.8</b>
+    </div>
+
+    <h4><span class="sn">4f</span>Combine</h4>
+    <p>Put ⟨Z⟩₁ = 0.8 and ⟨Z⟩₂ = −0.8 into the recipe from 4b:</p>
+    <div class="math">
+      ⟨Z⟩ ideal = (9/8)·⟨Z⟩₁ − (1/8)·⟨Z⟩₂<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= (9/8)·(0.8) − (1/8)·(−0.8)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= 0.9 + 0.1 = <span class="good">1</span> &nbsp;✓ the noise-free answer
+    </div>
     <p>This is the heart of PEC: <b>two noisy answers, combined with the right weights, give exactly the noise-free answer.</b> The ideal state is never built; only its measured value is reconstructed.</p>
+  </section>
 
-    <div class="step-tag">Step 5</div>
-    <h3>Make the negative weight runnable: γ appears</h3>
-    <p>On hardware you choose <b>how often</b> to run each circuit, and "how often" can't be negative. So each weight is split into three parts:</p>
-    <div class="math">weight = γ × chance × sign</div>
+  <!-- ============================================================ -->
+  <section id="step5" class="step" data-label="Step 5 · Two gates in a row">
+    <div class="step-head"><span class="step-num">Step 5</span><h3>Two gates in a row: the circuits multiply</h3></div>
+    <div class="from"><b>From Steps 1–4:</b> one noisy gate needs 2 circuits, with weights +9/8 and −1/8. But real circuits have many gates, each with its own noise. What happens with two?</div>
+
+    <h4><span class="sn">5a</span>The setup</h4>
+    <p>Two gates in a row, both should do nothing, both flip 10% of the time. Each noisy gate gets its own undo, right after it:</p>
+    <div class="math">ideal = (noisy₁, then undo) then (noisy₂, then undo)</div>
+    <p>Each bracket is exactly the one-gate case, so Step 3 already split it:</p>
+    <div class="math">
+      noisy, then undo = (9/8)·(noisy) − (1/8)·(noisy, then X)
+    </div>
+    <p>So:</p>
+    <div class="math">ideal = [(9/8)·noisy₁ − (1/8)·(noisy₁, X)] then [(9/8)·noisy₂ − (1/8)·(noisy₂, X)]</div>
+
+    <h4><span class="sn">5b</span>Multiply out the brackets</h4>
+    <p>Same rule as Steps 1 and 2: every piece of the first bracket meets every piece of the second, and the weights multiply:</p>
+    <div class="math">
+      (9/8)·(9/8) &nbsp;&nbsp;= 81/64 &nbsp;: noisy₁, noisy₂<br>
+      (9/8)·(−1/8) &nbsp;= −9/64 &nbsp;: noisy₁, noisy₂, X<br>
+      (−1/8)·(9/8) &nbsp;= −9/64 &nbsp;: noisy₁, X, noisy₂<br>
+      (−1/8)·(−1/8) = +1/64 &nbsp;: noisy₁, X, noisy₂, X
+    </div>
+    <p>As a table, where "+ X" means an extra X right after that gate:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>After gate 1</th><th>After gate 2</th><th>Weight</th></tr></thead>
+        <tbody>
+          <tr><td>Circuit 1</td><td>nothing</td><td>nothing</td><td>+81/64</td></tr>
+          <tr><td>Circuit 2</td><td>nothing</td><td>+ X</td><td>−9/64</td></tr>
+          <tr><td>Circuit 3</td><td>+ X</td><td>nothing</td><td>−9/64</td></tr>
+          <tr><td>Circuit 4</td><td>+ X</td><td>+ X</td><td>+1/64</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Two things to notice. The <b>signs multiply</b>: a circuit gets a minus when it has an odd number of extra X's. And by Step 4, the ideal answer is these four measured answers combined with these four weights.</p>
+
+    <h4><span class="sn">5c</span>The problem this shows</h4>
+    <p>Each gate doubles the number of circuits: 1 gate → 2, 2 gates → 4, 3 gates → 8, t gates → 2<sup>t</sup>.</p>
+    <div class="math">100 gates → 2¹⁰⁰ ≈ 10³⁰ circuits</div>
+    <p>Nobody can run 10³⁰ circuits. So PEC can't run every circuit and combine them as in Step 4.</p>
+    <p class="next">Next: Step 6 shows how to get the same answer by running circuits picked at random.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="step6" class="step" data-label="Step 6 · Pick at random: γ">
+    <div class="step-head"><span class="step-num">Step 6</span><h3>Pick circuits at random: γ appears</h3></div>
+    <div class="from"><b>From Step 5:</b> there are far too many circuits to run them all. The way out: on each run, <b>pick one circuit at random</b>, so the more important circuits get picked more often. We work it out for one gate first (2 circuits, weights +9/8 and −1/8). Step 7 does two gates.</div>
+
+    <h4><span class="sn">6a</span>Why the weights can't be used as chances directly</h4>
+    <p>To pick at random, we need <b>chances</b>: numbers that are positive and add up to 1. Our weights fail the first test, because −1/8 is negative.</p>
+
+    <h4><span class="sn">6b</span>Split each weight into size and sign</h4>
+    <p>Write each weight as its size (ignoring the sign) times its sign:</p>
+    <div class="math">
+      +9/8 = (9/8) × (+1)<br>
+      −1/8 = (1/8) × (−1)
+    </div>
+    <p>The sizes are positive, but they add to 9/8 + 1/8 = 10/8, not 1. Call that total <b>γ</b> (gamma):</p>
+    <div class="math">γ = 9/8 + 1/8 = 10/8 = 1.25</div>
+    <p>Divide each size by γ. Now they add to 1, so they are real chances:</p>
+    <div class="math">
+      chance for circuit 1 = (9/8) ÷ (10/8) = 9/10 = 0.9<br>
+      chance for circuit 2 = (1/8) ÷ (10/8) = 1/10 = 0.1
+    </div>
+    <p>Putting it back together, every weight is γ × chance × sign:</p>
     <div class="table-wrap">
       <table>
         <thead><tr><th></th><th>Weight</th><th>= γ</th><th>× chance</th><th>× sign</th></tr></thead>
         <tbody>
-          <tr><td>Circuit 1</td><td>9/8</td><td>10/8</td><td>0.9</td><td>+1</td></tr>
+          <tr><td>Circuit 1</td><td>+9/8</td><td>10/8</td><td>0.9</td><td>+1</td></tr>
           <tr><td>Circuit 2</td><td>−1/8</td><td>10/8</td><td>0.1</td><td>−1</td></tr>
         </tbody>
       </table>
     </div>
-    <ul>
-      <li><b>γ</b> = the sizes of the weights added up (ignoring signs): 9/8 + 1/8 = 10/8 = 1.25.</li>
-      <li><b>Chance</b> = each size divided by γ. The chances 0.9 and 0.1 are ordinary probabilities: positive, adding to 1. They decide <i>which circuit to run</i>.</li>
-      <li><b>Sign</b> = where the minus went. It's no longer on "how often"; it's applied to <i>the number you write down</i>.</li>
-    </ul>
-    <p>So the recipe the hardware actually follows is:</p>
+
+    <h4><span class="sn">6c</span>The recipe</h4>
+    <p>Each part of the weight now has a job:</p>
     <ol>
-      <li>90% of the runs: run circuit 1 and write down its result as it is.</li>
-      <li>10% of the runs: run circuit 2 and write down its result <b>with the sign flipped</b>.</li>
-      <li>Average everything written down, then multiply by γ.</li>
+      <li><b>Chance</b> decides which circuit to run: 90% of the runs use circuit 1, 10% use circuit 2.</li>
+      <li><b>Sign</b> is applied to the result you write down: circuit 1's result as it is, circuit 2's result with its sign flipped.</li>
+      <li><b>γ</b> is applied once at the end: average everything written down, then multiply by γ.</li>
     </ol>
+
+    <h4><span class="sn">6d</span>Why the recipe gives the Step 4 answer</h4>
+    <p>Over many runs, the circuit-1 runs average to ⟨Z⟩₁ and the circuit-2 runs average to ⟨Z⟩₂. With the chances and signs, the overall average is:</p>
+    <div class="math">average = 0.9·(+1)·⟨Z⟩₁ + 0.1·(−1)·⟨Z⟩₂ = 0.9·⟨Z⟩₁ − 0.1·⟨Z⟩₂</div>
+    <p>Multiply by γ:</p>
     <div class="math">
-      average = 0.9 × (0.8) + 0.1 × (+0.8) = 0.8<br>
-      × γ = 0.8 × 1.25 = <span class="good">1</span> &nbsp;✓
+      γ × average = 1.25·(0.9·⟨Z⟩₁ − 0.1·⟨Z⟩₂)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= 1.125·⟨Z⟩₁ − 0.125·⟨Z⟩₂<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= (9/8)·⟨Z⟩₁ − (1/8)·⟨Z⟩₂ &nbsp;&nbsp;<span class="c">← exactly the formula from 4b</span>
+    </div>
+
+    <h4><span class="sn">6e</span>With our numbers</h4>
+    <p>⟨Z⟩₁ = 0.8 and ⟨Z⟩₂ = −0.8 (from 4d and 4e):</p>
+    <div class="math">
+      average = 0.9·(+1)·(0.8) + 0.1·(−1)·(−0.8)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;= 0.72 + 0.08 = 0.8<br>
+      γ × average = 1.25 × 0.8 = <span class="good">1</span> &nbsp;✓
     </div>
     <p>The average alone is still 0.8. <b>Multiplying by γ</b> is what lifts it back to the true answer.</p>
+  </section>
 
-    <div class="step-tag">Step 6</div>
-    <h3>Two gates in a row: γ multiplies</h3>
-    <p>Real circuits have many gates, and each noisy gate needs its own undo. Take two gates in a row, both with the same 10% flip, so each has the same recipe. For each gate there are two choices: plain (weight 9/8) or with an extra X after it (weight −1/8). Two gates × two choices = four circuits:</p>
+  <!-- ============================================================ -->
+  <section id="step7" class="step" data-label="Step 7 · γ multiplies">
+    <div class="step-head"><span class="step-num">Step 7</span><h3>Two gates: γ multiplies, and the dice appear</h3></div>
+    <div class="from"><b>From Steps 5 and 6:</b> two gates give four circuits with weights +81/64, −9/64, −9/64, +1/64. For one gate, we split weights into γ × chance × sign. Now do the same split for two gates.</div>
+
+    <h4><span class="sn">7a</span>γ for two gates</h4>
+    <p>As in 6b, γ is the sizes of the weights added up:</p>
+    <div class="math">γ = 81/64 + 9/64 + 9/64 + 1/64 = 100/64</div>
+    <p>And 100/64 = (10/8) × (10/8). That's no coincidence: the four sizes are exactly what you get by multiplying out (9/8 + 1/8) × (9/8 + 1/8), the one-gate sizes. So:</p>
+    <div class="math">γ for two gates = (γ for one gate)² = 1.25² ≈ 1.56</div>
+    <p><b>The γ's multiply.</b> t gates give γ<sup>t</sup>.</p>
+
+    <h4><span class="sn">7b</span>The chances, and the dice</h4>
+    <p>As in 6b, each chance is size ÷ γ:</p>
     <div class="table-wrap">
       <table>
-        <thead><tr><th></th><th>Gate 1</th><th>Gate 2</th><th>Weight</th></tr></thead>
+        <thead><tr><th></th><th>Size</th><th>Chance = size ÷ (100/64)</th><th>= gate 1 × gate 2</th><th>Sign</th></tr></thead>
         <tbody>
-          <tr><td>Circuit 1</td><td>plain</td><td>plain</td><td>(9/8)·(9/8) = 81/64</td></tr>
-          <tr><td>Circuit 2</td><td>plain</td><td>+ extra X</td><td>(9/8)·(−1/8) = −9/64</td></tr>
-          <tr><td>Circuit 3</td><td>+ extra X</td><td>plain</td><td>(−1/8)·(9/8) = −9/64</td></tr>
-          <tr><td>Circuit 4</td><td>+ extra X</td><td>+ extra X</td><td>(−1/8)·(−1/8) = +1/64</td></tr>
+          <tr><td>Circuit 1 (nothing, nothing)</td><td>81/64</td><td>81/100</td><td>0.9 × 0.9</td><td>+</td></tr>
+          <tr><td>Circuit 2 (nothing, + X)</td><td>9/64</td><td>9/100</td><td>0.9 × 0.1</td><td>−</td></tr>
+          <tr><td>Circuit 3 (+ X, nothing)</td><td>9/64</td><td>9/100</td><td>0.1 × 0.9</td><td>−</td></tr>
+          <tr><td>Circuit 4 (+ X, + X)</td><td>1/64</td><td>1/100</td><td>0.1 × 0.1</td><td>+</td></tr>
         </tbody>
       </table>
     </div>
-    <p>These are the four terms you get by multiplying out the two brackets. Here "multiply" means "do one channel, then the other", since we're combining channels, not gate matrices. Each weight is the two gates' weights multiplied, so the signs multiply too.</p>
-    <div class="math">γ for the circuit = 81/64 + 9/64 + 9/64 + 1/64 = 100/64 = (10/8) × (10/8)</div>
-    <p><b>The γ's multiply.</b> 2 gates give γ², 10 gates give γ¹⁰, and t gates give γ<sup>t</sup>.</p>
+    <p>Each chance is just the one-gate chances multiplied. That means we never need the full list of circuits. For each gate, separately, <b>roll a dice</b>: 90% leave it alone, 10% add an extra X after it. That gives each circuit exactly the right chance. This is the "build the versions" part of the process.</p>
+    <p>The sign is + or − depending on whether the number of extra X's is even or odd. Then, as in 6c: flip the sign of the minus results, average, multiply by γ = 100/64.</p>
+    <p>This works for any number of gates: one dice roll per gate, and one γ<sup>t</sup> at the end.</p>
+  </section>
 
-    <div class="step-tag">Step 7</div>
-    <h3>Why a big γ is costly: shots</h3>
+  <!-- ============================================================ -->
+  <section id="step8" class="step" data-label="Step 8 · The cost: shots">
+    <div class="step-head"><span class="step-num">Step 8</span><h3>Why a big γ is costly: shots</h3></div>
+    <div class="from"><b>From Steps 6 and 7:</b> the recipe ends by multiplying the average by γ, and γ grows as γ<sup>t</sup> with the number of gates. This step shows why that makes PEC expensive.</div>
+
+    <h4><span class="sn">8a</span>Shots, and why averages wobble</h4>
     <p><b>A shot</b> is one run of the circuit plus one measurement. A single shot gives only +1 or −1. ⟨Z⟩ is the <b>average over many shots</b>, so with a limited number of shots the average wobbles a little around the truth.</p>
-    <p><b>Why the wobble shrinks slowly.</b> Think of a fair coin: heads = +1, tails = −1, true average 0.</p>
-    <ul>
-      <li>Toss it 100 times. Ideally 50 heads and 50 tails, so the total is 0. In real life you might get 55 heads, so the total is +10. That +10 is how far the total landed from where it should be.</li>
-      <li>This is a random walk: each toss is a step forward or back. Over many runs, the <b>squared</b> distance averages exactly the number of steps. For 3 steps: (9 + 1 + 1 + 1 + 1 + 1 + 1 + 9) / 8 = 3. So the total typically ends about <b>√N</b> away (√100 = 10).</li>
-      <li>The average divides the total by N, so it's off by about √N ÷ N:</li>
-    </ul>
+
+    <h4><span class="sn">8b</span>How big the wobble is: a coin</h4>
+    <p>Think of a fair coin: heads = +1, tails = −1, true average 0. Toss it 3 times and add up. All 8 possible outcomes, equally likely:</p>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Shots</th><th>Total typically off by</th><th>Average off by</th></tr></thead>
+        <thead><tr><th>Tosses</th><th>Total</th><th>Total²</th></tr></thead>
         <tbody>
-          <tr><td>100</td><td>√100 = 10</td><td>10 ÷ 100 = 0.10</td></tr>
-          <tr><td>10,000</td><td>√10,000 = 100</td><td>100 ÷ 10,000 = 0.01</td></tr>
+          <tr><td>H H H</td><td>+3</td><td>9</td></tr>
+          <tr><td>H H T</td><td>+1</td><td>1</td></tr>
+          <tr><td>H T H</td><td>+1</td><td>1</td></tr>
+          <tr><td>H T T</td><td>−1</td><td>1</td></tr>
+          <tr><td>T H H</td><td>+1</td><td>1</td></tr>
+          <tr><td>T H T</td><td>−1</td><td>1</td></tr>
+          <tr><td>T T H</td><td>−1</td><td>1</td></tr>
+          <tr><td>T T T</td><td>−3</td><td>9</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The totals average to 0, as they should. But the <b>squared</b> totals average to (9 + 1 + 1 + 1 + 1 + 1 + 1 + 9) / 8 = 24 / 8 = <b>3</b>, the number of tosses. This holds for any number of tosses N: the squared total averages N. So the total typically lands about <b>√N</b> away from 0.</p>
+    <p>The average is the total divided by N, so it's off by about √N ÷ N:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Shots N</th><th>Total typically off by √N</th><th>Average off by √N ÷ N</th></tr></thead>
+        <tbody>
+          <tr><td>100</td><td>10</td><td>10 ÷ 100 = 0.10</td></tr>
+          <tr><td>10,000</td><td>100</td><td>100 ÷ 10,000 = 0.01</td></tr>
         </tbody>
       </table>
     </div>
     <p><b>100× more shots only makes the answer 10× more accurate.</b> To make the wobble k times smaller, you need k² times more shots.</p>
-    <p><b>Where γ comes in.</b> PEC's last step multiplies the average by γ, and that multiplies the wobble by γ too. To shrink it back down you need <b>γ² times more shots</b>.</p>
+
+    <h4><span class="sn">8c</span>Where γ comes in</h4>
+    <p>PEC's last step multiplies the average by γ, and that multiplies the wobble by γ too. For example, with one gate, suppose the average comes out with a wobble of 0.10:</p>
+    <div class="math">
+      average ≈ 0.8 ± 0.10<br>
+      × γ = 1.25 &nbsp;→&nbsp; answer ≈ 1 ± 0.125
+    </div>
+    <p>To shrink the wobble back down by a factor γ, 8b says you need <b>γ² times more shots</b>.</p>
     <div class="math">
       10 gates at 10% noise: &nbsp;γ = 1.25¹⁰ ≈ 9.3 &nbsp;→&nbsp; shots needed ≈ 9.3² ≈ <span class="bad">87×</span> more
     </div>
     <p>Real hardware has much less noise per gate, but real circuits have hundreds of gates, so the cost still grows very fast. That's why the lab estimates about 4.5 minutes of QPU time for PEC, against 16 seconds for ZNE.</p>
+  </section>
 
-    <div class="step-tag">Any noise level</div>
-    <h3>The same recipe for any flip chance p</h3>
-    <p>Repeat Step 2 with flip chance p instead of 0.1. The noisy gate is (1 − p)·I + p·X. Multiplying out and matching, exactly as in 2c and 2d, gives:</p>
+  <!-- ============================================================ -->
+  <section id="anyp" class="step" data-label="Any noise level p">
+    <div class="step-head"><span class="step-num">Extra</span><h3>The same recipe for any flip chance p</h3></div>
+    <div class="from"><b>So far</b> every number came from a 10% flip chance. Here is Step 2 again with a general flip chance p, to see how the weights and γ depend on the noise.</div>
+
+    <h4><span class="sn">+a</span>The equations</h4>
+    <p>The noisy gate is (1 − p)·I + p·X. Multiplying out and matching, exactly as in 2c and 2d, gives:</p>
     <div class="math">
       I part: (1 − p)·a + p·b = 1<br>
       X part: p·a + (1 − p)·b = 0
     </div>
+
+    <h4><span class="sn">+b</span>Solve</h4>
     <p>From the X part:</p>
     <div class="math">a = −(1 − p)·b / p</div>
     <p>Put that into the I part:</p>
     <div class="math">
       −(1 − p)²·b / p + p·b = 1<br>
       b·(p² − (1 − p)²) / p = 1<br>
-      b·(2p − 1) / p = 1 &nbsp;&nbsp;← because p² − (1 − p)² = p² − 1 + 2p − p² = 2p − 1<br>
+      b·(2p − 1) / p = 1 &nbsp;&nbsp;<span class="c">← because p² − (1 − p)² = p² − 1 + 2p − p² = 2p − 1</span><br>
       b = p / (2p − 1) = −p / (1 − 2p)
     </div>
-    <p>Back into a, then add the sizes to get γ:</p>
+    <p>Back into a, then add the sizes to get γ (a is positive and b is negative, so the sizes are a and −b):</p>
     <div class="math">
       a = (1 − p) / (1 − 2p)<br>
-      γ = |a| + |b| = (1 − p + p) / (1 − 2p) = 1 / (1 − 2p)
+      γ = a − b = (1 − p + p) / (1 − 2p) = 1 / (1 − 2p)
     </div>
-    <p>With p = 0.1 this gives back 9/8, −1/8 and 10/8. <b>The weights come straight from how noisy the gate is:</b> a noisier gate gives bigger weights, a bigger γ, and more shots.</p>
+
+    <h4><span class="sn">+c</span>What it says</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Flip chance p</th><th>γ = 1 / (1 − 2p)</th></tr></thead>
+        <tbody>
+          <tr><td>0.01</td><td>≈ 1.02</td></tr>
+          <tr><td>0.1</td><td>1.25 &nbsp;(our example: 9/8, −1/8, 10/8)</td></tr>
+          <tr><td>0.25</td><td>2</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><b>The weights come straight from how noisy the gate is:</b> a noisier gate gives bigger weights, a bigger γ, and more shots.</p>
   </section>
 
   <!-- ============================================================ -->
-  <section>
+  <section id="summary" data-label="Summary">
     <h2>Summary</h2>
     <div class="card key">
-      <p><b>PEC doesn't fix the noisy circuit. It runs several noisy versions and combines their results with pluses and minuses, so the noise cancels out in the final answer.</b></p>
+      <p><b>PEC doesn't fix the noisy circuit. It runs noisy versions picked at random and combines their results with pluses and minuses, so the noise cancels out in the final answer.</b></p>
       <ul>
-        <li>The perfect "undo" needs a negative amount, so it can't be built. It's used only on paper.</li>
-        <li>On paper, the ideal gate becomes a combination of circuits the hardware <i>can</i> run.</li>
-        <li>The measured answers combine the same way (the trace is linear), so the noise-free answer can be computed from noisy runs.</li>
-        <li>Negative weights become chance × sign × γ: run versions by chance, flip some results, average, and multiply by γ.</li>
-        <li>γ multiplies gate by gate, and the cost is γ² times more shots.</li>
+        <li><b>Steps 1–2.</b> The perfect "undo" needs a negative amount, so it can't be built. It's used only on paper.</li>
+        <li><b>Step 3.</b> On paper, the ideal gate becomes a weighted combination of circuits the hardware <i>can</i> run.</li>
+        <li><b>Step 4.</b> The measured answers combine the same way (the trace is linear), so the noise-free answer can be computed from noisy runs.</li>
+        <li><b>Step 5.</b> Every gate doubles the number of circuits, so they can't all be run.</li>
+        <li><b>Steps 6–7.</b> Weight = γ × chance × sign: roll a dice per gate, flip the sign of some results, average, and multiply by γ. γ multiplies gate by gate.</li>
+        <li><b>Step 8.</b> Multiplying by γ also multiplies the wobble, so PEC costs γ² times more shots.</li>
       </ul>
     </div>
   </section>
 
-  <section>
+  <section id="related" data-label="Related pages">
     <h2>Related pages</h2>
     <div class="card">
       <p><a href="lab4b_glossary.html"><b>Lab 4b glossary →</b></a> Plain-English reminders for every idea in the lab.</p>
@@ -334,5 +639,33 @@
   </section>
 
 </main>
+</div>
+
+<script>
+  // Copy the left map into the phone menu, then highlight whichever section is being read.
+  (function () {
+    var tocLinks = Array.prototype.slice.call(document.querySelectorAll('#toc-list a'));
+    var mobileList = document.getElementById('mobile-list');
+    var mobileCurrent = document.getElementById('mobile-current');
+    var mobileMap = document.getElementById('mobile-map');
+    tocLinks.forEach(function (a) {
+      var copy = a.cloneNode(true);
+      copy.addEventListener('click', function () { mobileMap.open = false; });
+      mobileList.appendChild(copy);
+    });
+
+    var sections = Array.prototype.slice.call(document.querySelectorAll('main section[id]'));
+    function update() {
+      var line = window.innerHeight * 0.3;
+      var current = sections[0];
+      sections.forEach(function (s) { if (s.getBoundingClientRect().top <= line) current = s; });
+      tocLinks.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + current.id); });
+      mobileCurrent.textContent = current.getAttribute('data-label');
+    }
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  })();
+</script>
 </body>
 </html>
