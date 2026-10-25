@@ -136,12 +136,12 @@
     <li><a class="sub" href="#t-graph">Partition as MaxCut</a></li>
     <li><a class="sub" href="#t-pce">PCE: fewer qubits</a></li>
 
-    <li class="group"><a href="#circuits">3 · Which circuit to run</a></li>
+    <li class="group"><a href="#circuits">3 · Which quantum learning technique</a></li>
     <li><a class="sub" href="#t-qsvm">Quantum kernel (QSVM)</a></li>
     <li><a class="sub" href="#t-vqe">VQE</a></li>
     <li><a class="sub" href="#t-qaoa">QAOA</a></li>
 
-    <li class="group"><a href="#training">4 · Training the dials</a></li>
+    <li class="group"><a href="#training">4 · Which classical optimiser</a></li>
     <li><a class="sub" href="#t-optimisers">Optimisers under noise</a></li>
     <li><a class="sub" href="#t-tricks">Warm starts, restarts, pretrained</a></li>
     <li><a class="sub" href="#t-plateau">Flat landscapes</a></li>
@@ -169,7 +169,7 @@
   <header>
     <div class="crumb"><a href="index.html">← All pages</a> · quantum-machine-learning</div>
     <h1>The Recap</h1>
-    <p class="lede">Everything this repo has taught so far, organised by the questions you ask when you use a quantum computer: how to put a problem on qubits, which circuit to run, how to train it, how to handle errors and how to read the results. Each section lists its techniques as cards; the tag on a card says which project used it.</p>
+    <p class="lede">Everything this repo has taught so far, organised by the questions you ask when you use a quantum computer: how to put a problem on qubits, which quantum learning technique to use, which classical optimiser to use, how to handle errors and how to read the results. Each section lists its techniques as cards; the tag on a card says which project used it.</p>
   </header>
 
   <!-- ============================================================ -->
@@ -179,9 +179,9 @@
     <div class="flow">
       <a class="box" href="#mapping"><b>Map to qubits</b>Section 2</a>
       <div class="arrow">→</div>
-      <a class="box" href="#circuits"><b>Pick a circuit</b>Section 3</a>
+      <a class="box" href="#circuits"><b>Pick a quantum learning technique</b>Section 3</a>
       <div class="arrow">→</div>
-      <a class="box" href="#training"><b>Train the dials</b>Section 4</a>
+      <a class="box" href="#training"><b>Pick a classical optimiser</b>Section 4</a>
       <div class="arrow">→</div>
       <a class="box" href="#errors"><b>Handle errors</b>Section 5</a>
       <div class="arrow">→</div>
@@ -281,13 +281,13 @@
   </section>
 
   <!-- ============================================================ -->
-  <section id="circuits" data-label="3 · Which circuit to run">
+  <section id="circuits" data-label="3 · Which quantum learning technique">
     <div class="sec-num">Section 3</div>
-    <h2>Which circuit do we run?</h2>
-    <p class="sec-intro">Once the problem is on qubits, the algorithm decides the circuit and what we measure.</p>
+    <h2>Which quantum learning technique should we use?</h2>
+    <p class="sec-intro">Once the problem is on qubits, the quantum learning technique decides what circuit runs, what it measures and what the dials are.</p>
 
     <div class="table-wrap"><table>
-      <thead><tr><th>Algorithm</th><th>Goal</th><th>What is measured</th><th>Dials?</th></tr></thead>
+      <thead><tr><th>Technique</th><th>Goal</th><th>What is measured</th><th>Dials?</th></tr></thead>
       <tbody>
         <tr><td><a href="#t-qsvm">QSVM</a></td><td>Classify data</td><td>Overlap of two states (a kernel value)</td><td>No, a normal SVM is trained on the kernel</td></tr>
         <tr><td><a href="#t-vqe">VQE</a></td><td>Lowest energy of a Hamiltonian</td><td>⟨H⟩</td><td>Yes</td></tr>
@@ -327,10 +327,10 @@
   </section>
 
   <!-- ============================================================ -->
-  <section id="training" data-label="4 · Training the dials">
+  <section id="training" data-label="4 · Which classical optimiser">
     <div class="sec-num">Section 4</div>
-    <h2>How do we train the dials?</h2>
-    <p class="sec-intro">VQE and QAOA need a normal computer to find good dial settings. Shot noise makes every measured value a little wrong, and that decides which optimiser works.</p>
+    <h2>Which classical optimiser should we use?</h2>
+    <p class="sec-intro">VQE and QAOA hand the dials to a classical optimiser running on a normal computer. Shot noise makes every measured value a little wrong, and that decides which optimiser works.</p>
 
     <div class="topic" id="t-optimisers" data-label="Optimisers under noise">
       <div class="topic-head"><h3>Optimisers under shot noise</h3><span class="used">VQE · MaxCut</span></div>
