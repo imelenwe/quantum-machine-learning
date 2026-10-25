@@ -124,8 +124,8 @@
     <li><a href="#step3"><span class="n">3</span>Undo → two circuits</a></li>
     <li><a href="#step4"><span class="n">4</span>Combine the answers</a></li>
     <li><a href="#step5"><span class="n">5</span>Two gates in a row</a></li>
-    <li><a href="#step6"><span class="n">6</span>Pick at random: γ</a></li>
-    <li><a href="#step7"><span class="n">7</span>γ multiplies</a></li>
+    <li><a href="#step6"><span class="n">6</span>Pick parts at random</a></li>
+    <li><a href="#step7"><span class="n">7</span>Many gates, γ multiplies</a></li>
     <li><a href="#step8"><span class="n">8</span>The cost: shots</a></li>
     <li><a href="#anyp"><span class="n">+</span>Any noise level p</a></li>
     <li class="group">Wrap-up</li>
@@ -151,8 +151,8 @@
     <ul>
       <li><b>The problem.</b> Noise pulls your measured answer away from the truth. You get 0.8 when the truth is 1.</li>
       <li><b>What PEC can't do.</b> It can't remove the noise from the chip, and it can't build a gate that undoes the noise. As we'll see in Step 2, such a gate is impossible.</li>
-      <li><b>What PEC does instead.</b> It runs <b>a few slightly changed versions</b> of your circuit. Each one is pulled away from the truth in a different, known way. Some results are <b>added</b> and some are <b>subtracted</b>, in just the right amounts, so the pulls cancel. What's left is the true answer.</li>
-      <li><b>The price.</b> Subtracting makes the final number <b>shakier</b>, so you need many more shots. Every extra gate makes it shakier still, which is why PEC gets expensive for big circuits.</li>
+      <li><b>What PEC does instead.</b> On paper, it writes each ideal gate as a weighted mix of <b>parts</b> the hardware can run (for example, "the noisy gate" and "the noisy gate followed by an extra X"). Some weights are positive and some are negative. On each run, it picks one part of each gate, with a probability that matches its weight, runs that circuit, and keeps track of the sign. Averaged over many runs, the parts add up to the ideal gate, so the average gives the noise-free answer.</li>
+      <li><b>The price.</b> Because some parts carry a minus sign, the results partly cancel each other, and the final average has to be scaled up by a number called γ. That makes it <b>shakier</b>, so you need many more shots. Every gate in the circuit multiplies γ again, which is why PEC gets expensive for big circuits.</li>
     </ul>
   </section>
 
@@ -162,12 +162,12 @@
     <p>This is what happens when you switch PEC on (in the lab: <code>resilience.pec_mitigation = True</code>). IBM's software does all five steps automatically.</p>
     <ol>
       <li><b>Learn the noise.</b> Before your circuit, run short test circuits to measure how noisy each gate is, for example "this gate flips the qubit 10% of the time."</li>
-      <li><b>Work out the undo</b> (on a normal computer). From that noise level, calculate a recipe: which versions of the circuit to run, how often, and which results get a minus sign.</li>
-      <li><b>Build the versions.</b> For each run, "roll a dice" for each gate: usually leave it alone, sometimes insert an extra gate (such as an X) right after it.</li>
-      <li><b>Run them on the chip.</b> Every version is an ordinary circuit. Nothing special happens on the hardware.</li>
+      <li><b>Work out the undo</b> (on a normal computer). From that noise level, calculate a recipe: what the parts of each ideal gate are, how often to pick each part, and which results get a minus sign.</li>
+      <li><b>Pick the parts.</b> For each run, pick one part of each gate, using that part's probability: usually the gate alone, sometimes the gate with an extra gate (such as an X) right after it.</li>
+      <li><b>Run them on the chip.</b> Every circuit built this way is an ordinary circuit. Nothing special happens on the hardware.</li>
       <li><b>Combine the results</b> (on a normal computer). Flip the sign of the results marked "minus", average everything, and multiply by one number, called <b>γ</b> (gamma).</li>
     </ol>
-    <p>The derivation below shows <b>why</b> that recipe gives the noise-free answer, and where the cost comes from. Steps 1–4 explain "work out the undo" and "combine". Steps 5–7 explain the dice and γ. Step 8 explains the cost.</p>
+    <p>The derivation below shows <b>why</b> that recipe gives the noise-free answer, and where the cost comes from. Steps 1–4 explain "work out the undo" and "combine". Steps 5–7 explain picking the parts and γ. Step 8 explains the cost.</p>
   </section>
 
   <!-- ============================================================ -->
@@ -192,14 +192,14 @@
     <h4><span class="sn">1a</span>Write it down</h4>
     <p>"90% of the time do nothing, 10% of the time flip" is written as:</p>
     <div class="math">noise = 0.9·I + 0.1·X</div>
-    <p>Read "0.9·I" as "with weight 0.9, do I". The weights are the chances, so they add up to 1.</p>
+    <p>Read "0.9·I" as "with weight 0.9, do I". The weights are the probabilities, so they add up to 1.</p>
 
     <h4><span class="sn">1b</span>Calculate with it: two noisy steps in a row</h4>
     <p><b>Why we do this:</b> Step 2 will need to put "one thing, then another" together. The simplest place to learn how is two noisy steps in a row.</p>
-    <p>Each step either flips or doesn't, so there are four paths. On each path, the chances multiply:</p>
+    <p>Each step either flips or doesn't, so there are four paths. On each path, the probabilities multiply:</p>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>First step</th><th>Second step</th><th>Chance</th><th>Overall</th></tr></thead>
+        <thead><tr><th>First step</th><th>Second step</th><th>Probability</th><th>Overall</th></tr></thead>
         <tbody>
           <tr><td>no flip (I)</td><td>no flip (I)</td><td>0.9 × 0.9 = 0.81</td><td>I</td></tr>
           <tr><td>no flip (I)</td><td>flip (X)</td><td>0.9 × 0.1 = 0.09</td><td>X</td></tr>
@@ -278,7 +278,7 @@
     <div class="math">undo = (9/8)·I − (1/8)·X &nbsp;&nbsp;&nbsp;<span class="c">(a = 1.125, b = −0.125)</span></div>
 
     <div class="card caveat">
-      <p><b>b is negative.</b> The undo would have to say "flip −12.5% of the time". A chance can't be negative, so the undo <b>cannot be built</b> on any hardware. It exists only on paper.</p>
+      <p><b>b is negative.</b> The undo would have to say "flip −12.5% of the time". A probability can't be negative, so the undo <b>cannot be built</b> on any hardware. It exists only on paper.</p>
       <p>The numbers still add to 1 (9/8 − 1/8 = 1), so it's a "sort-of probability", called a <b>quasi-probability</b>.</p>
     </div>
   </section>
@@ -308,6 +308,17 @@
       <li><b>Circuit 2:</b> run the noisy gate, then add one extra X gate on purpose. Weight −1/8. The extra X is the X piece of the undo, now run as a real gate.</li>
     </ul>
     <p>The impossible undo has been spread over two possible circuits. The minus sign is now on a <b>weight</b>, not on a gate.</p>
+    <div class="card">
+      <p><b>Where did the noise go?</b> Nowhere. Both circuits start with the same real noisy gate; the noise is never removed. What got split in two is the <b>undo</b>: its I piece became "nothing extra" and its X piece became "an extra X".</p>
+      <p>So the ideal gate is made of <b>two parts</b>, each with a weight:</p>
+      <div class="math">
+        ideal gate = (9/8)·(part 1) − (1/8)·(part 2)<br>
+        part 1 = the noisy gate, nothing after it<br>
+        part 2 = the noisy gate, then an extra X
+      </div>
+      <p>Neither part is the ideal gate on its own. Only the weighted combination is.</p>
+      <p><b>Note:</b> this example has two parts because its noise has only one kind of error (the X flip). Real noise can have more kinds of error (X, Y and Z flips, or flips on two qubits at once), and each kind adds one more part, so a gate can have 4, 16 or more parts. Step 7c shows how many.</p>
+    </div>
     <p class="next">Next: we can't run "9/8 of a circuit minus 1/8 of another", so Step 4 works out how to use the weights.</p>
   </section>
 
@@ -367,7 +378,7 @@
       &nbsp;&nbsp;&nbsp;&nbsp;= 0.9·X|0⟩⟨0|X + 0.1·X|1⟩⟨1|X<br>
       &nbsp;&nbsp;&nbsp;&nbsp;= 0.9·|1⟩⟨1| + 0.1·|0⟩⟨0| &nbsp;&nbsp;<span class="c">← X swaps 0 and 1 on both sides</span>
     </div>
-    <p>In words: the extra X swapped the chances, so now 90% is |1⟩ and 10% is |0⟩.</p>
+    <p>In words: the extra X swapped the probabilities, so now 90% is |1⟩ and 10% is |0⟩.</p>
     <p><i>Then measure Z on ρ₂:</i></p>
     <div class="math">
       ⟨Z⟩₂ = Tr(Z·ρ₂)<br>
@@ -390,6 +401,15 @@
   <section id="step5" class="step" data-label="Step 5 · Two gates in a row">
     <div class="step-head"><span class="step-num">Step 5</span><h3>Two gates in a row: the circuits multiply</h3></div>
     <div class="from"><b>From Steps 1–4:</b> one noisy gate needs 2 circuits, with weights +9/8 and −1/8. But real circuits have many gates, each with its own noise. What happens with two?</div>
+
+    <div class="card">
+      <p><b>Three words, used from here on:</b></p>
+      <ul>
+        <li><b>Gate:</b> one gate in your circuit, e.g. our do-nothing gate. The hardware always runs it noisy.</li>
+        <li><b>Part:</b> from Step 3, each ideal gate is made of 2 weighted parts: part 1 (the noisy gate alone, weight +9/8) and part 2 (the noisy gate then an extra X, weight −1/8).</li>
+        <li><b>Circuit:</b> one complete run, with one part chosen for every gate.</li>
+      </ul>
+    </div>
 
     <h4><span class="sn">5a</span>The setup</h4>
     <p>Two gates in a row, both should do nothing, both flip 10% of the time. Each noisy gate gets its own undo, right after it:</p>
@@ -424,19 +444,23 @@
     <p>Two things to notice. The <b>signs multiply</b>: a circuit gets a minus when it has an odd number of extra X's. And by Step 4, the ideal answer is these four measured answers combined with these four weights.</p>
 
     <h4><span class="sn">5c</span>The problem this shows</h4>
-    <p>Each gate doubles the number of circuits: 1 gate → 2, 2 gates → 4, 3 gates → 8, t gates → 2<sup>t</sup>.</p>
+    <p>Each gate has 2 parts, so each gate doubles the number of circuits: 1 gate → 2, 2 gates → 4, 3 gates → 8, t gates → 2<sup>t</sup>.</p>
     <div class="math">100 gates → 2¹⁰⁰ ≈ 10³⁰ circuits</div>
     <p>Nobody can run 10³⁰ circuits. So PEC can't run every circuit and combine them as in Step 4.</p>
-    <p class="next">Next: Step 6 shows how to get the same answer by running circuits picked at random.</p>
+    <p class="next">Next: Step 6 shows how to get the same answer by picking one part of each gate at random, instead of running every circuit.</p>
   </section>
 
   <!-- ============================================================ -->
-  <section id="step6" class="step" data-label="Step 6 · Pick at random: γ">
-    <div class="step-head"><span class="step-num">Step 6</span><h3>Pick circuits at random: γ appears</h3></div>
-    <div class="from"><b>From Step 5:</b> there are far too many circuits to run them all. The way out: on each run, <b>pick one circuit at random</b>, so the more important circuits get picked more often. We work it out for one gate first (2 circuits, weights +9/8 and −1/8). Step 7 does two gates.</div>
+  <section id="step6" class="step" data-label="Step 6 · Pick parts at random">
+    <div class="step-head"><span class="step-num">Step 6</span><h3>For each gate, pick one of its parts at random, by weight</h3></div>
+    <div class="from"><b>From Step 5:</b> every ideal gate is made of 2 parts (part 1: the noisy gate alone, part 2: the noisy gate then an extra X), and a circuit with many gates has far too many combinations to run them all. The way out: on each run, <b>for each gate, pick one of its parts at random</b>, and run the circuit those picks make. Over many runs, the picked parts add up, with the right weights, to the ideal gate. We work it out for one gate first (2 parts, weights +9/8 and −1/8). Step 7 does two gates.</div>
 
-    <h4><span class="sn">6a</span>Why the weights can't be used as chances directly</h4>
-    <p>To pick at random, we need <b>chances</b>: numbers that are positive and add up to 1. Our weights fail the first test, because −1/8 is negative.</p>
+    <div class="card key">
+      <p><b>What is picked at random, and what isn't.</b> The random pick is <b>which part of the gate to run</b>. γ (gamma) is <b>not</b> random: it is one fixed number, worked out once from the weights, that every result is multiplied by at the end.</p>
+    </div>
+
+    <h4><span class="sn">6a</span>Why the weights can't be used as probabilities directly</h4>
+    <p>To pick at random, we need <b>probabilities</b>: numbers that are positive and add up to 1. Our weights fail the first test, because −1/8 is negative.</p>
 
     <h4><span class="sn">6b</span>Split each weight into size and sign</h4>
     <p>Write each weight as its size (ignoring the sign) times its sign:</p>
@@ -444,34 +468,43 @@
       +9/8 = (9/8) × (+1)<br>
       −1/8 = (1/8) × (−1)
     </div>
-    <p>The sizes are positive, but they add to 9/8 + 1/8 = 10/8, not 1. Call that total <b>γ</b> (gamma):</p>
+    <p>The sizes are positive, but they add to 9/8 + 1/8 = 10/8, not 1. Call that total <b>γ</b>. Its job is to <b>normalise</b> the weights: dividing by γ turns the sizes into probabilities.</p>
     <div class="math">γ = 9/8 + 1/8 = 10/8 = 1.25</div>
-    <p>Divide each size by γ. Now they add to 1, so they are real chances:</p>
+    <p>Divide each size by γ (normalise). Now they add to 1, so they are real probabilities:</p>
     <div class="math">
-      chance for circuit 1 = (9/8) ÷ (10/8) = 9/10 = 0.9<br>
-      chance for circuit 2 = (1/8) ÷ (10/8) = 1/10 = 0.1
+      probability of part 1 (noisy gate alone) &nbsp;&nbsp;&nbsp;&nbsp;= (9/8) ÷ (10/8) = 9/10 = 0.9<br>
+      probability of part 2 (noisy gate, extra X) = (1/8) ÷ (10/8) = 1/10 = 0.1
     </div>
-    <p>Putting it back together, every weight is γ × chance × sign:</p>
+    <p>Putting it back together, every weight is γ × probability × sign:</p>
     <div class="table-wrap">
       <table>
-        <thead><tr><th></th><th>Weight</th><th>= γ</th><th>× chance</th><th>× sign</th></tr></thead>
+        <thead><tr><th></th><th>Weight</th><th>= γ</th><th>× probability</th><th>× sign</th></tr></thead>
         <tbody>
-          <tr><td>Circuit 1</td><td>+9/8</td><td>10/8</td><td>0.9</td><td>+1</td></tr>
-          <tr><td>Circuit 2</td><td>−1/8</td><td>10/8</td><td>0.1</td><td>−1</td></tr>
+          <tr><td>Part 1 (noisy gate alone)</td><td>+9/8</td><td>10/8</td><td>0.9</td><td>+1</td></tr>
+          <tr><td>Part 2 (noisy gate, extra X)</td><td>−1/8</td><td>10/8</td><td>0.1</td><td>−1</td></tr>
         </tbody>
       </table>
     </div>
 
     <h4><span class="sn">6c</span>The recipe</h4>
-    <p>Each part of the weight now has a job:</p>
+    <p>Each part of the weight now has one job:</p>
     <ol>
-      <li><b>Chance</b> decides which circuit to run: 90% of the runs use circuit 1, 10% use circuit 2.</li>
-      <li><b>Sign</b> is applied to the result you write down: circuit 1's result as it is, circuit 2's result with its sign flipped.</li>
-      <li><b>γ</b> is applied once at the end: average everything written down, then multiply by γ.</li>
+      <li><b>Probability</b> decides which part to run. Before each run, pick part 1 with probability 0.9 or part 2 with probability 0.1. With only one gate, the part you pick <i>is</i> the whole circuit: part 1 = circuit 1, part 2 = circuit 2 (from Step 4).</li>
+      <li><b>Sign</b> is applied to the result you write down: a part-1 result as it is, a part-2 result with its sign flipped.</li>
+      <li><b>γ</b> is applied once at the end: average everything written down, then multiply by γ = 1.25.</li>
     </ol>
 
-    <h4><span class="sn">6d</span>Why the recipe gives the Step 4 answer</h4>
-    <p>Over many runs, the circuit-1 runs average to ⟨Z⟩₁ and the circuit-2 runs average to ⟨Z⟩₂. With the chances and signs, the overall average is:</p>
+    <h4><span class="sn">6d</span>Why it isn't really "random"</h4>
+    <p>The word "random" can sound like guessing. It isn't, for two reasons:</p>
+    <ul>
+      <li><b>The pick is weighted, on purpose.</b> It isn't a fair 50/50 pick. The probabilities 0.9 and 0.1 come straight from the weights, so part 1 (the bigger weight) is picked 9 times as often as part 2. Each part gets exactly its share.</li>
+      <li><b>The final answer isn't random.</b> Any single run is a gamble, but over many runs the shares settle down: about 90% of the runs use part 1 and 10% use part 2. 6e shows that this average, times γ, is exactly the Step 4 answer. Randomness only decides the <i>order</i> of the runs; the long-run mix is fixed.</li>
+    </ul>
+    <p>So "pick at random" really means: <b>use each part in proportion to its weight, so that over many runs the parts add up to the ideal gate, without having to list every circuit</b>. That last part matters in Step 7.</p>
+    <p><b>Note:</b> our example has two parts, so there are only two probabilities. With more kinds of error there are more parts (see 7c); γ is still the sum of all the sizes, and each part's probability is its size ÷ γ. The recipe stays the same.</p>
+
+    <h4><span class="sn">6e</span>Why the recipe gives the Step 4 answer</h4>
+    <p>Over many runs, the circuit-1 runs average to ⟨Z⟩₁ and the circuit-2 runs average to ⟨Z⟩₂. With the probabilities and signs, the overall average is:</p>
     <div class="math">average = 0.9·(+1)·⟨Z⟩₁ + 0.1·(−1)·⟨Z⟩₂ = 0.9·⟨Z⟩₁ − 0.1·⟨Z⟩₂</div>
     <p>Multiply by γ:</p>
     <div class="math">
@@ -480,7 +513,7 @@
       &nbsp;&nbsp;&nbsp;&nbsp;= (9/8)·⟨Z⟩₁ − (1/8)·⟨Z⟩₂ &nbsp;&nbsp;<span class="c">← exactly the formula from 4b</span>
     </div>
 
-    <h4><span class="sn">6e</span>With our numbers</h4>
+    <h4><span class="sn">6f</span>With our numbers</h4>
     <p>⟨Z⟩₁ = 0.8 and ⟨Z⟩₂ = −0.8 (from 4d and 4e):</p>
     <div class="math">
       average = 0.9·(+1)·(0.8) + 0.1·(−1)·(−0.8)<br>
@@ -488,12 +521,13 @@
       γ × average = 1.25 × 0.8 = <span class="good">1</span> &nbsp;✓
     </div>
     <p>The average alone is still 0.8. <b>Multiplying by γ</b> is what lifts it back to the true answer.</p>
+    <p>With only one gate, you could of course just run both circuits and use Step 4 directly. The random pick pays off when there are many gates, which is next.</p>
   </section>
 
   <!-- ============================================================ -->
-  <section id="step7" class="step" data-label="Step 7 · γ multiplies">
-    <div class="step-head"><span class="step-num">Step 7</span><h3>Two gates: γ multiplies, and the dice appear</h3></div>
-    <div class="from"><b>From Steps 5 and 6:</b> two gates give four circuits with weights +81/64, −9/64, −9/64, +1/64. For one gate, we split weights into γ × chance × sign. Now do the same split for two gates.</div>
+  <section id="step7" class="step" data-label="Step 7 · Many gates, γ multiplies">
+    <div class="step-head"><span class="step-num">Step 7</span><h3>Many gates: pick a part for each gate, and γ multiplies</h3></div>
+    <div class="from"><b>From Steps 5 and 6:</b> two gates give four circuits with weights +81/64, −9/64, −9/64, +1/64. For one gate, we split weights into γ × probability × sign. Now do the same split for two gates.</div>
 
     <h4><span class="sn">7a</span>γ for two gates</h4>
     <p>As in 6b, γ is the sizes of the weights added up:</p>
@@ -502,11 +536,11 @@
     <div class="math">γ for two gates = (γ for one gate)² = 1.25² ≈ 1.56</div>
     <p><b>The γ's multiply.</b> t gates give γ<sup>t</sup>.</p>
 
-    <h4><span class="sn">7b</span>The chances, and the dice</h4>
-    <p>As in 6b, each chance is size ÷ γ:</p>
+    <h4><span class="sn">7b</span>The probabilities: pick a part for each gate separately</h4>
+    <p>As in 6b, each probability is size ÷ γ:</p>
     <div class="table-wrap">
       <table>
-        <thead><tr><th></th><th>Size</th><th>Chance = size ÷ (100/64)</th><th>= gate 1 × gate 2</th><th>Sign</th></tr></thead>
+        <thead><tr><th></th><th>Size</th><th>Probability = size ÷ (100/64)</th><th>= gate 1 × gate 2</th><th>Sign</th></tr></thead>
         <tbody>
           <tr><td>Circuit 1 (nothing, nothing)</td><td>81/64</td><td>81/100</td><td>0.9 × 0.9</td><td>+</td></tr>
           <tr><td>Circuit 2 (nothing, + X)</td><td>9/64</td><td>9/100</td><td>0.9 × 0.1</td><td>−</td></tr>
@@ -515,9 +549,23 @@
         </tbody>
       </table>
     </div>
-    <p>Each chance is just the one-gate chances multiplied. That means we never need the full list of circuits. For each gate, separately, <b>roll a dice</b>: 90% leave it alone, 10% add an extra X after it. That gives each circuit exactly the right chance. This is the "build the versions" part of the process.</p>
+    <p>Each circuit's probability is just the one-gate probabilities multiplied. That means we never need the full list of circuits. Instead, for <b>each gate separately</b>, pick a part with the same probabilities as in 6c: part 1 (nothing after it) with probability 0.9, part 2 (an extra X after it) with probability 0.1. The picks together build one circuit, and each circuit comes up with exactly the right probability. This is the "pick the parts" step of the process.</p>
     <p>The sign is + or − depending on whether the number of extra X's is even or odd. Then, as in 6c: flip the sign of the minus results, average, multiply by γ = 100/64.</p>
-    <p>This works for any number of gates: one dice roll per gate, and one γ<sup>t</sup> at the end.</p>
+    <p>This works for any number of gates: one pick per gate, and one γ<sup>t</sup> at the end. For 100 gates that's 100 picks per run, instead of a list of 2¹⁰⁰ circuits.</p>
+
+    <h4><span class="sn">7c</span>Is it always two parts per gate?</h4>
+    <p>No. We got two because our noise had only <b>one</b> kind of error (the X flip), so the undo had two pieces, I and X. In general, an ideal gate has one part for "nothing extra", plus one part per kind of error:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Noise on the gate</th><th>Kinds of error</th><th>Parts per gate</th></tr></thead>
+        <tbody>
+          <tr><td>Our example: X flip only</td><td>X</td><td>2: nothing, X</td></tr>
+          <tr><td>One qubit, all flip types</td><td>X, Y, Z</td><td>4: nothing, X, Y, Z</td></tr>
+          <tr><td>Two-qubit gate (e.g. CNOT)</td><td>up to 15 (XI, IX, XX, …)</td><td>up to 16</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The steps don't change: solve for the undo (more unknowns, more equations), split each weight into γ × probability × sign, and pick one of more parts for each gate.</p>
   </section>
 
   <!-- ============================================================ -->
@@ -573,8 +621,8 @@
 
   <!-- ============================================================ -->
   <section id="anyp" class="step" data-label="Any noise level p">
-    <div class="step-head"><span class="step-num">Extra</span><h3>The same recipe for any flip chance p</h3></div>
-    <div class="from"><b>So far</b> every number came from a 10% flip chance. Here is Step 2 again with a general flip chance p, to see how the weights and γ depend on the noise.</div>
+    <div class="step-head"><span class="step-num">Extra</span><h3>The same recipe for any flip probability p</h3></div>
+    <div class="from"><b>So far</b> every number came from a 10% flip probability. Here is Step 2 again with a general flip probability p, to see how the weights and γ depend on the noise.</div>
 
     <h4><span class="sn">+a</span>The equations</h4>
     <p>The noisy gate is (1 − p)·I + p·X. Multiplying out and matching, exactly as in 2c and 2d, gives:</p>
@@ -602,7 +650,7 @@
     <h4><span class="sn">+c</span>What it says</h4>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Flip chance p</th><th>γ = 1 / (1 − 2p)</th></tr></thead>
+        <thead><tr><th>Flip probability p</th><th>γ = 1 / (1 − 2p)</th></tr></thead>
         <tbody>
           <tr><td>0.01</td><td>≈ 1.02</td></tr>
           <tr><td>0.1</td><td>1.25 &nbsp;(our example: 9/8, −1/8, 10/8)</td></tr>
@@ -617,13 +665,13 @@
   <section id="summary" data-label="Summary">
     <h2>Summary</h2>
     <div class="card key">
-      <p><b>PEC doesn't fix the noisy circuit. It runs noisy versions picked at random and combines their results with pluses and minuses, so the noise cancels out in the final answer.</b></p>
+      <p><b>PEC doesn't fix the noisy circuit. For each gate it picks one of its parts, with probabilities set by the weights, runs the circuit those picks make, and combines their results with pluses and minuses, so the noise cancels out in the final answer.</b></p>
       <ul>
         <li><b>Steps 1–2.</b> The perfect "undo" needs a negative amount, so it can't be built. It's used only on paper.</li>
         <li><b>Step 3.</b> On paper, the ideal gate becomes a weighted combination of circuits the hardware <i>can</i> run.</li>
         <li><b>Step 4.</b> The measured answers combine the same way (the trace is linear), so the noise-free answer can be computed from noisy runs.</li>
         <li><b>Step 5.</b> Every gate doubles the number of circuits, so they can't all be run.</li>
-        <li><b>Steps 6–7.</b> Weight = γ × chance × sign: roll a dice per gate, flip the sign of some results, average, and multiply by γ. γ multiplies gate by gate.</li>
+        <li><b>Steps 6–7.</b> Weight = γ × probability × sign: γ normalises the weights into probabilities; pick one part per gate with those probabilities, flip the sign of some results, average, and multiply by γ. γ multiplies gate by gate.</li>
         <li><b>Step 8.</b> Multiplying by γ also multiplies the wobble, so PEC costs γ² times more shots.</li>
       </ul>
     </div>
