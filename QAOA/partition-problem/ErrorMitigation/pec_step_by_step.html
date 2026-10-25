@@ -124,7 +124,7 @@
     <li><a href="#step3"><span class="n">3</span>Undo → two circuits</a></li>
     <li><a href="#step4"><span class="n">4</span>Combine the answers</a></li>
     <li><a href="#step5"><span class="n">5</span>Two gates in a row</a></li>
-    <li><a href="#step6"><span class="n">6</span>Pick parts at random</a></li>
+    <li><a href="#step6"><span class="n">6</span>Pick parts by weight</a></li>
     <li><a href="#step7"><span class="n">7</span>Many gates, γ multiplies</a></li>
     <li><a href="#step8"><span class="n">8</span>The cost: shots</a></li>
     <li><a href="#anyp"><span class="n">+</span>Any noise level p</a></li>
@@ -456,20 +456,20 @@
     <p>Each gate has 2 parts, so each gate doubles the number of circuits: 1 gate → 2, 2 gates → 4, 3 gates → 8, t gates → 2<sup>t</sup>.</p>
     <div class="math">100 gates → 2¹⁰⁰ ≈ 10³⁰ circuits</div>
     <p>Nobody can run 10³⁰ circuits. So PEC can't run every circuit and combine them as in Step 4.</p>
-    <p class="next">Next: Step 6 shows how to get the same answer by picking one part of each gate at random, instead of running every circuit.</p>
+    <p class="next">Next: Step 6 shows how to get the same answer by picking one part of each gate by its weight, instead of running every circuit.</p>
   </section>
 
   <!-- ============================================================ -->
-  <section id="step6" class="step" data-label="Step 6 · Pick parts at random">
-    <div class="step-head"><span class="step-num">Step 6</span><h3>For each gate, pick one of its parts at random, by weight</h3></div>
-    <div class="from"><b>From Step 5:</b> every ideal gate is made of 2 parts (part 1: the noisy gate alone, part 2: the noisy gate then an extra X), and a circuit with many gates has far too many combinations to run them all. The way out: on each run, <b>for each gate, pick one of its parts at random</b>, and run the circuit those picks make. Over many runs, the picked parts add up, with the right weights, to the ideal gate. We work it out for one gate first (2 parts, weights +9/8 and −1/8). Step 7 does two gates.</div>
+  <section id="step6" class="step" data-label="Step 6 · Pick parts by weight">
+    <div class="step-head"><span class="step-num">Step 6</span><h3>For each gate, pick one of its parts by its weight</h3></div>
+    <div class="from"><b>From Step 5:</b> every ideal gate is made of 2 parts (part 1: the noisy gate alone, part 2: the noisy gate then an extra X), and a circuit with many gates has far too many combinations to run them all. The way out: on each run, <b>for each gate, pick one of its parts, sampled by its weight</b>, and run the circuit those picks make. Over many runs, the picked parts add up, with the right weights, to the ideal gate. We work it out for one gate first (2 parts, weights +9/8 and −1/8). Step 7 does two gates.</div>
 
     <div class="card key">
-      <p><b>What is picked at random, and what isn't.</b> The random pick is <b>which part of the gate to run</b>. γ (gamma) is <b>not</b> random: it is one fixed number, worked out once from the weights, that every result is multiplied by at the end.</p>
+      <p><b>What is picked, and what isn't.</b> What gets picked on each shot is <b>which part of the gate to run</b>. γ (gamma) is <b>not</b> picked: it is one fixed number, worked out once from the weights, that normalises them into probabilities and that every result is multiplied by at the end.</p>
     </div>
 
     <h4><span class="sn">6a</span>Why the weights can't be used as probabilities directly</h4>
-    <p>To pick at random, we need <b>probabilities</b>: numbers that are positive and add up to 1. Our weights fail the first test, because −1/8 is negative.</p>
+    <p>To pick parts by weight, we need <b>probabilities</b>: numbers that are positive and add up to 1. Our weights fail the first test, because −1/8 is negative.</p>
 
     <h4><span class="sn">6b</span>Split each weight into size and sign</h4>
     <p>Write each weight as its size (ignoring the sign) times its sign:</p>
@@ -503,13 +503,8 @@
       <li><b>γ</b> is applied once at the end: average everything written down, then multiply by γ = 1.25.</li>
     </ol>
 
-    <h4><span class="sn">6d</span>Why it isn't really "random"</h4>
-    <p>The word "random" can sound like guessing. It isn't, for two reasons:</p>
-    <ul>
-      <li><b>The pick is weighted, on purpose.</b> It isn't a fair 50/50 pick. The probabilities 0.9 and 0.1 come straight from the weights, so part 1 (the bigger weight) is picked 9 times as often as part 2. Each part gets exactly its share.</li>
-      <li><b>The final answer isn't random.</b> Any single run is a gamble, but over many runs the shares settle down: about 90% of the runs use part 1 and 10% use part 2. 6e shows that this average, times γ, is exactly the Step 4 answer. Randomness only decides the <i>order</i> of the runs; the long-run mix is fixed.</li>
-    </ul>
-    <p>So "pick at random" really means: <b>use each part in proportion to its weight, so that over many runs the parts add up to the ideal gate, without having to list every circuit</b>. That last part matters in Step 7.</p>
+    <h4><span class="sn">6d</span>How the part is picked</h4>
+    <p>On each shot, the part is <b>sampled from the probabilities</b> 0.9 and 0.1, which come from the weights. So over many shots, about 90% use part 1 and 10% use part 2: each part is run in proportion to its weight.</p>
     <p><b>Note:</b> our example has two parts, so there are only two probabilities. With more kinds of error there are more parts (see 7c); γ is still the sum of all the sizes, and each part's probability is its size ÷ γ. The recipe stays the same.</p>
 
     <h4><span class="sn">6e</span>Why the recipe gives the Step 4 answer</h4>
@@ -530,7 +525,7 @@
       γ × average = 1.25 × 0.8 = <span class="good">1</span> &nbsp;✓
     </div>
     <p>The average alone is still 0.8. <b>Multiplying by γ</b> is what lifts it back to the true answer.</p>
-    <p>With only one gate, you could of course just run both circuits and use Step 4 directly. The random pick pays off when there are many gates, which is next.</p>
+    <p>With only one gate, you could of course just run both circuits and use Step 4 directly. Picking by weight pays off when there are many gates, which is next.</p>
   </section>
 
   <!-- ============================================================ -->
