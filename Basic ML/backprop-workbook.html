@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backprop Workbook</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,650&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* Left nav + one column. Forward values amber, slopes teal. Numbers appear only once you have worked them out. */
+  :root{
+    --bg:#F4F6F8; --paper:#FFFFFF; --ink:#18222D; --muted:#5A6878; --rule:#D5DCE3; --node:#EEF2F6;
+    --fwd:#B4690E; --fwd-soft:#FBEBD6; --bwd:#0F7A72; --bwd-soft:#D9F0EC; --bad:#B42318; --bad-soft:#FDE4E1;
+    --display:'Source Serif 4', Georgia, serif; --body:'IBM Plex Sans', system-ui, sans-serif; --mono:'JetBrains Mono', ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --bg:#11161C; --paper:#19212A; --ink:#E7ECF1; --muted:#97A5B4; --rule:#2C3743; --node:#202A35;
+    --fwd:#F0A548; --fwd-soft:#3A2A14; --bwd:#5CCBC0; --bwd-soft:#123430; --bad:#FF8A7D; --bad-soft:#3D1D1A; color-scheme:dark } }
+  :root[data-theme="dark"]{
+    --bg:#11161C; --paper:#19212A; --ink:#E7ECF1; --muted:#97A5B4; --rule:#2C3743; --node:#202A35;
+    --fwd:#F0A548; --fwd-soft:#3A2A14; --bwd:#5CCBC0; --bwd-soft:#123430; --bad:#FF8A7D; --bad-soft:#3D1D1A; color-scheme:dark }
+  *{box-sizing:border-box}
+  body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:16px; line-height:1.6; padding-inline:16px; padding-block:24px 72px; margin:0}
+  .layout{max-width:1100px; margin:0 auto; display:grid; grid-template-columns:180px minmax(0,1fr); gap:20px; align-items:start}
+  nav{position:sticky; top:16px; background:var(--paper); border:1px solid var(--rule); border-radius:10px; padding:12px}
+  nav p{font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:0 0 6px}
+  nav ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+  nav a{display:block; padding:5px 8px; border-radius:6px; color:var(--ink); text-decoration:none; font-size:14px}
+  nav a:hover{background:var(--node)}
+  nav a .tag{font-family:var(--mono); font-size:11px; color:var(--fwd)}
+  /* Phones only: the pane becomes a sticky bar at the top */
+  @media (max-width:600px){ .layout{grid-template-columns:1fr} nav{top:0; z-index:2; padding:8px} nav p{display:none}
+    nav ol{flex-direction:row; overflow-x:auto} nav a{white-space:nowrap} }
+  main{display:flex; flex-direction:column; gap:18px; min-width:0}
+  h1,h2,h3{font-family:var(--display); text-wrap:balance; margin:0; line-height:1.2}
+  h1{font-size:clamp(26px,5vw,34px)} h2{font-size:21px} h3{font-size:17px}
+  p{margin:0; max-width:70ch}
+  section{background:var(--paper); border:1px solid var(--rule); border-radius:10px; padding:18px; display:flex; flex-direction:column; gap:12px; min-width:0; scroll-margin-top:16px}
+  .m{font-family:var(--mono); font-size:.92em}
+  .fwd{color:var(--fwd); font-weight:600} .bwd{color:var(--bwd); font-weight:600}
+  .hint{color:var(--muted); font-size:14px}
+  .scroll{overflow-x:auto; max-width:100%}
+  table{border-collapse:collapse; font-size:15px; font-variant-numeric:tabular-nums}
+  th,td{border-bottom:1px solid var(--rule); padding:6px 10px; text-align:left; vertical-align:middle}
+  th{font-weight:600; color:var(--muted); font-size:13px}
+  .note{border-left:3px solid var(--bwd); background:var(--bwd-soft); padding:10px 14px; border-radius:0 8px 8px 0; max-width:74ch}
+  .wait{border-left:3px solid var(--fwd); background:var(--fwd-soft); padding:10px 14px; border-radius:0 8px 8px 0; max-width:74ch}
+  .steps{display:flex; flex-direction:column; gap:10px; max-width:74ch}
+  .steps > div{border:1px solid var(--rule); border-radius:8px; padding:10px 14px}
+  svg text{font-family:var(--mono)}
+  .ex input{width:100px; font-family:var(--mono); font-size:15px; padding:4px 8px; border:1px solid var(--rule); border-radius:6px; background:var(--bg); color:var(--ink)}
+  input:focus-visible, button:focus-visible, nav a:focus-visible{outline:2px solid var(--bwd); outline-offset:2px}
+  .ex tr.ok td{background:var(--bwd-soft)} .ex tr.no td{background:var(--bad-soft)}
+  .mark{font-family:var(--mono); font-weight:600; width:2em} .ex tr.ok .mark{color:var(--bwd)} .ex tr.no .mark{color:var(--bad)}
+  .btns{display:flex; flex-wrap:wrap; gap:10px}
+  button{font-family:var(--body); font-size:15px; padding:7px 14px; border-radius:7px; border:1px solid var(--rule); background:var(--paper); color:var(--ink); cursor:pointer}
+  button.primary{background:var(--bwd); border-color:var(--bwd); color:var(--paper)}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav aria-label="Sections">
+  <p>Workbook</p>
+  <ol>
+    <li><a href="../index.html">← All pages</a></li>
+    <li><a href="#how">How to use</a></li>
+    <li><a href="#net">1 · The network</a></li>
+    <li><a href="#eq">2 · The equations</a></li>
+    <li><a href="#exA">3 · Forward pass <span class="tag">ex A</span></a></li>
+    <li><a href="#slope">4 · What a slope is</a></li>
+    <li><a href="#exB">5 · Backward pass <span class="tag">ex B</span></a></li>
+    <li><a href="#step">6 · One learning step</a></li>
+  </ol>
+</nav>
+<main>
+<header style="display:flex;flex-direction:column;gap:6px">
+  <h1>Backprop Workbook</h1>
+  <p class="hint">One network, one set of names. Go in order: each section uses only numbers you have already worked out. Values you calculate show in <span class="fwd">amber</span>; slopes in <span class="bwd">teal</span>.</p>
+</header>
+
+<section id="how">
+  <h2>How to use this page</h2>
+  <div class="scroll"><table>
+    <tr><td class="m fwd">1</td><td>Read sections 1–2: the network and its equations.</td></tr>
+    <tr><td class="m fwd">2</td><td>Exercise A: the six forward numbers by hand, then <b>Check</b>.</td></tr>
+    <tr><td class="m bwd">3</td><td>Section 4, then exercise B: derive each slope with the chain rule on paper, then <b>Check</b>.</td></tr>
+    <tr><td class="m">4</td><td>Section 6 needs no hand work: once exercise B is complete (or after <b>Show the answers</b> in exercise B), it fills in by itself: the new knob values, the next forward pass, and L over 10 steps.</td></tr>
+  </table></div>
+  <p class="hint">Everything runs in your browser; nothing is sent anywhere. Reloading the page clears your answers.</p>
+  <p>Worked solution, by hand: <a href="backprop-handworkout.pdf">backprop-handworkout.pdf</a> (forward pass, all 14 derivatives, their numbers).</p>
+</section>
+
+<section id="net">
+  <h2>1. The network</h2>
+  <p>2 inputs, 2 hidden neurons, 1 output, fully connected. A number sits on every line: its <b>weight</b>. Each neuron also has a <b>bias</b>. These 9 numbers are the knobs training turns. The target is <span class="m">t = 1</span>.</p>
+  <div class="scroll"><svg id="netsvg" viewBox="0 0 700 360" width="700" height="360" role="img" aria-label="Network: x1, x2 into hidden neurons (z1|h1) and (z2|h2), into output y-hat, then loss L"></svg></div>
+  <p class="hint">Each hidden circle holds two numbers: <span class="m">z</span> (left) and <span class="m">h</span> (right). The <b>?</b> marks fill in as you get them right in exercise A.</p>
+</section>
+
+<section id="eq">
+  <h2>2. The equations</h2>
+  <p>These are your four equations. Every name here is on the diagram.</p>
+  <div class="scroll"><table>
+    <tr><th>name</th><th>formula</th><th>in words</th></tr>
+    <tr><td class="m">z₁</td><td class="m">w₁₁·x₁ + w₂₁·x₂ + b₁</td><td>neuron 1's weighted sum</td></tr>
+    <tr><td class="m">h₁</td><td class="m">tanh(z₁)</td><td>neuron 1's output; it travels along neuron 1's outgoing line</td></tr>
+    <tr><td class="m">z₂, h₂</td><td class="m">w₁₂·x₁ + w₂₂·x₂ + b₂,&nbsp; tanh(z₂)</td><td>the same for neuron 2</td></tr>
+    <tr><td class="m">ŷ</td><td class="m">v₁·h₁ + v₂·h₂ + c</td><td>the prediction ("y-hat"), no tanh</td></tr>
+    <tr><td class="m">L</td><td class="m">(ŷ − t)²</td><td>the loss: how far the prediction is from t = 1</td></tr>
+  </table></div>
+  <p class="hint">Weight names: <span class="m">w₁₂</span> = from x₁ into neuron 2 (first number = where the line starts, second = where it ends). <span class="m">v₁</span> = from neuron 1 into the output. tanh squashes any number into −1 … 1.</p>
+</section>
+
+<section id="exA">
+  <h2>3. Exercise A: forward pass, by hand</h2>
+  <p>Work out these six numbers <b>in this order</b>, with the knob values on the diagram. Use a calculator for tanh. Keep 3 decimals. Within 0.002 counts.</p>
+  <div class="scroll"><table class="ex" id="fwdtab"></table></div>
+  <div class="btns"><button class="primary" id="checkA" type="button">Check</button><button id="revealA" type="button">Show the answers</button></div>
+</section>
+
+<section id="slope">
+  <h2>4. What a slope is</h2>
+  <div id="slopebody"></div>
+</section>
+
+<section id="exB">
+  <h2>5. Exercise B: backward pass, by hand</h2>
+  <p>A slope for every name, right to left. Each one uses a slope you have just worked out, times one number from exercise A. Correct answers appear on the diagram in teal. Within 0.005 counts.</p>
+  <div class="scroll"><table class="ex" id="bwdtab"></table></div>
+  <div class="btns"><button class="primary" id="checkB" type="button">Check</button><button id="revealB" type="button">Show the answers</button></div>
+</section>
+
+<section id="step">
+  <h2>6. One learning step</h2>
+  <p>Each knob moves a little against its slope: <span class="m">new = old − 0.1 × slope</span> (0.1 is the <b>learning rate</b>, the step size). Then the forward pass runs again and L should be smaller.</p>
+  <p class="hint">No hand calculation here: press <b>Show the answers</b> in exercise B (or finish it) and these tables fill in automatically.</p>
+  <div class="scroll"><table id="steptab"></table></div>
+  <p id="stepsum"></p>
+  <div class="scroll"><table id="losstab"></table></div>
+</section>
+</main>
+</div>
+
+<script>
+const $=id=>document.getElementById(id), f3=v=>(Math.abs(v)<5e-4?0:v).toFixed(3);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const N={x1:1,x2:0.5,t:1,w11:0.5,w21:-0.4,b1:0.1,w12:0.3,w22:0.8,b2:-0.2,v1:1.0,v2:-0.5,c:0.2};
+const K=['w11','w21','b1','w12','w22','b2','v1','v2','c'];
+const NAME={w11:'w₁₁',w12:'w₁₂',b1:'b₁',w21:'w₂₁',w22:'w₂₂',b2:'b₂',v1:'v₁',v2:'v₂',c:'c'};
+function fwd(p){const z1=p.w11*p.x1+p.w21*p.x2+p.b1,h1=Math.tanh(z1),z2=p.w12*p.x1+p.w22*p.x2+p.b2,h2=Math.tanh(z2),y=p.v1*h1+p.v2*h2+p.c;return{z1,h1,z2,h2,y,L:(y-p.t)**2};}
+function bwd(p,f){const dy=2*(f.y-p.t),dh1=dy*p.v1,dh2=dy*p.v2,dz1=dh1*(1-f.h1**2),dz2=dh2*(1-f.h2**2);
+  return{dy,dv1:dy*f.h1,dv2:dy*f.h2,dc:dy,dh1,dh2,dz1,dz2,dw11:dz1*p.x1,dw21:dz1*p.x2,db1:dz1,dw12:dz2*p.x1,dw22:dz2*p.x2,db2:dz2};}
+const F=fwd(N), G=bwd(N,F);
+// Exercise A rows: key, name, calculation to do
+const A=[['z1','z₁','w₁₁·x₁ + w₂₁·x₂ + b₁ = 0.5·1 + (−0.4)·0.5 + 0.1'],['h1','h₁','tanh(z₁)'],['z2','z₂','w₁₂·x₁ + w₂₂·x₂ + b₂ = 0.3·1 + 0.8·0.5 + (−0.2)'],['h2','h₂','tanh(z₂)'],['y','ŷ','v₁·h₁ + v₂·h₂ + c = 1.0·h₁ + (−0.5)·h₂ + 0.2'],['L','L','(ŷ − t)² = (ŷ − 1)²']];
+// Exercise B rows: key, name, how (in plain words)
+const B=[['dy','ŷ','2 × (ŷ − t)'],['dc','c','slope of ŷ × 1'],['dv1','v₁','slope of ŷ × h₁'],['dv2','v₂','slope of ŷ × h₂'],
+  ['dh1','h₁','slope of ŷ × v₁'],['dh2','h₂','slope of ŷ × v₂'],['dz1','z₁','slope of h₁ × (1 − h₁²)'],['dz2','z₂','slope of h₂ × (1 − h₂²)'],
+  ['dw11','w₁₁','slope of z₁ × x₁'],['dw21','w₂₁','slope of z₁ × x₂'],['db1','b₁','slope of z₁ × 1'],
+  ['dw12','w₁₂','slope of z₂ × x₁'],['dw22','w₂₂','slope of z₂ × x₂'],['db2','b₂','slope of z₂ × 1']];
+let shown={};
+const S=k=>shown[k], fwdDone=()=>A.every(([k])=>S(k));
+
+function drawNet(){
+  const f=F,b=G,ink=css('--ink'),mu=css('--muted'),fw=css('--fwd'),bw=css('--bwd'),nd=css('--node');
+  const P={x1:[60,110],x2:[60,250],n1:[300,110],n2:[300,250],y:[520,180],L:[650,180]},R=34,V=k=>S(k)?f3(f[k]):'?';
+  let g=`<defs><marker id="am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="${mu}"/></marker></defs>`;
+  const t=(x,y,s,c,sz=12)=>g+=`<text x="${x}" y="${y}" text-anchor="middle" font-size="${sz}" fill="${c}">${s}</text>`;
+  const along=(x,y,ang,s,c,sz)=>g+=`<text transform="translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${ang.toFixed(1)})" text-anchor="middle" font-size="${sz}" fill="${c}">${s}</text>`;
+  const edge=(a,b2,k,fr)=>{const[x1,y1]=P[a],[x2,y2]=P[b2],d=Math.hypot(x2-x1,y2-y1),ux=(x2-x1)/d,uy=(y2-y1)/d,ang=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
+    g+=`<line x1="${x1+ux*R}" y1="${y1+uy*R}" x2="${x2-ux*(R+3)}" y2="${y2-uy*(R+3)}" stroke="${mu}" stroke-width="1.5" marker-end="url(#am)"/>`;
+    const px=x1+(x2-x1)*fr,py=y1+(y2-y1)*fr;
+    along(px+uy*6,py-ux*6,ang,`${NAME[k]} = ${N[k]}`,ink,12); if(S('d'+k)) along(px-uy*14,py+ux*14,ang,`slope ${f3(b['d'+k])}`,bw,11);};
+  edge('x1','n1','w11',.5); edge('x2','n1','w21',.3); edge('x1','n2','w12',.3); edge('x2','n2','w22',.5);
+  edge('n1','y','v1',.5); edge('n2','y','v2',.5);
+  [['x1','x₁',N.x1],['x2','x₂',N.x2]].forEach(([k,l,v])=>{const[x,y]=P[k];g+=`<circle cx="${x}" cy="${y}" r="26" fill="${nd}" stroke="${ink}"/>`;t(x,y+5,l,ink,15);t(x,y-34,`= ${v}`,fw);});
+  [['n1','z₁','h₁','z1','h1','b1','dz1','dh1'],['n2','z₂','h₂','z2','h2','b2','dz2','dh2']].forEach(([k,zl,hl,zk,hk,bk,dz,dh])=>{const[x,y]=P[k];
+    g+=`<circle cx="${x}" cy="${y}" r="${R}" fill="${nd}" stroke="${ink}" stroke-width="1.5"/><line x1="${x}" y1="${y-R}" x2="${x}" y2="${y+R}" stroke="${ink}"/>`;
+    t(x-16,y+5,zl,ink,14);t(x+16,y+5,hl,ink,14);t(x-18,y-R-8,V(zk),fw);t(x+20,y-R-8,V(hk),fw);
+    t(x,y+R+15,`${NAME[bk]} = ${N[bk]} · tanh`,mu,11); if(S(dz)) t(x-18,y+R+30,f3(b[dz]),bw,11); if(S(dh)) t(x+22,y+R+30,f3(b[dh]),bw,11);});
+  {const[x,y]=P.y;g+=`<circle cx="${x}" cy="${y}" r="30" fill="${nd}" stroke="${ink}" stroke-width="1.5"/>`;t(x,y+5,'ŷ',ink,15);t(x,y-38,V('y'),fw);t(x,y+46,`c = ${N.c} · no tanh`,mu,11);if(S('dc'))t(x,y+60,`c slope ${f3(b.dc)}`,bw,11);if(S('dy'))t(x,y+74,`ŷ slope ${f3(b.dy)}`,bw,11);}
+  {const[x,y]=P.L;g+=`<line x1="552" y1="${y}" x2="${x-28}" y2="${y}" stroke="${mu}" stroke-width="1.5" marker-end="url(#am)"/><rect x="${x-26}" y="${y-20}" width="52" height="40" rx="8" fill="${nd}" stroke="${ink}"/>`;t(x,y+5,'L',ink,15);t(x,y-28,V('L'),fw);t(x,y+38,'(ŷ − 1)²',mu,11);}
+  [['inputs',60],['hidden layer',300],['output',520],['loss',650]].forEach(([s,x])=>t(x,24,s,mu));
+  $('netsvg').innerHTML=g;
+}
+
+function slopeSection(){
+  if(!fwdDone()){ $('slopebody').innerHTML=`<div class="wait"><b>Finish exercise A first.</b> This section uses your six numbers (h₁, ŷ, L …). It opens when all six are correct.</div>`; return; }
+  const n=0.001, f=F, dy=G.dy, yUp=f.y+n, Lup=(yUp-1)**2, h1n=Math.tanh(f.z1+n);
+  $('slopebody').innerHTML=`
+  <p><b>Slope of a name</b> = nudge that name up by a tiny amount: how much does L move, per unit of nudge? That's all it means. The forward pass gave you the values; the backward pass works out a slope for every name, from L back to the inputs.</p>
+  <div class="steps">
+    <div><h3>Start at ŷ</h3><p>Your ŷ = ${f3(f.y)}, L = ${f3(f.L)}. Nudge ŷ up by 0.001 to ${(f.y+n).toFixed(4)}: L becomes ${Lup.toFixed(4)}, about ${(Lup-f.L).toFixed(4)}. So L moves <b class="bwd">${f3(dy)}</b> times whatever ŷ moves. That is the <b>slope of ŷ</b>. (Shortcut: 2 × (ŷ − t).) It is negative because pushing ŷ up brings it closer to 1, so L shrinks.</p></div>
+    <div><h3>c is added on</h3><p>ŷ = v₁·h₁ + v₂·h₂ + c. Nudge c by 0.001 → ŷ moves 0.001, the <b>same</b> amount (1 times). So slope of c = slope of ŷ × 1 = <b class="bwd">${f3(G.dc)}</b>.</p></div>
+    <div><h3>v₁ is multiplied by h₁</h3><p>v₁·h₁ = ${N.v1} × ${f3(f.h1)}. Nudge v₁ by 0.001 → v₁·h₁ grows by ${f3(f.h1)} × 0.001 = ${(f.h1*n).toFixed(5)}, so ŷ moves <b>h₁ times</b> the nudge. Slope of v₁ = slope of ŷ × h₁ = ${f3(dy)} × ${f3(f.h1)} = <b class="bwd">${f3(G.dv1)}</b>.<br>Turn it round: nudge h₁ → ŷ moves <b>v₁ times</b> the nudge, so slope of h₁ = slope of ŷ × v₁.</p></div>
+    <div><h3>tanh, from z₁ to h₁</h3><p>Nudge z₁ = ${f3(f.z1)} by 0.001 → h₁ moves ${(h1n-f.h1).toFixed(5)}, which is (1 − h₁²) × 0.001. So h₁ moves <b>(1 − h₁²) times</b> the nudge. Slope of z₁ = slope of h₁ × (1 − h₁²).</p></div>
+  </div>
+  <div class="note"><b>The one pattern:</b> slope of a name = (slope of the name it feeds into) × (how many times that one moves when you nudge this one). Going right to left, the first number is always one you just worked out; the second is a number from exercise A. That is the chain rule.</div>`;
+}
+
+function rowsA(){
+  const tb=$('fwdtab'); if(tb.dataset.b) return;
+  tb.innerHTML=`<tr><th>#</th><th>name</th><th>calculate</th><th>your answer</th><th></th></tr>`+A.map(([k,l,c],i)=>`<tr id="r-${k}"><td class="m">${i+1}</td><td class="m fwd">${l}</td><td class="m">${c}</td><td><input id="a-${k}" inputmode="decimal" aria-label="${l}"></td><td class="mark" id="m-${k}"></td></tr>`).join('');
+  tb.dataset.b=1;
+}
+function rowsB(){
+  const tb=$('bwdtab'); if(tb.dataset.b) return;
+  tb.innerHTML=`<tr><th>slope of</th><th>how</th><th>your answer</th><th></th></tr>`+B.map(([k,l,r])=>`<tr id="r-${k}"><td class="m bwd">${l}</td><td>${r}</td><td><input id="a-${k}" inputmode="decimal" aria-label="slope of ${l}"></td><td class="mark" id="m-${k}"></td></tr>`).join('');
+  tb.dataset.b=1;
+}
+function stepTable(){
+  const q={};K.forEach(k=>q[k]=N[k]-0.1*G['d'+k]);const f2=fwd({...N,...q}),all=K.every(k=>S('d'+k));
+  $('steptab').innerHTML=`<tr><th>knob</th><th>old</th><th>slope</th><th>new</th><th>moved</th></tr>`+K.map(k=>{const s=S('d'+k);return `<tr><td class="m">${NAME[k]}</td><td class="m">${N[k]}</td><td class="m bwd">${s?f3(G['d'+k]):'?'}</td><td class="m">${s?f3(q[k]):'?'}</td><td>${s?(q[k]>N[k]?'up':'down'):'?'}</td></tr>`}).join('');
+  if(!all){$('stepsum').innerHTML=`<span class="hint">Fills in once you have all nine knob slopes.</span>`;$('losstab').innerHTML='';return;}
+  $('stepsum').innerHTML=`New forward pass: ŷ = <span class="fwd">${f3(f2.y)}</span> (was ${f3(F.y)}), L = <span class="fwd">${f3(f2.L)}</span> (was ${f3(F.L)}). Negative slopes moved up, positive slopes moved down. <b>Training = repeat this step</b> (forward, backward, update):`;
+  // repeat the same step and record ŷ and L after steps 1, 2, 5, 10
+  let p={...N};const rec={};for(let i=1;i<=10;i++){const fi=fwd(p),gi=bwd(p,fi);K.forEach(k=>p[k]-=0.1*gi['d'+k]);rec[i]=fwd(p);}
+  const at=[1,2,5,10];
+  $('losstab').innerHTML=`<tr><th>steps</th><td class="m">0</td>${at.map(i=>`<td class="m">${i}</td>`).join('')}</tr><tr><th>ŷ</th><td class="m">${f3(F.y)}</td>${at.map(i=>`<td class="m">${f3(rec[i].y)}</td>`).join('')}</tr><tr><th>L</th><td class="m fwd">${f3(F.L)}</td>${at.map(i=>`<td class="m fwd">${rec[i].L<5e-4?rec[i].L.toExponential(0):f3(rec[i].L)}</td>`).join('')}</tr>`;
+}
+function render(){ rowsA(); rowsB(); drawNet(); slopeSection(); stepTable(); }
+function mark(rows,vals,tol){rows.forEach(([k])=>{const v=$('a-'+k).value.trim(),r=$('r-'+k),m=$('m-'+k);r.classList.remove('ok','no');if(!v){m.textContent='';return;}
+  const ok=Math.abs(parseFloat(v)-vals[k])<=tol;r.classList.add(ok?'ok':'no');m.textContent=ok?'✓':'✗';if(ok)shown[k]=1;});render();}
+$('checkA').onclick=()=>mark(A,F,0.002);
+$('revealA').onclick=()=>{A.forEach(([k])=>$('a-'+k).value=F[k].toFixed(3));mark(A,F,0.002);};
+$('checkB').onclick=()=>mark(B,G,0.005);
+$('revealB').onclick=()=>{B.forEach(([k])=>$('a-'+k).value=f3(G[k]));mark(B,G,0.005);};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',render);
+render();
+</script>
+</body>
+</html>
