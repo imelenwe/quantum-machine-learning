@@ -126,7 +126,8 @@
     <li><a href="#step5"><span class="n">5</span>Two gates in a row</a></li>
     <li><a href="#step6"><span class="n">6</span>Pick parts by weight</a></li>
     <li><a href="#step7"><span class="n">7</span>Many gates, γ multiplies</a></li>
-    <li><a href="#step8"><span class="n">8</span>The cost: shots</a></li>
+    <li><a href="#step8"><span class="n">8</span>PEC on a real circuit</a></li>
+    <li><a href="#step9"><span class="n">9</span>The cost: shots</a></li>
     <li><a href="#anyp"><span class="n">+</span>Any noise level p</a></li>
     <li class="group">Wrap-up</li>
     <li><a href="#summary">Summary</a></li>
@@ -152,7 +153,7 @@
       <li><b>The problem.</b> Noise pulls your measured answer away from the truth. You get 0.8 when the truth is 1.</li>
       <li><b>What PEC can't do.</b> It can't remove the noise from the chip, and it can't build a gate that undoes the noise. As we'll see in Step 2, such a gate is impossible.</li>
       <li><b>What PEC does instead.</b> On paper, it writes each ideal gate as a weighted mix of <b>parts</b> the hardware can run (for example, "the noisy gate" and "the noisy gate followed by an extra X"). Some weights are positive and some are negative. On each run, it picks one part of each gate, with a probability that matches its weight, runs that circuit, and keeps track of the sign. Averaged over many runs, the parts add up to the ideal gate, so the average gives the noise-free answer.</li>
-      <li><b>The price: many more shots.</b> Every shot gives +1 or −1. To get the right answer, PEC has to multiply each recorded result by a number called <b>γ</b>, which is bigger than 1, so each result becomes +γ or −γ. Bigger swings make the average wobble more, and calming it down again takes <b>γ² times more shots</b> (Step 8). γ for the whole circuit is the γ of every gate multiplied together: in our example it is 1.25 for one gate, but 1.25¹⁰ ≈ 9.3 for ten gates, which means about 87 times more shots. That is why PEC gets expensive for big circuits.</li>
+      <li><b>The price: many more shots.</b> Every shot gives +1 or −1. To get the right answer, PEC has to multiply each recorded result by a number called <b>γ</b>, which is bigger than 1, so each result becomes +γ or −γ. Bigger swings make the average wobble more, and calming it down again takes <b>γ² times more shots</b> (Step 9). γ for the whole circuit is the γ of every gate multiplied together: in our example it is 1.25 for one gate, but 1.25¹⁰ ≈ 9.3 for ten gates, which means about 87 times more shots. That is why PEC gets expensive for big circuits.</li>
     </ul>
   </section>
 
@@ -167,7 +168,7 @@
       <li><b>Run them on the chip.</b> Every circuit built this way is an ordinary circuit. Nothing special happens on the hardware.</li>
       <li><b>Combine the results</b> (on a normal computer). Flip the sign of the results marked "minus", average everything, and multiply by one number, called <b>γ</b> (gamma).</li>
     </ol>
-    <p>The derivation below shows <b>why</b> that recipe gives the noise-free answer, and where the cost comes from. Steps 1–4 explain "work out the undo" and "combine". Steps 5–7 explain picking the parts and γ. Step 8 explains the cost.</p>
+    <p>The derivation below shows <b>why</b> that recipe gives the noise-free answer, and where the cost comes from. Steps 1–4 explain "work out the undo" and "combine". Steps 5–7 explain picking the parts and γ. Step 8 applies it all to a real circuit. Step 9 explains the cost.</p>
   </section>
 
   <!-- ============================================================ -->
@@ -411,6 +412,12 @@
     <div class="step-head"><span class="step-num">Step 5</span><h3>Two gates in a row: the circuits multiply</h3></div>
     <div class="from"><b>From Steps 1–4:</b> one noisy gate needs 2 circuits, with weights +9/8 and −1/8. But real circuits have many gates, each with its own noise. What happens with two?</div>
 
+    <div class="card key">
+      <p><b>Where do more gates come from?</b> From your circuit. We don't add them: a real circuit already has many gates (H, CNOT, Rz, …), and on hardware <b>every one of them is noisy</b>. Steps 1–4 used one gate only because it's the smallest case to work by hand; the do-nothing gate just made the right answer easy to check.</p>
+      <p>PEC treats any gate the same way: noisy gate = ideal gate, then a little noise. The undo cancels only the <b>noise</b> part, so this step's recipe applies to any gate, not just I.</p>
+      <p><b>Not to be confused with ZNE:</b> ZNE adds pairs U†U ("folding"), which do nothing on paper but add noise on purpose. PEC never adds U†U pairs. Step 8 shows exactly what PEC does to a real circuit.</p>
+    </div>
+
     <div class="card">
       <p><b>Three words, used from here on:</b></p>
       <ul>
@@ -569,18 +576,95 @@
         </tbody>
       </table>
     </div>
-    <p>The steps don't change: solve for the undo (more unknowns, more equations), split each weight into γ × probability × sign, and pick one of more parts for each gate.</p>
+    <p>The steps don't change: solve for the undo (more unknowns, more equations), split each weight into γ × probability × sign, and pick one of several parts for each gate.</p>
   </section>
 
   <!-- ============================================================ -->
-  <section id="step8" class="step" data-label="Step 8 · The cost: shots">
-    <div class="step-head"><span class="step-num">Step 8</span><h3>Why a big γ is costly: shots</h3></div>
-    <div class="from"><b>From Steps 6 and 7:</b> the recipe ends by multiplying the average by γ, and γ grows as γ<sup>t</sup> with the number of gates. This step shows why that makes PEC expensive.</div>
+  <section id="step8" class="step" data-label="Step 8 · Applying PEC to a real circuit">
+    <div class="step-head"><span class="step-num">Step 8</span><h3>Applying PEC to a real circuit</h3></div>
+    <div class="from"><b>From Steps 1–7:</b> we worked with do-nothing gates, so the right answer was always easy to check. Now take a real circuit and follow exactly what PEC does to it, from start to finish. The numbers will be the same as before, so you can match every line to an earlier step.</div>
 
-    <h4><span class="sn">8a</span>Shots, and why averages wobble</h4>
+    <div class="card key">
+      <p><b>The one-line answer:</b> PEC <b>keeps all your gates</b>. It never replaces or removes them, and it never adds U†U pairs. On each run it inserts a few <b>extra Pauli gates</b> (X, Y or Z) right after some layers, picked by weight, and keeps track of the sign.</p>
+    </div>
+
+    <h4><span class="sn">8a</span>The circuit</h4>
+    <p>Two qubits. H on qubit 1, then a CNOT from qubit 1 to qubit 2, then measure Z₁Z₂ (the product of the two Z readings).</p>
+    <div class="math">
+      |00⟩ → H on qubit 1 → CNOT → (|00⟩ + |11⟩)/√2<br>
+      ⟨Z₁Z₂⟩ ideal = 1 &nbsp;&nbsp;<span class="c">← both qubits always agree, so the product is always +1</span>
+    </div>
+
+    <h4><span class="sn">8b</span>Split the circuit into layers</h4>
+    <p>A <b>layer</b> is a group of gates that run at the same time. Here: layer 1 = the H, layer 2 = the CNOT. PEC works layer by layer.</p>
+
+    <h4><span class="sn">8c</span>Learn each layer's noise</h4>
+    <p>Before your circuit, the software runs short test circuits to measure what goes wrong after each layer (with twirling switched on, so the noise takes the form of random X, Y, Z flips). For this example, suppose it finds:</p>
+    <div class="math">
+      layer 1 (H): no noise<br>
+      layer 2 (CNOT): an X flip on qubit 2, 10% of the time &nbsp;&nbsp;<span class="c">← noise = 0.9·I + 0.1·X₂</span>
+    </div>
+
+    <h4><span class="sn">8d</span>Work out each layer's undo</h4>
+    <p>The CNOT layer has exactly our Step 2 noise, so it has the same undo, and Step 6 turns it into probabilities:</p>
+    <div class="math">
+      undo (CNOT layer) = (9/8)·nothing − (1/8)·(X on qubit 2)<br>
+      γ = 9/8 + 1/8 = 1.25 &nbsp;&nbsp;→ probabilities 0.9 and 0.1<br>
+      undo (H layer) = nothing &nbsp;&nbsp;<span class="c">← no noise, one part, γ = 1</span>
+    </div>
+
+    <h4><span class="sn">8e</span>The copies of your circuit that get run</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Circuit actually run</th><th>Probability</th><th>Sign</th></tr></thead>
+        <tbody>
+          <tr><td>Part 1</td><td>H, CNOT &nbsp;(your circuit, unchanged)</td><td>0.9</td><td>+</td></tr>
+          <tr><td>Part 2</td><td>H, CNOT, then an extra X on qubit 2</td><td>0.1</td><td>−</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Both are ordinary circuits. About 90% of the runs are exactly your circuit; about 10% have one extra X.</p>
+
+    <h4><span class="sn">8f</span>Run, record, combine</h4>
+    <ol>
+      <li>For each run, pick a part for every noisy layer using its probability, and build that copy.</li>
+      <li>Run it on the chip and record the result, with its sign flipped if the copy's sign is −.</li>
+      <li>Repeat for many copies. Average everything recorded, then multiply by γ.</li>
+    </ol>
+
+    <h4><span class="sn">8g</span>Check it with our numbers</h4>
+    <p><i>⟨Z₁Z₂⟩ from part 1.</i> 90% of the time there is no flip: the qubits agree, so the result is +1. 10% of the time qubit 2 is flipped: the state becomes (|01⟩ + |10⟩)/√2, the qubits disagree, so the result is −1.</p>
+    <div class="math">⟨Z₁Z₂⟩₁ = 0.9·(+1) + 0.1·(−1) = 0.8</div>
+    <p><i>⟨Z₁Z₂⟩ from part 2.</i> The extra X flips qubit 2 again. Where the noise didn't flip it (90%), it is now flipped: −1. Where the noise did flip it (10%), X then X = I, so it is back: +1.</p>
+    <div class="math">⟨Z₁Z₂⟩₂ = 0.9·(−1) + 0.1·(+1) = −0.8</div>
+    <p><i>Combine, as in 6e:</i></p>
+    <div class="math">
+      average = 0.9·(+1)·(0.8) + 0.1·(−1)·(−0.8) = 0.72 + 0.08 = 0.8<br>
+      γ × average = 1.25 × 0.8 = <span class="good">1</span> &nbsp;✓ the ideal ⟨Z₁Z₂⟩
+    </div>
+
+    <h4><span class="sn">8h</span>A bigger circuit</h4>
+    <p>Nothing new happens. Every noisy layer gets its own undo, its own parts and its own γ. Each run picks one part per layer (Step 7), the signs of the picked parts multiply, and the final γ is every layer's γ multiplied together.</p>
+
+    <div class="card caveat">
+      <p><b>What PEC does not do.</b></p>
+      <ul>
+        <li>It does not change or remove your gates. It only inserts extra Pauli gates after layers.</li>
+        <li>It does not add U†U pairs. That is ZNE's "folding", which <i>adds</i> noise on purpose; PEC <i>cancels</i> it.</li>
+        <li>It does not make any single run noise-free. Every copy runs on the noisy chip; only the <b>signed, scaled average</b> is noise-free. That's why PEC gives expectation values (the Estimator), not a clean bitstring.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="step9" class="step" data-label="Step 9 · The cost: shots">
+    <div class="step-head"><span class="step-num">Step 9</span><h3>Why a big γ is costly: shots</h3></div>
+    <div class="from"><b>From Steps 6–8:</b> the recipe ends by multiplying the average by γ, and γ grows as γ<sup>t</sup> with the number of gates. This step shows why that makes PEC expensive.</div>
+
+    <h4><span class="sn">9a</span>Shots, and why averages wobble</h4>
     <p><b>A shot</b> is one run of the circuit plus one measurement. A single shot gives only +1 or −1. ⟨Z⟩ is the <b>average over many shots</b>, so with a limited number of shots the average wobbles a little around the truth.</p>
 
-    <h4><span class="sn">8b</span>How big the wobble is: a coin</h4>
+    <h4><span class="sn">9b</span>How big the wobble is: a coin</h4>
     <p>Think of a fair coin: heads = +1, tails = −1, true average 0. Toss it 3 times and add up. All 8 possible outcomes, equally likely:</p>
     <div class="table-wrap">
       <table>
@@ -610,13 +694,13 @@
     </div>
     <p><b>100× more shots only makes the answer 10× more accurate.</b> To make the wobble k times smaller, you need k² times more shots.</p>
 
-    <h4><span class="sn">8c</span>Where γ comes in</h4>
+    <h4><span class="sn">9c</span>Where γ comes in</h4>
     <p>PEC's last step multiplies the average by γ, and that multiplies the wobble by γ too. For example, with one gate, suppose the average comes out with a wobble of 0.10:</p>
     <div class="math">
       average ≈ 0.8 ± 0.10<br>
       × γ = 1.25 &nbsp;→&nbsp; answer ≈ 1 ± 0.125
     </div>
-    <p>To shrink the wobble back down by a factor γ, 8b says you need <b>γ² times more shots</b>.</p>
+    <p>To shrink the wobble back down by a factor γ, 9b says you need <b>γ² times more shots</b>.</p>
     <div class="math">
       10 gates at 10% noise: &nbsp;γ = 1.25¹⁰ ≈ 9.3 &nbsp;→&nbsp; shots needed ≈ 9.3² ≈ <span class="bad">87×</span> more
     </div>
@@ -676,7 +760,8 @@
         <li><b>Step 4.</b> The measured answers combine the same way (the trace is linear), so the noise-free answer can be computed from noisy runs.</li>
         <li><b>Step 5.</b> Every gate doubles the number of circuits, so they can't all be run.</li>
         <li><b>Steps 6–7.</b> Weight = γ × probability × sign: γ normalises the weights into probabilities; pick one part per gate with those probabilities, flip the sign of some results, average, and multiply by γ. γ multiplies gate by gate.</li>
-        <li><b>Step 8.</b> Multiplying by γ also multiplies the wobble, so PEC costs γ² times more shots.</li>
+        <li><b>Step 8.</b> On a real circuit, PEC keeps your gates and only inserts extra Pauli gates after noisy layers, picked by weight; no U†U pairs (that's ZNE).</li>
+        <li><b>Step 9.</b> Multiplying by γ also multiplies the wobble, so PEC costs γ² times more shots.</li>
       </ul>
     </div>
   </section>

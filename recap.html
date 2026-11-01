@@ -446,6 +446,7 @@
       </div>
       <ul>
         <li><b>γ normalises the weights:</b> γ = 9/8 + 1/8 = 1.25; probabilities = size ÷ γ = 0.9, 0.1. Pick a part per gate by probability, flip the sign of part-2 results, average, multiply by γ. The chip only runs ordinary circuits.</li>
+        <li><b>On a real circuit:</b> PEC keeps your gates and only inserts extra Pauli gates (X, Y, Z) after noisy layers, picked by weight. It never adds U†U pairs; that is ZNE.</li>
         <li><b>The cost:</b> γ multiplies gate by gate (10 gates: 1.25¹⁰ ≈ 9.3) and the shots needed grow as γ² (≈ 87×).</li>
       </ul>
       <p class="more">Go deeper: <a href="QAOA/partition-problem/ErrorMitigation/pec_step_by_step.html">PEC, step by step</a></p>
