@@ -176,16 +176,12 @@
     <li><a class="sub" href="#sub-correction">D · Correction</a></li>
     <li><a class="sub" href="#sub-choose">E · Choosing and combining</a></li>
 
-    <li class="group"><a href="#results">6 · Understanding results</a></li>
-    <li><a class="sub" href="#t-readanswer">Turning outputs into answers</a></li>
-    <li><a class="sub" href="#r-ml">Results: machine learning</a></li>
-    <li><a class="sub" href="#r-vqe">Results: VQE optimisers</a></li>
-    <li><a class="sub" href="#r-maxcut">Results: MaxCut</a></li>
-    <li><a class="sub" href="#r-part6">Results: partition, 6 numbers</a></li>
-    <li><a class="sub" href="#r-part160">Results: partition, 160 numbers</a></li>
-    <li><a class="sub" href="#t-trust">Before you trust a number</a></li>
+    <li class="group"><a href="#results">6 · Results</a></li>
+    <li><a class="sub" href="#r-ml">Machine learning</a></li>
+    <li><a class="sub" href="#r-vqe">VQE optimisers</a></li>
+    <li><a class="sub" href="#r-maxcut">MaxCut</a></li>
+    <li><a class="sub" href="#r-partition">Partition problem</a></li>
 
-    <li class="group"><a href="#lessons">7 · Lessons to keep</a></li>
     <li class="group"><a href="#pages">All detailed pages</a></li>
   </ol>
 </nav>
@@ -847,7 +843,8 @@
     <div class="topic" data-label="Pauli twirling">
       <div class="topic-head"><h3>Pauli twirling (gates and measurement)</h3><span class="used">Lab 4b Ex 2, 4</span></div>
       <p class="oneline"><b>Pauli twirling</b> puts a random Pauli gate (I, X, Y or Z) before each noisy gate, and the matching Pauli after it. The ideal circuit does not change. Over many random copies, a coherent twist becomes random flips.</p>
-      <h4>Example: a 12° over-rotation on each gate, after k gates</h4>
+      <h4>Example: coherent noise, a 12° over-rotation on each gate, after k gates</h4>
+      <p>This is the <b>coherent</b> error from the first row of the table in "First: what kind of error?". Every gate turns the qubit 12° too far, always in the same direction.</p>
       <div class="math">
         without twirling: ⟨Z⟩ = cos(k·12°) &nbsp;&nbsp;<span class="c">← k = 1, 3, 5: 0.978, 0.809, 0.500 … −1 at k = 15</span><br>
         with twirling: &nbsp;&nbsp;&nbsp;⟨Z⟩ = (cos 12°)ᵏ &nbsp;&nbsp;<span class="c">← k = 1, 3, 5: 0.978, 0.936, 0.895 … smooth decay</span>
@@ -862,35 +859,79 @@
 
     <div class="topic" data-label="M3">
       <div class="topic-head"><h3>M3 (matrix-free measurement mitigation)</h3><span class="used">Lab 4b Ex 2 · Sampler counts</span></div>
-      <p class="oneline"><b>M3</b> learns how often each qubit is misread. Then it works back from the measured counts to the true counts.</p>
-      <ol>
-        <li><b>Calibrate.</b> Prepare known states (all 0s and all 1s). Record how often each qubit is misread. Example qubit: a true 0 reads as 1 in <b>2%</b> of shots. A true 1 reads as 0 in <b>5%</b> of shots.</li>
-        <li><b>Write how misreads mix the counts.</b>
-          <div class="math">
-            measured P(0) = 0.98·true P(0) + 0.05·true P(1)<br>
-            measured P(1) = 0.02·true P(0) + 0.95·true P(1)
-          </div></li>
-        <li><b>Solve for the true counts.</b> The measured result is 10% zeros and 90% ones.
-          <div class="math">
-            0.98·a + 0.05·(1 − a) = 0.10 &nbsp;&nbsp;<span class="c">← a = true P(0)</span><br>
-            0.93·a = 0.05 &nbsp;→&nbsp; a = 0.054<br>
-            true P(0) = 5.4%, &nbsp;true P(1) = 94.6%
-          </div></li>
-        <li><b>Do the same for many qubits.</b> A full table for n qubits has 2ⁿ × 2ⁿ entries. M3 ("matrix-free") uses the small table of each qubit. It solves only for the bitstrings that appear in your counts, so it stays fast.</li>
-      </ol>
-      <p><b>Limit:</b> the result is a set of <b>quasi-probabilities</b>. They add to 1, but some can be slightly negative, because the correction can overshoot. M3 corrects only readout errors, not gate errors.</p>
+      <p class="oneline"><b>M3</b> corrects readout errors in Sampler counts. It learns how often each qubit is misread. Then it works back from the measured counts to the true counts.</p>
+
+      <h4>Step 1 · Calibrate each qubit</h4>
+      <p>Run two calibration circuits: all qubits in |0⟩, and all qubits in |1⟩. Record how often each qubit is misread. Example qubit:</p>
+      <ul>
+        <li>A true 0 reads as 1 in <b>2%</b> of shots.</li>
+        <li>A true 1 reads as 0 in <b>5%</b> of shots.</li>
+      </ul>
+
+      <h4>Step 2 · Write how misreads mix the counts</h4>
+      <div class="math">
+        measured P(0) = 0.98·true P(0) + 0.05·true P(1)<br>
+        measured P(1) = 0.02·true P(0) + 0.95·true P(1)
+      </div>
+
+      <h4>Step 3 · Solve for the true counts</h4>
+      <p>The measured result is 10% zeros and 90% ones. Let a = true P(0), so true P(1) = 1 − a:</p>
+      <div class="math">
+        0.98·a + 0.05·(1 − a) = 0.10<br>
+        0.93·a = 0.05 &nbsp;→&nbsp; a = 0.054<br>
+        true P(0) = 5.4%, &nbsp;true P(1) = 94.6%
+      </div>
+
+      <h4>Why M3 does not need 2ⁿ calibrations</h4>
+      <p>A full readout table for n qubits has one row and one column for each bitstring: 2ⁿ × 2ⁿ entries. To fill it directly, you must prepare all 2ⁿ bitstrings. M3 avoids this with two ideas.</p>
+      <p><b>Idea 1: each qubit is misread on its own.</b> M3 assumes that one qubit's misread does not depend on the other qubits. Then any entry of the full table is a product of small per-qubit entries. Example with 2 qubits (q0 rates 2% and 5%, q1 rates 1% and 3%):</p>
+      <div class="math">
+        P(q0 reads 0, q1 reads 1 | true 00) = P(q0: 0→0) × P(q1: 0→1) = 0.98 × 0.01 = 0.0098
+      </div>
+      <p>So each qubit needs only a 2 × 2 table, and the two calibration circuits fill all of them.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Qubits n</th><th>Full table: entries</th><th>Full table: calibration circuits</th><th>M3: numbers</th><th>M3: calibration circuits</th></tr></thead>
+        <tbody>
+          <tr><td>3</td><td>8 × 8 = 64</td><td>8</td><td>3 × 4 = 12</td><td>2</td></tr>
+          <tr><td>11</td><td>2,048 × 2,048 ≈ 4.2 million</td><td>2,048</td><td>11 × 4 = 44</td><td>2</td></tr>
+          <tr><td>100</td><td>about 10⁶⁰</td><td>about 10³⁰</td><td>100 × 4 = 400</td><td>2</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>Idea 2: solve only for the bitstrings you saw.</b> 1,000 shots contain at most 1,000 different bitstrings. M3 ("matrix-free") never builds the full table. It solves the correction only over the bitstrings that appear in your counts.</p>
+
+      <h4>Why M3 does not need tomography</h4>
+      <p><b>Quantum state tomography</b> rebuilds the full quantum state. It needs measurements in many bases. M3 does not need the state. A readout error happens after the measurement, when the qubit already has a definite value of 0 or 1. So the error is classical: the chip records the wrong bit. M3 corrects only that recording step, so calibration in the Z basis is enough.</p>
+      <p><b>Limit:</b> M3 assumes that the misreads of different qubits are independent. The result is a set of <b>quasi-probabilities</b>: they add to 1, but some can be slightly negative, because the correction can overshoot. M3 corrects only readout errors, not gate errors.</p>
     </div>
 
     <div class="topic" data-label="TREX">
       <div class="topic-head"><h3>TREX (twirled readout error extinction)</h3><span class="used">Lab 4b Ex 4 · Estimator values</span></div>
-      <p class="oneline"><b>TREX</b> is the Estimator's version of M3. It makes readout error shrink every expectation value by one known factor. Then it divides that factor out.</p>
-      <ol>
-        <li><b>Twirl the measurement.</b> Before readout, flip some qubits at random with X. After readout, flip the recorded bits back. An uneven error (2% one way, 5% the other way) becomes even: <b>3.5%</b> both ways, on average.</li>
-        <li><b>An even error only shrinks ⟨Z⟩.</b> A flip rate p in both directions multiplies every ⟨Z⟩ by f = 1 − 2p. Here f = 1 − 2 × 0.035 = <b>0.93</b>. A true ⟨Z⟩ of 0.6 reads as 0.6 × 0.93 = 0.558.</li>
-        <li><b>Measure f.</b> Run a calibration circuit with a known answer: all qubits in |0⟩, so the ideal ⟨Z⟩ = 1. Use the same twirling. The result is 0.93, which is f.</li>
-        <li><b>Divide f out.</b> 0.558 ÷ 0.93 = <b>0.6</b>, the true value.</li>
-      </ol>
+      <p class="oneline"><b>TREX</b> corrects readout errors in Estimator expectation values. Readout error multiplies the true value by a factor f, so the measured value is too small. TREX measures f, then divides the measured value by f to get the true value back.</p>
+
+      <h4>Example: true ⟨Z⟩ = 0.6, with the misread rates from the M3 card</h4>
+      <p>The true state gives P(0) = 0.8 and P(1) = 0.2, so the true ⟨Z⟩ = 0.8 − 0.2 = 0.6. A true 0 reads as 1 in 2% of shots, and a true 1 reads as 0 in 5% of shots.</p>
+      <div class="math">
+        measured P(0) = 0.8 × 0.98 + 0.2 × 0.05 = 0.794<br>
+        measured ⟨Z⟩ = 0.794 − 0.206 = 0.588<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 0.93 × 0.6 + 0.03 &nbsp;&nbsp;<span class="c">← a factor AND a shift</span>
+      </div>
+      <p>The error has two parts: a factor (0.93) and a shift (+0.03). The shift comes from the uneven rates (5% − 2% = 3%). One division cannot remove a shift. So TREX first removes the shift.</p>
+
+      <h4>Step 1 · Twirl the measurement to remove the shift</h4>
+      <p>Before readout, apply X to each qubit in a random half of the shots. After readout, flip the recorded bit back in those shots. Now each true value is read through both rates equally often, so each direction has the average rate (2% + 5%)/2 = <b>3.5%</b>.</p>
+      <div class="math">
+        measured P(0) = 0.8 × 0.965 + 0.2 × 0.035 = 0.779<br>
+        measured ⟨Z⟩ = 0.779 − 0.221 = 0.558 = 0.93 × 0.6 &nbsp;&nbsp;<span class="c">← only a factor, no shift</span>
+      </div>
+      <p>With equal rates p in both directions, the factor is f = 1 − 2p = 1 − 2 × 0.035 = <b>0.93</b>.</p>
+
+      <h4>Step 2 · Measure the factor f</h4>
+      <p>Run a calibration circuit with a known answer: all qubits in |0⟩, so the true ⟨Z⟩ = 1. Use the same twirling. The measured value is 1 × f = 0.93. So f = 0.93.</p>
+
+      <h4>Step 3 · Divide by f</h4>
+      <div class="math">true ⟨Z⟩ = measured ⟨Z⟩ ÷ f = 0.558 ÷ 0.93 = <b>0.6</b> ✓</div>
       <p>For an observable on more qubits, such as Z₁Z₂, TREX measures the factor for that observable in the same way.</p>
+      <p><b>M3 or TREX?</b> M3 corrects counts (Sampler). TREX corrects expectation values (Estimator).</p>
       <p><b>Limit:</b> TREX corrects only readout errors. Gate errors stay in the result.</p>
     </div>
 
@@ -918,14 +959,36 @@
 
     <div class="topic" data-label="PEA">
       <div class="topic-head"><h3>PEA (probabilistic error amplification)</h3><span class="used">option, not used</span></div>
-      <p class="oneline"><b>PEA</b> is ZNE with a more accurate way to turn the noise up. Folding makes the circuit 3 times deeper, and real noise does not always grow by exactly 3. PEA adds noise more accurately.</p>
+      <p class="oneline"><b>PEA</b> is a form of ZNE. ZNE and PEA do the same three things: make the noise larger, measure at several noise levels, and extrapolate back to zero noise. They differ only in <b>how they make the noise larger</b>.</p>
+
+      <h4>Example: one circuit layer, noise at 3×</h4>
+      <p>A circuit has 10 layers. One CNOT layer has this noise: qubit 2 gets an X flip in 1% of shots.</p>
+      <p><b>ZNE (folding)</b> repeats the gates:</p>
       <ol>
-        <li><b>Learn the noise</b> of each layer of gates, as rates of random X, Y and Z flips. With twirling on, the noise has this form. Example: after this layer, qubit 2 gets an X flip in 1% of shots.</li>
-        <li><b>Inject more of the same noise.</b> For 2× noise, insert an extra X on qubit 2 in about 1% of shots. The total flip rate is then about 2%. The circuit does not get deeper. PEA adds only cheap Pauli gates.</li>
-        <li><b>Measure</b> at several noise levels.</li>
-        <li><b>Extrapolate</b> back to 0× noise, the same as in ZNE.</li>
+        <li>Replace the layer U with U · U<sup>†</sup> · U. The layer now has 3 CNOTs in place of 1.</li>
+        <li>The circuit now has 30 layers in place of 10.</li>
+        <li>The noise grows about 3 times, if each copy adds the same noise. The extra run time also adds more idle drift, so the real factor can differ from 3.</li>
       </ol>
-      <p><b>Limit:</b> PEA needs extra runs to learn the noise. Gate twirling must be on, because the noise must have the form of flips.</p>
+      <p><b>PEA (injection)</b> adds copies of the learned noise:</p>
+      <ol>
+        <li>Learn the noise of the layer first: an X flip on qubit 2 in 1% of shots.</li>
+        <li>Insert an extra X on qubit 2 in about 2% of shots. The total flip rate is then about 3%, exactly 3 times the learned noise.</li>
+        <li>The circuit stays at 10 layers. PEA adds only single-qubit Pauli gates, which are almost free of error.</li>
+      </ol>
+
+      <h4>The general rule: ZNE and PEA compared</h4>
+      <div class="table-wrap"><table>
+        <thead><tr><th></th><th>ZNE (folding)</th><th>PEA (injection)</th></tr></thead>
+        <tbody>
+          <tr><td>How it adds noise</td><td>Repeats each gate (U · U<sup>†</sup> · U)</td><td>Inserts extra random Paulis at the learned rates</td></tr>
+          <tr><td>Circuit depth at 3× noise</td><td>3 times deeper</td><td>The same depth</td></tr>
+          <tr><td>Noise levels</td><td>Odd numbers only: 1×, 3×, 5×</td><td>Any number: 1×, 1.5×, 2×, 3× …</td></tr>
+          <tr><td>Is the noise factor exact?</td><td>No. It assumes each copy adds the same noise.</td><td>Yes, for the noise that it learned.</td></tr>
+          <tr><td>Extra cost</td><td>Longer circuits</td><td>Runs to learn the noise of each layer</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>PEA and PEC</b> learn the same noise model. PEC uses the model to <b>cancel</b> the noise, so it needs negative weights and many more shots. PEA uses the model to <b>add</b> noise, which needs only normal probabilities.</p>
+      <p><b>Limit:</b> PEA is only as accurate as its learned noise model. Gate twirling must be on, because the noise must have the form of random flips. The extrapolation step has the same weakness as in ZNE: it makes small wobbles larger.</p>
     </div>
 
     <div class="topic" data-label="PEC">
@@ -990,31 +1053,10 @@
   </section>
 
   <!-- ============================================================ -->
-  <section id="results" data-label="6 · Understanding results">
+  <section id="results" data-label="6 · Results">
     <div class="sec-num">Section 6</div>
-    <h2>How do we read and trust the results?</h2>
-    <p class="sec-intro">The chip returns counts or averages. You must change them into an answer, then decide whether to believe it. Each result card says what we compared, how to read the numbers, and what they tell us.</p>
-
-    <div class="topic" id="t-readanswer" data-label="Turning outputs into answers">
-      <div class="topic-head"><h3>Turning outputs into an answer</h3></div>
-      <p class="oneline">Each technique gives a different kind of output. Each kind of output has its own rule for reading the answer.</p>
-      <ul>
-        <li><b>Most-measured bitstring</b> (Sampler, QAOA): take the bitstring that appears most often. Then decode it: each bit says where one node or number goes.</li>
-        <li><b>Sign of an expectation value</b> (Estimator, PCE): a + sign puts a number in one group. A − sign puts it in the other group.</li>
-        <li><b>Accuracy</b> (QSVM): train the SVM on the kernel values. Then count the correct predictions on the test points.</li>
-        <li><b>The partition score</b> (the "loss"): for each pair of numbers, add the weight aᵢaⱼ if they are in the same group. Subtract it if they are in different groups. A lower score is better.</li>
-      </ul>
-      <h4>Example: the partition score for 1, 2, 3</h4>
-      <div class="math">
-        split {1, 2} and {3}<br>
-        pair (1, 2): same group &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ +1×2 = +2<br>
-        pair (1, 3): different groups → −1×3 = −3<br>
-        pair (2, 3): different groups → −2×3 = −6<br>
-        score = 2 − 3 − 6 = −7 &nbsp;&nbsp;<span class="c">← the lowest possible score: this split is perfect (3 vs 3)</span>
-      </div>
-      <p><b>Limit:</b> the score has no fixed scale. With 160 numbers, scores are in the tens of thousands. Compare scores only for the same set of numbers.</p>
-      <p class="more">Go deeper: <a href="QAOA/partition-problem/ErrorMitigation/reading_the_partition_score.html">Reading the partition score</a></p>
-    </div>
+    <h2>What did we get?</h2>
+    <p class="sec-intro">The key results of each project, with one takeaway for each.</p>
 
     <div class="topic" id="r-ml" data-label="Results: machine learning">
       <div class="topic-head"><h3>Results: machine learning (Titanic)</h3><span class="used">Basic ML · QSVM</span></div>
@@ -1025,95 +1067,67 @@
           <tr><td>Classical SVM, RBF, 8 features (Basic ML)</td><td>711 / 178</td><td>79.8%</td></tr>
           <tr><td>Classical SVM, RBF, 7 features (QSVM notebook)</td><td>711 / 178</td><td>77.5%</td></tr>
           <tr><td>QSVM simulator, ZZ linear</td><td>711 / 178</td><td>80.9%</td></tr>
-          <tr><td>QSVM simulator, ZZ full</td><td>711 / 178</td><td>83.1%</td></tr>
+          <tr><td>QSVM simulator, ZZ full</td><td>711 / 178</td><td class="good">83.1%</td></tr>
           <tr><td>QSVM simulator, small sample</td><td>16 / 8</td><td>62.5%</td></tr>
           <tr><td>QSVM ibm_fez hardware, ZZ linear</td><td>16 / 8</td><td>62.5%</td></tr>
         </tbody>
       </table></div>
-      <p><b>Takeaway:</b> on the simulator, the quantum kernels scored higher than an <i>untuned</i> classical SVM. On hardware, only the linear map finished. With 8 test points, we can say only that hardware matched the simulator.</p>
+      <p><b>Takeaway:</b> on the simulator, the quantum kernels scored higher than an <i>untuned</i> classical SVM, so this is not a claim of quantum advantage. On hardware, only the linear map finished. With 8 test points, one point changes the accuracy by 12.5%, so we can say only that hardware matched the simulator.</p>
     </div>
 
     <div class="topic" id="r-vqe" data-label="Results: VQE optimisers">
       <div class="topic-head"><h3>Results: VQE, two optimisers with and without shot noise</h3><span class="used">VQE</span></div>
-      <p class="meta"><b>Compared:</b> gradient descent and Nelder–Mead on the one-qubit VQE (H = 3X − 2Y + Z). Each ran twice: once with <b>exact</b> energies (no noise), and once with energies <b>estimated from 10,000 shots</b>. <b>Read:</b> a result nearer to the true lowest energy, −3.742, is better. A real energy cannot go <i>below</i> −3.742. A lower value shows that noise misled the optimiser.</p>
+      <p class="meta"><b>Problem:</b> one qubit, H = 3X − 2Y + Z. The true lowest energy is −3.742. A real energy cannot go below −3.742.</p>
       <div class="table-wrap"><table>
-        <thead><tr><th>Optimiser</th><th>Exact energies</th><th>Shot-noise energies</th></tr></thead>
+        <thead><tr><th>Optimiser</th><th>Energies</th><th>Final energy</th><th>Error</th><th>Verdict</th></tr></thead>
         <tbody>
-          <tr><td>Gradient descent</td><td>−3.742 ✓ (18 steps)</td><td>−3.761 with ε = 0.3; no result with ε = 10⁻⁶</td></tr>
-          <tr><td>Nelder–Mead</td><td>−3.742 ✓</td><td>−3.829 (the value is too low; the dials are correct)</td></tr>
+          <tr><td>Gradient descent</td><td>exact</td><td>−3.742</td><td>0.000</td><td class="good">correct (18 steps)</td></tr>
+          <tr><td>Gradient descent, ε = 0.3</td><td>10,000 shots</td><td>−3.761</td><td>−0.019</td><td class="good">close</td></tr>
+          <tr><td>Gradient descent, ε = 10⁻⁶</td><td>10,000 shots</td><td>—</td><td>—</td><td class="bad">fails: the dials jump at random</td></tr>
+          <tr><td>Nelder–Mead</td><td>exact</td><td>−3.742</td><td>0.000</td><td class="good">correct</td></tr>
+          <tr><td>Nelder–Mead</td><td>10,000 shots</td><td>−3.829</td><td>−0.087</td><td class="warnc">too low; the dials are correct</td></tr>
         </tbody>
       </table></div>
-      <p><b>Takeaway:</b> without noise, both optimisers find the answer. With noise, gradient descent needs a step size tuned by hand, and Nelder–Mead reports a value that is too good. Judge an optimiser by its final dials. Then measure the energy again with fresh shots.</p>
+      <p><b>Takeaway:</b> with noise, judge an optimiser by its final dials. Then measure the energy again with fresh shots.</p>
     </div>
 
     <div class="topic" id="r-maxcut" data-label="Results: MaxCut">
       <div class="topic-head"><h3>Results: MaxCut with QAOA</h3><span class="used">MaxCut · simulator</span></div>
-      <p class="meta"><b>Compared:</b> QAOA at depths p = 1 to 10, exact and with 8,192 shots, with several optimisers. <b>Read:</b> the expectation value is the average cut of the circuit's output. The best possible cut is 7.</p>
-      <ul>
-        <li><b>Exact:</b> 5.30, 6.06, 6.44, 6.69 and 6.72 for p = 1 to 5.</li>
-        <li><b>With shot noise:</b> only COBYLA with a warm start and restarts climbed steadily, to about 6.9.</li>
-        <li><b>Most-measured bitstring:</b> it was the true best split in 30 of 30 runs, even when the average was only 5.3. Only 2 of the 64 bitstrings give the best cut, so those 2 can be the most likely outcomes while the average stays low.</li>
-      </ul>
-      <p><b>Takeaway:</b> the average score can look poor while the most likely answer is already correct.</p>
-    </div>
-
-    <div class="topic" id="r-part6" data-label="Results: partition, 6 numbers">
-      <div class="topic-head"><h3>Results: partition, 6 numbers on real hardware</h3><span class="used">Lab 4b Ex 2</span></div>
-      <p class="meta"><b>Compared:</b> the same QAOA circuit (p = 1, pretrained dials) on ibm_marrakesh with 4 error settings, 1,000 shots each. <b>Read:</b> take the most likely bitstring and add up each group. A difference of 0 is perfect (24 and 24).</p>
+      <p class="meta"><b>Problem:</b> our 6-node, 8-edge graph. The best possible cut is 7. The expected cut is the average cut of the circuit's output.</p>
       <div class="table-wrap"><table>
-        <thead><tr><th>Setting</th><th>Groups found</th><th>Difference</th></tr></thead>
+        <thead><tr><th>Layers p</th><th>Simulation</th><th>Optimiser</th><th>Expected cut</th><th>% of best (7)</th></tr></thead>
         <tbody>
-          <tr><td>No mitigation</td><td>{3, 5, 13} = 21 and {7, 9, 11} = 27</td><td>6</td></tr>
-          <tr><td>DD + twirling</td><td>{5, 11, 13} = 29 and {3, 7, 9} = 19</td><td>10</td></tr>
-          <tr><td>M3</td><td>21 and 27 (the same as no mitigation)</td><td>6</td></tr>
-          <tr><td>M3 + DD + twirling</td><td>29 and 19 (the same as DD + twirling)</td><td>10</td></tr>
+          <tr><td>1</td><td>exact</td><td>—</td><td>5.30</td><td>76%</td></tr>
+          <tr><td>2</td><td>exact</td><td>—</td><td>6.06</td><td>87%</td></tr>
+          <tr><td>3</td><td>exact</td><td>—</td><td>6.44</td><td>92%</td></tr>
+          <tr><td>4</td><td>exact</td><td>—</td><td>6.69</td><td>96%</td></tr>
+          <tr><td>5</td><td>exact</td><td>—</td><td>6.72</td><td>96%</td></tr>
+          <tr><td>6</td><td>8,192 shots</td><td>plain COBYLA</td><td class="bad">5.42</td><td>77%</td></tr>
+          <tr><td>6 to 10</td><td>8,192 shots</td><td>COBYLA, warm start + 3 restarts</td><td class="good">≈ 6.9</td><td>≈ 99%</td></tr>
         </tbody>
       </table></div>
-      <p><b>Takeaway:</b> no setting found the perfect split. The most likely bitstring had only about 3.7% of the shots. A random guess gives 1/64 = 1.6%. So the output was almost random. M3 changed the counts only a little, because it cannot fix gate noise.</p>
+      <p><b>Takeaway:</b> the most-measured bitstring was the true best split in 30 of 30 runs, even when the expected cut was only 5.3. The average can look poor while the most likely answer is already correct.</p>
     </div>
 
-    <div class="topic" id="r-part160" data-label="Results: partition, 160 numbers">
-      <div class="topic-head"><h3>Results: partition, 160 numbers on 11 qubits</h3><span class="used">Lab 4b Ex 4</span></div>
-      <p class="meta"><b>Compared:</b> the PCE circuit (pretrained dials) on hardware through the Estimator, with 4 mitigation settings. <b>Read:</b> a lower score is better. The group sums show how even the split is. The total is 7,853, so the ideal is about 3,926 in each group.</p>
+    <div class="topic" id="r-partition" data-label="Results: partition problem">
+      <div class="topic-head"><h3>Results: partition problem on real hardware</h3><span class="used">Lab 4b Ex 2, 4</span></div>
+      <p class="meta"><b>6 numbers:</b> QAOA (p = 1, pretrained dials) on ibm_marrakesh, 1,000 shots, total 48 (ideal 24 and 24). <b>160 numbers:</b> PCE on 11 qubits (pretrained dials) through the Estimator, total 7,853 (ideal about 3,926 each). A smaller difference is better. A lower score is better.</p>
       <div class="table-wrap"><table>
-        <thead><tr><th>Setting</th><th>Score</th><th>Group sums</th><th>QPU estimate</th></tr></thead>
+        <thead><tr><th>Numbers</th><th>Setting</th><th>Group sums</th><th>Difference</th><th>Score</th><th>QPU estimate</th></tr></thead>
         <tbody>
-          <tr><td>No mitigation</td><td class="bad">+157,420</td><td>4,802 and 3,051</td><td>12 s</td></tr>
-          <tr><td>TREX + twirling</td><td class="good">−27,422</td><td>3,773 and 4,080</td><td>12 s</td></tr>
-          <tr><td>ZNE + twirling</td><td class="good">−23,652</td><td>3,857 and 3,996</td><td>16 s</td></tr>
-          <tr><td>PEC + twirling</td><td class="warnc">not run</td><td>—</td><td>4 min 26 s</td></tr>
+          <tr><td>6</td><td>No mitigation</td><td>21 and 27</td><td>6</td><td>—</td><td>—</td></tr>
+          <tr><td>6</td><td>DD + twirling</td><td>29 and 19</td><td>10</td><td>—</td><td>—</td></tr>
+          <tr><td>6</td><td>M3</td><td>21 and 27</td><td>6</td><td>—</td><td>—</td></tr>
+          <tr><td>6</td><td>M3 + DD + twirling</td><td>29 and 19</td><td>10</td><td>—</td><td>—</td></tr>
+          <tr><td>160</td><td>No mitigation</td><td>4,802 and 3,051</td><td class="bad">1,751</td><td>+157,420</td><td>12 s</td></tr>
+          <tr><td>160</td><td>TREX + twirling</td><td>3,773 and 4,080</td><td class="good">307</td><td>−27,422</td><td>12 s</td></tr>
+          <tr><td>160</td><td>ZNE + twirling</td><td>3,857 and 3,996</td><td class="good">139</td><td>−23,652</td><td>16 s</td></tr>
+          <tr><td>160</td><td>PEC + twirling</td><td>not run</td><td>—</td><td>—</td><td>4 min 26 s</td></tr>
         </tbody>
       </table></div>
-      <p><b>Takeaway:</b> mitigation changed a very uneven split (difference 1,751) into an almost even one (difference 307 with TREX, 139 with ZNE). Read the stability check in the next card before you trust either answer.</p>
-    </div>
-
-    <div class="topic" id="t-trust" data-label="Before you trust a number">
-      <div class="topic-head"><h3>Before you trust a number</h3></div>
-      <p class="oneline">Ask four questions about each result before you believe it.</p>
-      <ol>
-        <li><b>Is the baseline fair?</b> We did not tune our classical SVM, so 83.1% against 77.5% is not a claim of quantum advantage. Good classical MaxCut methods solve thousands of nodes in seconds. The Goemans–Williamson method guarantees at least 87.8% of the best cut.</li>
-        <li><b>Is the sample large enough?</b> With 8 test points, one point changes the accuracy by 12.5%.</li>
-        <li><b>Is the answer stable?</b> TREX and ZNE gave similar scores. But they put only about half (51%) of the 160 numbers in the same group. So most of the choices for single numbers were still noise.</li>
-        <li><b>What did it cost?</b> Count the QPU seconds, not only the accuracy.</li>
-      </ol>
-    </div>
-  </section>
-
-  <!-- ============================================================ -->
-  <section id="lessons" data-label="7 · Lessons to keep">
-    <div class="sec-num">Section 7</div>
-    <h2>Lessons to keep</h2>
-    <p class="sec-intro">Each lesson comes from a result on this page. The section in brackets has the numbers.</p>
-    <div class="card">
       <ul>
-        <li><b>Compare with a good baseline first.</b> Compare with a good classical method, not with brute force. None of our projects claims a quantum advantage, and IBM's lab does not claim one either (Section 6).</li>
-        <li><b>Use the simulator first and hardware last.</b> Test the full pipeline on a fake backend. Hardware seconds are the scarce resource (Section 4).</li>
-        <li><b>The encoding sets the circuit size.</b> PCE put 160 numbers on 11 qubits. The circuit size decides what a real chip can do (Section 2).</li>
-        <li><b>Use COBYLA with a warm start and restarts.</b> It needs the fewest circuit runs, and it is reliable under shot noise (Section 4).</li>
-        <li><b>Shot noise affects everything.</b> The 1/√N rule breaks tiny-step gradients and makes PEC expensive (Sections 1, 4 and 5).</li>
-        <li><b>Know the kind of error.</b> Coherent errors swing, and random errors shrink. Twirling changes the first kind into the second kind, which most mitigation needs (Section 5).</li>
-        <li><b>Mitigation costs QPU time.</b> TREX is almost free, and ZNE costs a little more. PEC rests on the clearest theory, but it costs by far the most (Section 5).</li>
-        <li><b>Flat landscapes are real.</b> A circuit that can reach almost any state gives almost the same score everywhere (Section 4).</li>
+        <li><b>6 numbers:</b> no setting found the perfect split. The most likely bitstring had only about 3.7% of the shots, against 1/64 = 1.6% for a random guess. So the output was almost random.</li>
+        <li><b>160 numbers:</b> mitigation made the split much more even. But TREX and ZNE put only 51% of the numbers in the same group. So most of the choices for single numbers were still noise.</li>
       </ul>
     </div>
   </section>
