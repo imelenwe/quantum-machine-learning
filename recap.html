@@ -129,6 +129,9 @@
   .fold-bar button { font: inherit; font-size: 13px; color: var(--text); background: var(--surface); border: 1px solid var(--surface-border); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
   .fold-bar button:hover { border-color: var(--step); }
   @media print { [hidden] { display: block !important; } .fold-bar, .fold-hint { display: none; } }
+  .mindmap { min-width: 760px; }
+  .mindmap td:first-child { font-weight: 600; white-space: nowrap; }
+  .mindmap tr.grp td { background: var(--step-bg); color: var(--step); font-weight: 700; font-size: 13px; padding-top: 10px; }
 </style>
 </head>
 <body>
@@ -182,6 +185,7 @@
     <li><a class="sub" href="#r-maxcut">MaxCut</a></li>
     <li><a class="sub" href="#r-partition">Partition problem</a></li>
 
+    <li class="group"><a href="#allinone">7 · Everything in one table</a></li>
     <li class="group"><a href="#pages">All detailed pages</a></li>
   </ol>
 </nav>
@@ -826,7 +830,7 @@
 
     <div class="subhead" id="sub-suppress" data-label="A · Suppression">A · Suppression <span>on the backend, while the circuit runs</span></div>
 
-    <div class="topic" data-label="DD">
+    <div class="topic" id="e-dd" data-label="DD">
       <div class="topic-head"><h3>Dynamical decoupling (DD)</h3><span class="used">Lab 4b Ex 2</span></div>
       <p class="oneline"><b>Dynamical decoupling</b> gives an idle qubit pairs of quick flips (for example X, then X). On paper, the two flips cancel. On the chip, they make slow drift cancel itself.</p>
       <h4>Example</h4>
@@ -840,7 +844,7 @@
       <p><b>Limit:</b> DD cancels only drift that stays the same during the wait. The flip gates also have small errors of their own.</p>
     </div>
 
-    <div class="topic" data-label="Pauli twirling">
+    <div class="topic" id="e-twirl" data-label="Pauli twirling">
       <div class="topic-head"><h3>Pauli twirling (gates and measurement)</h3><span class="used">Lab 4b Ex 2, 4</span></div>
       <p class="oneline"><b>Pauli twirling</b> puts a random Pauli gate (I, X, Y or Z) before each noisy gate, and the matching Pauli after it. The ideal circuit does not change. Over many random copies, a coherent twist becomes random flips.</p>
       <h4>Example: coherent noise, a 12° over-rotation on each gate, after k gates</h4>
@@ -857,7 +861,7 @@
 
     <div class="subhead" id="sub-readout" data-label="B · Readout mitigation">B · Mitigation of readout errors <span>after the run</span></div>
 
-    <div class="topic" data-label="M3">
+    <div class="topic" id="e-m3" data-label="M3">
       <div class="topic-head"><h3>M3 (matrix-free measurement mitigation)</h3><span class="used">Lab 4b Ex 2 · Sampler counts</span></div>
       <p class="oneline"><b>M3</b> corrects readout errors in Sampler counts. It learns how often each qubit is misread. Then it works back from the measured counts to the true counts.</p>
 
@@ -904,7 +908,7 @@
       <p><b>Limit:</b> M3 assumes that the misreads of different qubits are independent. The result is a set of <b>quasi-probabilities</b>: they add to 1, but some can be slightly negative, because the correction can overshoot. M3 corrects only readout errors, not gate errors.</p>
     </div>
 
-    <div class="topic" data-label="TREX">
+    <div class="topic" id="e-trex" data-label="TREX">
       <div class="topic-head"><h3>TREX (twirled readout error extinction)</h3><span class="used">Lab 4b Ex 4 · Estimator values</span></div>
       <p class="oneline"><b>TREX</b> corrects readout errors in Estimator expectation values. Readout error multiplies the true value by a factor f, so the measured value is too small. TREX measures f, then divides the measured value by f to get the true value back.</p>
 
@@ -937,7 +941,7 @@
 
     <div class="subhead" id="sub-gate" data-label="C · Gate-error mitigation">C · Mitigation of gate errors <span>after the run</span></div>
 
-    <div class="topic" data-label="ZNE">
+    <div class="topic" id="e-zne" data-label="ZNE">
       <div class="topic-head"><h3>ZNE (zero-noise extrapolation)</h3><span class="used">Lab 4b Ex 4</span></div>
       <p class="oneline"><b>ZNE</b> cannot turn noise off, but it can turn noise <b>up</b>. It measures at several noise levels, finds the trend, and follows the trend back to zero noise.</p>
       <ol>
@@ -957,7 +961,7 @@
       <div class="key"><b>Limit.</b> ZNE is only as good as its curve. <b>Use it with twirling</b>, because twirling makes the decay smooth. The extrapolation also makes small wobbles larger, so ZNE has wider error bars than TREX.</div>
     </div>
 
-    <div class="topic" data-label="PEA">
+    <div class="topic" id="e-pea" data-label="PEA">
       <div class="topic-head"><h3>PEA (probabilistic error amplification)</h3><span class="used">option, not used</span></div>
       <p class="oneline"><b>PEA</b> is a form of ZNE. ZNE and PEA do the same three things: make the noise larger, measure at several noise levels, and extrapolate back to zero noise. They differ only in <b>how they make the noise larger</b>.</p>
 
@@ -991,7 +995,7 @@
       <p><b>Limit:</b> PEA is only as accurate as its learned noise model. Gate twirling must be on, because the noise must have the form of random flips. The extrapolation step has the same weakness as in ZNE: it makes small wobbles larger.</p>
     </div>
 
-    <div class="topic" data-label="PEC">
+    <div class="topic" id="e-pec" data-label="PEC">
       <div class="topic-head"><h3>PEC (probabilistic error cancellation)</h3><span class="used">Lab 4b Ex 4d · not run</span></div>
       <p class="oneline"><b>PEC</b> cancels noise <b>on average</b>. No real gate can undo the noise, but a weighted mix of circuits can, and some weights are negative.</p>
       <h4>Example: one gate that flips the qubit in 10% of shots</h4>
@@ -1015,7 +1019,7 @@
     </div>
 
     <div class="subhead" id="sub-correction" data-label="D · Correction">D · Correction</div>
-    <div class="topic" data-label="Error correction">
+    <div class="topic" id="e-qec" data-label="Error correction">
       <div class="topic-head"><h3>Quantum error correction</h3><span class="used">not used here</span></div>
       <p class="oneline"><b>Quantum error correction</b> spreads each logical qubit over many physical qubits. It finds errors while the circuit runs and fixes them.</p>
       <h4>Example: the 3-qubit bit-flip code</h4>
@@ -1030,7 +1034,7 @@
     </div>
 
     <div class="subhead" id="sub-choose" data-label="E · Choosing and combining">E · Choosing and combining</div>
-    <div class="topic" data-label="Choosing">
+    <div class="topic" id="e-choose" data-label="Choosing">
       <div class="topic-head"><h3>What each costs, and how they stack</h3></div>
       <p class="oneline">The methods fix different errors, so you can use them together. The cost in QPU time is very different for each method.</p>
       <div class="table-wrap"><table>
@@ -1130,6 +1134,61 @@
         <li><b>160 numbers:</b> mitigation made the split much more even. But TREX and ZNE put only 51% of the numbers in the same group. So most of the choices for single numbers were still noise.</li>
       </ul>
     </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="allinone" data-label="7 · Everything in one table">
+    <div class="sec-num">Section 7</div>
+    <h2>Everything in one table</h2>
+    <p class="sec-intro">This table lists every technique on this page, grouped by the question it answers. For each technique, it gives the general use and our use. Click a name to go to its card.</p>
+
+    <div class="table-wrap"><table class="mindmap">
+      <thead><tr><th>Name</th><th>What it is</th><th>Where it is generally used</th><th>Where we used it</th></tr></thead>
+      <tbody>
+        <tr class="grp"><td colspan="4">1 · Basics: how the chip gives numbers</td></tr>
+        <tr><td><a href="#t-shots">Shot</a></td><td>One run of the circuit and one measurement</td><td>Every quantum program</td><td>Every project</td></tr>
+        <tr><td><a href="#t-shots">Expectation value ⟨Z⟩</a></td><td>The average of ±1 readings over many shots</td><td>Energies, costs and any observable</td><td>VQE, Lab 4b Ex 4 (PCE)</td></tr>
+        <tr><td><a href="#t-shots">Sampler</a></td><td>A Qiskit tool that returns counts of bitstrings</td><td>Algorithms that need the answer bitstring</td><td>MaxCut (QAOA), Lab 4b Ex 2, QSVM on ibm_fez</td></tr>
+        <tr><td><a href="#t-shots">Estimator</a></td><td>A Qiskit tool that returns expectation values</td><td>Algorithms that need averages, such as energies</td><td>Lab 4b Ex 4 (PCE, 160 numbers)</td></tr>
+        <tr><td><a href="#t-measure">Basis rotation</a></td><td>Ry(−π/2) or Rx(π/2) before a Z measurement</td><td>Measuring X and Y terms</td><td>VQE (3X − 2Y + Z), PCE (XX and YY slots)</td></tr>
+        <tr><td><a href="#t-shotnoise">Shot noise 1/√N</a></td><td>The error of an average from N shots</td><td>Deciding how many shots to use</td><td>VQE (10,000 shots), MaxCut (8,192 shots)</td></tr>
+
+        <tr class="grp"><td colspan="4">2 · Mapping: how a problem gets onto qubits</td></tr>
+        <tr><td><a href="#t-featuremap">Feature map (ZZFeatureMap)</a></td><td>A circuit that sets its angles from a data point</td><td>Quantum kernels and quantum classifiers</td><td>QSVM, Titanic, 7 features, linear and full</td></tr>
+        <tr><td><a href="#t-featuremap">ZZ gate (RZZ)</a></td><td>CNOT · Rz · CNOT; a phase that depends on whether two qubits agree</td><td>Feature maps and QAOA cost layers</td><td>QSVM feature map, MaxCut and partition cost layers</td></tr>
+        <tr><td><a href="#t-maxcut">Cost Hamiltonian H<sub>C</sub> (Ising)</a></td><td>An energy rule whose lowest energy is the best answer</td><td>Combinatorial optimisation on qubits</td><td>MaxCut (6 nodes, 8 edges), partition problem</td></tr>
+        <tr><td><a href="#t-ising">QUBO → Ising</a></td><td>A yes/no problem written as a sum of products, then as spins</td><td>Scheduling, portfolios, routing, any 0/1 optimisation</td><td>Lab 4b partition problem</td></tr>
+        <tr><td><a href="#t-implement">CNOT · Rz · CNOT block</a></td><td>The gates for one ZZ term of H<sub>C</sub></td><td>Every QAOA cost layer</td><td>MaxCut (8 blocks), partition (15 blocks for 6 numbers)</td></tr>
+        <tr><td><a href="#t-pce">PCE</a></td><td>Each number in one slot (XX, YY or ZZ) on a qubit pair</td><td>Large 0/1 problems on few qubits</td><td>Lab 4b Ex 4: 160 numbers on 11 qubits</td></tr>
+
+        <tr class="grp"><td colspan="4">3 · Quantum learning technique: what circuit runs</td></tr>
+        <tr><td><a href="#t-qsvm">SVM and RBF kernel</a></td><td>A classical classifier with the widest boundary</td><td>Classification of tabular data</td><td>Basic ML (79.8%), QSVM baseline (77.5%)</td></tr>
+        <tr><td><a href="#t-qsvm">QSVM (quantum kernel)</a></td><td>An SVM with similarity from a circuit overlap</td><td>Quantum machine learning for classification</td><td>Titanic: simulator 80.9% and 83.1%; ibm_fez 62.5%</td></tr>
+        <tr><td><a href="#t-vqe">VQE</a></td><td>A dial circuit that the optimiser tunes to the lowest energy</td><td>Chemistry and materials: ground-state energies</td><td>One qubit, H = 3X − 2Y + Z, E₀ = −3.742</td></tr>
+        <tr><td><a href="#t-qaoa">QAOA</a></td><td>Alternate cost and mixer layers, with dials γ and β</td><td>Combinatorial optimisation</td><td>MaxCut (p = 1 to 10), Lab 4b Ex 2 (p = 1), Lab 4b Ex 4 (circuit shape for PCE)</td></tr>
+        <tr><td><a href="#t-whyqaoa">Interference</a></td><td>Phases that add or cancel, so good answers become likely</td><td>The engine of most quantum algorithms</td><td>MaxCut: best colouring from 1.6% to about 8% at p = 1</td></tr>
+
+        <tr class="grp"><td colspan="4">4 · Classical optimiser: how the dials are tuned</td></tr>
+        <tr><td><a href="#t-optimisers">Gradient descent (finite difference)</a></td><td>Measure the slope, then step downhill</td><td>Smooth scores without noise</td><td>VQE: works with ε = 0.3, fails with ε = 10⁻⁶</td></tr>
+        <tr><td><a href="#t-optimisers">Nelder–Mead</a></td><td>A triangle of points that moves downhill; no slopes</td><td>Few dials, no slopes available</td><td>VQE, MaxCut comparison (400 runs)</td></tr>
+        <tr><td><a href="#t-optimisers">SPSA</a></td><td>One random direction, 2 runs for each slope</td><td>Many dials, noisy scores</td><td>MaxCut comparison (1,200 runs)</td></tr>
+        <tr><td><a href="#t-optimisers">COBYLA</a></td><td>A flat model inside a trust region; no slopes</td><td>Noisy quantum scores (the default choice)</td><td>MaxCut (36 runs), Lab 4b</td></tr>
+        <tr><td><a href="#t-tricks">Warm start, restarts</a></td><td>Start from earlier good dials; run 3 times, keep the best</td><td>Any optimiser under noise</td><td>MaxCut: p = 6 from 5.42 to about 6.9</td></tr>
+        <tr><td><a href="#t-tricks">Pretrained dials</a></td><td>Load dials from an earlier run; do not train again</td><td>Saving QPU time on hardware</td><td>Lab 4b Ex 2 and Ex 4</td></tr>
+        <tr><td><a href="#t-plateau">Barren plateau (Haar test)</a></td><td>A score that is flat almost everywhere</td><td>Checking whether a circuit is trainable</td><td>Haar experiment: spread 0.00985 at 10 qubits (simulation)</td></tr>
+
+        <tr class="grp"><td colspan="4">5 · Handling errors: suppression, mitigation, correction</td></tr>
+        <tr><td><a href="#e-dd">DD (dynamical decoupling)</a></td><td>Pairs of flips on idle qubits (an echo)</td><td>Suppression of idle drift</td><td>Lab 4b Ex 2</td></tr>
+        <tr><td><a href="#e-twirl">Pauli twirling</a></td><td>Random Paulis around gates and readout</td><td>Changes coherent errors into random flips</td><td>Lab 4b Ex 2 and Ex 4</td></tr>
+        <tr><td><a href="#e-m3">M3</a></td><td>Per-qubit misread rates, solved for the seen bitstrings</td><td>Readout mitigation for counts (Sampler)</td><td>Lab 4b Ex 2</td></tr>
+        <tr><td><a href="#e-trex">TREX</a></td><td>Twirled readout, then divide by the factor f</td><td>Readout mitigation for expectation values (Estimator)</td><td>Lab 4b Ex 4</td></tr>
+        <tr><td><a href="#e-zne">ZNE</a></td><td>Fold gates to add noise, then extrapolate to zero</td><td>Gate-error mitigation</td><td>Lab 4b Ex 4</td></tr>
+        <tr><td><a href="#e-pea">PEA</a></td><td>Inject learned noise, then extrapolate to zero</td><td>Gate-error mitigation, more accurate than folding</td><td>Not used (an option)</td></tr>
+        <tr><td><a href="#e-pec">PEC</a></td><td>Cancel noise on average with signed weights</td><td>Gate-error mitigation without bias, at a high shot cost</td><td>Lab 4b Ex 4d: estimated at 4 min 26 s, not run</td></tr>
+        <tr><td><a href="#e-qec">Error correction</a></td><td>Many physical qubits for each logical qubit</td><td>Future large, fault-tolerant computers</td><td>Not used</td></tr>
+        <tr><td><a href="#e-choose">Resilience levels</a></td><td>An Estimator shortcut: 0, 1 (TREX), 2 (TREX + ZNE)</td><td>Quick mitigation settings</td><td>Not used; Lab 4b set each option by hand</td></tr>
+      </tbody>
+    </table></div>
   </section>
 
   <section id="pages" data-label="All detailed pages">
