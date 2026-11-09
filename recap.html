@@ -105,6 +105,7 @@
   .warnc { color: var(--warn); font-weight: 700; }
   .diagram { overflow-x: auto; background: var(--surface-2); border: 1px solid var(--surface-border); border-radius: 8px; padding: 10px; margin: 8px 0 10px; }
   .diagram svg { display: block; min-width: 560px; width: 100%; height: auto; color: var(--text); }
+  .diagram img { display: block; max-width: 100%; height: auto; margin: 0 auto; background: #fff; border-radius: 6px; }
   .diagram .cap { font-size: 12.5px; color: var(--text-dim); margin: 6px 4px 0; }
 
   /* ---------- big-picture flow ---------- */
@@ -114,6 +115,20 @@
   .flow .box b { display: block; color: var(--step); font-size: 13px; margin-bottom: 3px; }
   .flow .arrow { align-self: center; color: var(--text-dim); font-size: 18px; }
   @media (max-width: 640px) { .flow .arrow { display: none; } }
+  /* ---------- collapsible sections and cards ---------- */
+  .fold-head { cursor: pointer; user-select: none; }
+  .fold-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  .fold-head .chev { display: inline-block; width: 1em; margin-right: 6px; color: var(--text-dim); font-size: 0.8em; transition: transform 0.15s; }
+  .fold-head[aria-expanded="false"] .chev { transform: rotate(-90deg); }
+  .topic.folded { padding-bottom: 12px; }
+  .topic.folded .topic-head { margin-bottom: 0; }
+  .topic.folded .oneline { margin: 8px 0 0; }
+  .fold-hint { font-size: 12.5px; color: var(--text-dim); margin: 8px 0 0; cursor: pointer; }
+  .fold-hint:hover { color: var(--accent); }
+  .fold-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .fold-bar button { font: inherit; font-size: 13px; color: var(--text); background: var(--surface); border: 1px solid var(--surface-border); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+  .fold-bar button:hover { border-color: var(--step); }
+  @media print { [hidden] { display: block !important; } .fold-bar, .fold-hint { display: none; } }
 </style>
 </head>
 <body>
@@ -139,7 +154,7 @@
     <li><a class="sub" href="#t-featuremap">Feature map (data)</a></li>
     <li><a class="sub" href="#t-maxcut">MaxCut → Ising</a></li>
     <li><a class="sub" href="#t-ising">Partition: QUBO → Ising</a></li>
-    <li><a class="sub" href="#t-implement">Building H<sub>C</sub> in code</a></li>
+    <li><a class="sub" href="#t-implement">Building H<sub>C</sub> into the circuit</a></li>
     <li><a class="sub" href="#t-pce">PCE: fewer qubits</a></li>
 
     <li class="group"><a href="#circuits">3 · Which quantum learning technique</a></li>
@@ -180,13 +195,17 @@
   <header>
     <div class="crumb"><a href="index.html">← All pages</a> · quantum-machine-learning</div>
     <h1>The Recap</h1>
-    <p class="lede">Everything this repo has taught so far, organised by the questions you ask when you use a quantum computer: how to put a problem on qubits, which quantum learning technique to use, which classical optimiser to use, how to handle errors and how to read the results. Each section lists its techniques as cards; the tag on a card says which project used it.</p>
+    <p class="lede">This page collects everything that this repo has taught so far. Each section answers one question that you ask when you use a quantum computer. Each section has cards, one for each technique. The tag on a card names the project that used the technique.</p>
+    <div class="fold-bar" id="fold-bar">
+      <button type="button" data-fold="open">Open all cards</button>
+      <button type="button" data-fold="close">Close all cards</button>
+    </div>
   </header>
 
   <!-- ============================================================ -->
   <section id="picture" data-label="The big picture">
     <h2>The big picture</h2>
-    <p class="sec-intro">Every project here follows the same pipeline. Each box is one section of this page; click to jump.</p>
+    <p class="sec-intro">Every project here follows the same five steps. Each box is one section of this page. Click a box to go to that section.</p>
     <div class="flow">
       <a class="box" href="#mapping"><b>Map to qubits</b>Section 2</a>
       <div class="arrow">→</div>
@@ -198,38 +217,70 @@
       <div class="arrow">→</div>
       <a class="box" href="#results"><b>Read the results</b>Section 6</a>
     </div>
-    <div class="key">The quantum computer only runs circuits and returns measurements. Everything else (encoding, tuning the dials, correcting the numbers, checking the answer) is done on a normal computer.</div>
+    <div class="key">The quantum computer only runs circuits and returns measurements. A normal computer does all the other work: it encodes the problem, tunes the dials, corrects the numbers and checks the answer.</div>
   </section>
 
   <!-- ============================================================ -->
   <section id="basics" data-label="1 · The basics">
     <div class="sec-num">Section 1</div>
     <h2>The basics you need for everything else</h2>
-    <p class="sec-intro">Three ideas that every later section relies on.</p>
+    <p class="sec-intro">Every later section uses these three ideas.</p>
 
     <div class="topic" id="t-shots" data-label="Shots and ⟨Z⟩">
       <div class="topic-head"><h3>Shots and expectation values</h3><span class="used">everywhere</span></div>
+      <p class="oneline">A <b>shot</b> is one run of the circuit, followed by one measurement. Each qubit gives 0 or 1. An <b>expectation value</b> is the average over many shots.</p>
+
+      <h4>Example: one qubit</h4>
+      <p>In 1,000 shots, the qubit reads 0 in 900 shots and 1 in 100 shots. A reading of 0 counts as +1, and a reading of 1 counts as −1:</p>
+      <div class="math">⟨Z⟩ = P(0) − P(1) = 0.9 − 0.1 = 0.8</div>
+
+      <h4>Example: two qubits</h4>
+      <p>For two qubits, each shot gives the product (Z₁ reading) × (Z₂ reading). The product is +1 when the qubits agree and −1 when they disagree. In 1,000 shots, the readings are 00 in 450 shots, 11 in 350 shots, 01 in 120 shots and 10 in 80 shots.</p>
+      <div class="math">⟨Z₁Z₂⟩ = P(agree) − P(disagree) = (450 + 350)/1,000 − (120 + 80)/1,000 = 0.8 − 0.2 = 0.6</div>
+
+      <h4>The general rule</h4>
+      <p>⟨Z⟩ goes from +1 (the qubit always reads 0) to −1 (the qubit always reads 1). Qiskit has two tools for this:</p>
       <ul>
-        <li>A <b>shot</b> is one run of the circuit plus one measurement. Each qubit comes out 0 or 1.</li>
-        <li>An <b>expectation value</b> is the average over many shots. For Z: ⟨Z⟩ = P(measure 0) − P(measure 1), from +1 (always 0) to −1 (always 1). Example: 900 zeros and 100 ones in 1,000 shots → ⟨Z⟩ = 0.9 − 0.1 = 0.8.</li>
-        <li>For two qubits, ⟨Z₁Z₂⟩ is the average of (Z₁ reading) × (Z₂ reading): +1 when the qubits agree, −1 when they disagree.</li>
-        <li>The <b>Sampler</b> returns counts of bitstrings; the <b>Estimator</b> returns expectation values.</li>
+        <li>The <b>Sampler</b> returns counts of bitstrings.</li>
+        <li>The <b>Estimator</b> returns expectation values.</li>
       </ul>
     </div>
 
     <div class="topic" id="t-measure" data-label="Measuring X and Y">
       <div class="topic-head"><h3>Measuring X and Y</h3><span class="used">VQE · PCE</span></div>
-      <p class="oneline">The chip can only measure Z. To measure X or Y, rotate first, then measure Z: Ry(−π/2) for X, Rx(π/2) for Y. A Hamiltonian like 3X − 2Y + Z is measured one term at a time and added up with its coefficients.</p>
+      <p class="oneline">The chip can measure only Z. To measure X or Y, rotate the qubit first, then measure Z.</p>
+
+      <h4>Example: ⟨X⟩ of the state |+⟩</h4>
+      <ol>
+        <li>Start with |+⟩. This state has ⟨X⟩ = 1.</li>
+        <li>Apply Ry(−π/2). This rotation changes |+⟩ to |0⟩.</li>
+        <li>Measure Z. Every shot reads 0, so the result is +1.</li>
+      </ol>
+      <p>So the Z measurement after the rotation gives ⟨X⟩ = 1.</p>
+
+      <h4>The general rule</h4>
+      <div class="math">
+        to measure X: &nbsp;Ry(−π/2), then measure Z<br>
+        to measure Y: &nbsp;Rx(π/2), then measure Z
+      </div>
+      <p>A Hamiltonian with several terms is measured one term at a time. Example: H = 3X − 2Y + Z. Suppose the three measurements give ⟨X⟩ = 0.5, ⟨Y⟩ = −0.2 and ⟨Z⟩ = 0.1. Then ⟨H⟩ = 3(0.5) − 2(−0.2) + 0.1 = 2.0.</p>
+      <p><b>Limit:</b> each term needs its own measurement setting, so more terms need more circuits. Terms can share a setting only if they use the same letter on each qubit (see PCE, Section 2).</p>
     </div>
 
     <div class="topic" id="t-shotnoise" data-label="Shot noise: 1/√N">
       <div class="topic-head"><h3>Shot noise: the error shrinks like 1/√N</h3><span class="used">everywhere</span></div>
-      <p class="oneline">With N shots, an average is off by roughly 1/√N. Like a coin: in 100 tosses, heads-minus-tails typically lands about √100 = 10 away from 0, so the average is off by 10/100 = 0.1.</p>
+      <p class="oneline"><b>Shot noise</b> is the error in an average that comes from a limited number of shots. With N shots, the average is off by about 1/√N.</p>
+
+      <h4>Example: a coin</h4>
+      <p>Toss a fair coin 100 times. Count +1 for heads and −1 for tails. The true average is 0. The sum is typically about √100 = 10 away from 0. So the average is typically off by 10/100 = 0.1.</p>
+
+      <h4>The general rule</h4>
       <div class="table-wrap"><table>
         <thead><tr><th>Shots</th><th>Typical error of the average</th></tr></thead>
         <tbody><tr><td>100</td><td>≈ 0.10</td></tr><tr><td>10,000</td><td>≈ 0.01</td></tr></tbody>
       </table></div>
-      <div class="key">100× more shots buys only 10× more accuracy. This explains why tiny-step gradients fail (Section 4) and why PEC is expensive (Section 5).</div>
+      <div class="key">100 times more shots give only 10 times more accuracy. This rule explains why tiny-step gradients fail (Section 4) and why PEC is expensive (Section 5).</div>
+      <p><b>Limit:</b> 1/√N is the worst case, at ⟨Z⟩ = 0. The exact error is √(1 − ⟨Z⟩²)/√N. Example: at ⟨Z⟩ = 0.8, the error is 0.6/√N.</p>
     </div>
   </section>
 
@@ -237,141 +288,264 @@
   <section id="mapping" data-label="2 · Mapping a problem to qubits">
     <div class="sec-num">Section 2</div>
     <h2>How do we map a problem onto qubits?</h2>
-    <p class="sec-intro">Data and problems are classical. Before any circuit runs, they have to be written in a form qubits can carry.</p>
+    <p class="sec-intro">A quantum computer runs only circuits. Each technique below writes a classical data point or a classical problem into a circuit.</p>
 
     <div class="table-wrap"><table>
       <thead><tr><th>Technique</th><th>What it maps</th><th>Qubits needed</th><th>Used in</th></tr></thead>
       <tbody>
         <tr><td><a href="#t-featuremap">Feature map</a></td><td>A data point → a quantum state</td><td>1 per feature (7 for Titanic)</td><td>QSVM</td></tr>
-        <tr><td><a href="#t-maxcut">MaxCut → Ising</a></td><td>A graph-splitting problem → a cost Hamiltonian</td><td>1 per node (6)</td><td>MaxCut</td></tr>
-        <tr><td><a href="#t-ising">QUBO → Ising</a></td><td>Any yes/no optimisation → a cost Hamiltonian</td><td>1 per variable (6)</td><td>Partition</td></tr>
-        <tr><td><a href="#t-pce">PCE</a></td><td>Each variable → a pair of qubits</td><td>≈ √n (11 for 160)</td><td>Lab 4b</td></tr>
+        <tr><td><a href="#t-maxcut">MaxCut → Ising</a></td><td>A graph puzzle → a cost Hamiltonian</td><td>1 per node (6)</td><td>MaxCut</td></tr>
+        <tr><td><a href="#t-ising">QUBO → Ising</a></td><td>A yes/no optimisation → a cost Hamiltonian</td><td>1 per number (6)</td><td>Partition</td></tr>
+        <tr><td><a href="#t-pce">PCE</a></td><td>Each number → a slot on a pair of qubits</td><td>about √(2n/3) (11 for 160)</td><td>Lab 4b</td></tr>
       </tbody>
     </table></div>
 
     <!-- feature map -->
     <div class="topic" id="t-featuremap" data-label="Feature map (data)">
       <div class="topic-head"><h3>Feature map: data → quantum state</h3><span class="used">QSVM</span></div>
-      <p class="oneline">A circuit U(x) whose gate angles are set by the data. Running it on |0…0⟩ gives one quantum state per data point:</p>
+      <p class="oneline">A <b>feature map</b> is a circuit U(x) that sets its gate angles from a data point x. The circuit starts in |0…0⟩. It ends in one quantum state for each data point:</p>
       <div class="math">|φ(x)⟩ = U(x)|0…0⟩</div>
-      <h4>ZZFeatureMap, written out for 2 features</h4>
+
+      <h4>Example: one data point with 2 features</h4>
+      <p>Take the data point x = (x₀, x₁) = (0.5, 1.0). The circuit applies three gate layers:</p>
+      <ol>
+        <li><b>H on each qubit.</b> The H gate (Hadamard) puts a qubit in an equal mix of 0 and 1.</li>
+        <li><b>Rz on each qubit, with its own feature.</b> Qubit 0 gets Rz(2 × 0.5) = Rz(1.0). Qubit 1 gets Rz(2 × 1.0) = Rz(2.0).</li>
+        <li><b>A ZZ gate on the pair, with both features.</b> (π − 0.5)(π − 1.0) = 2.6416 × 2.1416 = 5.657. The Rz in the middle gets the angle 2 × 5.657 = 11.31.</li>
+      </ol>
+      <p>The result is the state |φ(x)⟩ for this data point. A different data point gives different angles, so it gives a different state.</p>
       <div class="diagram">
-        <svg viewBox="0 0 640 140" role="img" aria-label="ZZFeatureMap circuit for two qubits">
-          <g fill="none" stroke="currentColor" stroke-width="1.5">
-            <line x1="40" y1="40" x2="620" y2="40"/><line x1="40" y1="105" x2="620" y2="105"/>
-            <rect x="60" y="25" width="36" height="30" fill="var(--surface)"/><rect x="60" y="90" width="36" height="30" fill="var(--surface)"/>
-            <rect x="115" y="25" width="92" height="30" fill="var(--surface)"/><rect x="115" y="90" width="92" height="30" fill="var(--surface)"/>
-            <line x1="250" y1="40" x2="250" y2="117"/><circle cx="250" cy="105" r="12" fill="var(--surface)"/><line x1="238" y1="105" x2="262" y2="105"/><line x1="250" y1="93" x2="250" y2="117"/>
-            <rect x="285" y="90" width="230" height="30" fill="var(--surface)"/>
-            <line x1="560" y1="40" x2="560" y2="117"/><circle cx="560" cy="105" r="12" fill="var(--surface)"/><line x1="548" y1="105" x2="572" y2="105"/><line x1="560" y1="93" x2="560" y2="117"/>
-          </g>
-          <g fill="currentColor"><circle cx="250" cy="40" r="5"/><circle cx="560" cy="40" r="5"/></g>
-          <g fill="currentColor" font-family="ui-monospace, Menlo, monospace" font-size="13" text-anchor="middle">
-            <text x="22" y="45">q₀</text><text x="22" y="110">q₁</text>
-            <text x="78" y="45">H</text><text x="78" y="110">H</text>
-            <text x="161" y="45">P(2x₀)</text><text x="161" y="110">P(2x₁)</text>
-            <text x="400" y="110">P(2(π−x₀)(π−x₁))</text>
-          </g>
-        </svg>
-        <div class="cap">Qiskit's ZZFeatureMap(2, reps=1), decomposed. With more features, every connected pair gets its own CNOT · P · CNOT block.</div>
+        <img src="assets/recap/zzfeaturemap_2q.png" alt="ZZFeatureMap circuit for two qubits: H, Rz(2x0) and H, Rz(2x1), then CNOT, Rz(2(pi-x0)(pi-x1)) on qubit 1, CNOT">
+        <div class="cap">Drawn by Qiskit: <code>ZZFeatureMap(2, reps=1)</code>, rewritten in H, Rz and CNOT gates. The CNOT · Rz · CNOT block on the right is the ZZ gate.</div>
       </div>
+
+      <h4>The ZZ gate</h4>
+      <p>The <b>ZZ gate</b> is the block CNOT · Rz · CNOT. Qiskit also calls it RZZ. It gives the pair a phase that depends on whether the two qubits agree:</p>
       <div class="math">
-        U(x) = exp( −i·[ Σᵢ φᵢ Zᵢ + Σ<sub>pairs</sub> φᵢⱼ ZᵢZⱼ ] ) · H<sup>⊗n</sup> &nbsp;&nbsp;<span class="c">← up to an overall phase</span><br>
-        φᵢ = xᵢ, &nbsp;&nbsp;φᵢⱼ = (π − xᵢ)(π − xⱼ) &nbsp;&nbsp;<span class="c">← Qiskit's default angle rules</span>
+        exp(−iφZZ)|00⟩ = e<sup>−iφ</sup>|00⟩ &nbsp;&nbsp;<span class="c">← the qubits agree: phase −φ</span><br>
+        exp(−iφZZ)|01⟩ = e<sup>+iφ</sup>|01⟩ &nbsp;&nbsp;<span class="c">← the qubits disagree: phase +φ</span>
       </div>
+      <p>The phase depends on both qubits, so the gate entangles them. This lets the map encode how two features interact. An Rz gate on one qubit cannot do this.</p>
+
+      <h4>The general rule</h4>
+      <div class="math">
+        U(x) = exp( −i·[ Σᵢ φᵢ Zᵢ + Σ<sub>pairs</sub> φᵢⱼ ZᵢZⱼ ] ) · H<sup>⊗n</sup><br>
+        φᵢ = xᵢ, &nbsp;&nbsp;φᵢⱼ = (π − xᵢ)(π − xⱼ) &nbsp;&nbsp;<span class="c">← Qiskit's default angle rules</span><br>
+        Rz(2φᵢ) = exp(−iφᵢZᵢ) &nbsp;&nbsp;<span class="c">← one per feature</span><br>
+        CNOT · Rz(2φᵢⱼ) · CNOT = exp(−iφᵢⱼ ZᵢZⱼ) &nbsp;&nbsp;<span class="c">← the ZZ gate, one per pair</span>
+      </div>
+      <p>Each feature gets one Rz gate. Each connected pair of features gets one ZZ gate. Researchers expect the pair terms to be the part that a classical computer cannot copy easily.</p>
+
+      <h4>Limit: more pairs give a deeper, noisier circuit</h4>
+      <p>The <b>depth</b> of a circuit is its number of gate layers. Each extra pair adds 2 CNOTs, and CNOTs are the noisiest gates on the chip.</p>
       <ul>
-        <li><b>In words:</b> Hadamards make an equal superposition; single-qubit phases encode each feature; the CNOT·P·CNOT blocks encode products of pairs of features. The pair terms are what make the map hard to imitate classically.</li>
-        <li><b>Linear</b> entanglement (neighbour pairs only, 7 features): depth 20, 12 CNOTs. <b>Full</b> (every pair): depth 35, 42 CNOTs. Full is more expressive but deeper and noisier.</li>
+        <li><b>Linear</b> entanglement connects only neighbour pairs. For 7 features: depth 20, 12 CNOTs.</li>
+        <li><b>Full</b> entanglement connects every pair. For 7 features: depth 35, 42 CNOTs.</li>
       </ul>
+      <p>Full entanglement encodes more interactions. On hardware, its extra CNOTs also add more noise.</p>
     </div>
 
     <!-- maxcut -->
     <div class="topic" id="t-maxcut" data-label="MaxCut → Ising">
       <div class="topic-head"><h3>MaxCut, and its Ising cost</h3><span class="used">MaxCut</span></div>
-      <p class="oneline"><b>The puzzle:</b> colour every node of a graph one of two colours so that as many edges as possible join nodes of <b>different</b> colours. Those edges are "cut".</p>
+      <p class="oneline"><b>MaxCut</b> is a graph puzzle. Give each node one of two colours. Make as many edges as possible join nodes of <b>different</b> colours. An edge between two different colours is <b>cut</b>.</p>
       <ul>
-        <li><b>Same puzzle, many costumes:</b> magnets that prefer to point opposite to their neighbours; party guests split over two tables so rivals sit apart; WiFi routers given different channels so neighbours don't interfere.</li>
-        <li><b>Our graph:</b> 6 nodes, 8 edges: 0–1, 0–2, 0–5, 1–2, 1–3, 2–3, 2–4, 3–5. There are 2⁶ = 64 colourings. Best cut = <b>7 of 8</b>: teams {1, 2, 5} vs {0, 3, 4} (bitstrings 011001 and its mirror 100110). Only edge 1–2 can't be cut.</li>
-        <li><b>Why it's hard:</b> checking every colouring takes 2ⁿ tries: 64 for 6 nodes, ≈ 10¹⁸ for 60.</li>
+        <li><b>The same puzzle in other forms:</b>
+          <ul>
+            <li>magnets that point opposite to their neighbours;</li>
+            <li>guests at two tables, with rivals at different tables;</li>
+            <li>WiFi routers on two channels, with neighbours on different channels.</li>
+          </ul></li>
+        <li><b>Our graph:</b> 6 nodes and 8 edges: 0–1, 0–2, 0–5, 1–2, 1–3, 2–3, 2–4, 3–5. It has 2⁶ = 64 colourings.</li>
+        <li><b>Why it is hard:</b> a brute-force search checks all 2ⁿ colourings. That is 64 checks for 6 nodes, and about 10¹⁸ checks for 60 nodes.</li>
       </ul>
-      <h4>From the puzzle to a cost formula</h4>
+
+      <h4>Step 1 · Write each colour as a spin</h4>
+      <p>A <b>spin</b> zᵢ is a number that is +1 or −1. Here it records the colour of node i.</p>
       <div class="math">
-        zᵢ = +1 or −1 &nbsp;<span class="c">← node i's colour (a "spin")</span><br>
-        zᵢzⱼ = +1 if same colour, −1 if different<br>
-        H = Σ<sub>edges</sub> zᵢzⱼ = (same pairs) − (cut pairs) = (all edges) − 2·(cut) &nbsp;<span class="c">← the Ising energy</span><br>
-        cut = Σ<sub>edges</sub> (1 − zᵢzⱼ)/2 &nbsp;<span class="c">← solve for cut: each edge adds 1 if cut, 0 if not</span>
+        zᵢ = +1 or −1 &nbsp;<span class="c">← node i's colour</span><br>
+        zᵢzⱼ = +1 if same colour, −1 if different colours
       </div>
-      <p><b>Minimising the energy H = maximising the cut.</b> Replace each zᵢ by the Z operator on qubit i (Z gives +1 for |0⟩, −1 for |1⟩) and H becomes the <b>cost Hamiltonian</b> that QAOA uses.</p>
+
+      <h4>Step 2 · Example: score one colouring</h4>
+      <p>Take the colouring 011001. Read it from left to right: node 0 has colour 0, node 1 has colour 1, and so on. Check each edge:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Edge</th><th>Colours</th><th>Result</th><th>zᵢzⱼ</th></tr></thead>
+        <tbody>
+          <tr><td>0–1</td><td>0, 1</td><td>cut</td><td>−1</td></tr>
+          <tr><td>0–2</td><td>0, 1</td><td>cut</td><td>−1</td></tr>
+          <tr><td>0–5</td><td>0, 1</td><td>cut</td><td>−1</td></tr>
+          <tr><td>1–2</td><td>1, 1</td><td>same</td><td>+1</td></tr>
+          <tr><td>1–3</td><td>1, 0</td><td>cut</td><td>−1</td></tr>
+          <tr><td>2–3</td><td>1, 0</td><td>cut</td><td>−1</td></tr>
+          <tr><td>2–4</td><td>1, 0</td><td>cut</td><td>−1</td></tr>
+          <tr><td>3–5</td><td>0, 1</td><td>cut</td><td>−1</td></tr>
+        </tbody>
+      </table></div>
+      <p>Sum of zᵢzⱼ = (+1) + 7 × (−1) = <b>−6</b>. This colouring cuts 7 of the 8 edges. The two groups are {1, 2, 5} and {0, 3, 4}. The mirror colouring 100110 gives the same groups.</p>
+      <p>No colouring cuts all 8 edges. Nodes 0, 1, 2 form a triangle, and nodes 1, 2, 3 form another. Two colours cannot cut all three edges of a triangle. The best colouring leaves only edge 1–2 uncut, because that edge is in both triangles.</p>
+
+      <h4>Step 3 · The general rule: the cost Hamiltonian</h4>
+      <p>A <b>Hamiltonian</b> is an energy rule. It gives each possible arrangement a number, its <b>energy</b>. A physical system settles in its lowest energy. A <b>cost Hamiltonian H<sub>C</sub></b> is a Hamiltonian whose lowest-energy arrangement is the best answer to our problem.</p>
+      <div class="math">
+        H<sub>C</sub>(z) = Σ<sub>edges</sub> zᵢzⱼ &nbsp;<span class="c">← the energy of colouring z (the Ising energy)</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= (same pairs) − (cut pairs) = (all edges) − 2·(cut)<br>
+        cut = Σ<sub>edges</sub> (1 − zᵢzⱼ)/2 &nbsp;<span class="c">← each edge adds 1 if cut, 0 if not</span>
+      </div>
+      <p>Check with the example: 8 − 2 × 7 = −6. This matches the sum in Step 2. A bigger cut gives a lower energy, so <b>the lowest energy marks the biggest cut</b>. For our graph, −6 is the lowest energy.</p>
+
+      <h4>Step 4 · From a formula to a quantum operator</h4>
+      <p>Replace each spin zᵢ with the operator Zᵢ on qubit i. Z gives +1 for |0⟩ and −1 for |1⟩, so the state of qubit i holds the colour of node i.</p>
+      <div class="math">
+        H<sub>C</sub> = Σ<sub>edges</sub> ZᵢZⱼ<br>
+        H<sub>C</sub>|z⟩ = H<sub>C</sub>(z)·|z⟩ &nbsp;<span class="c">← on one colouring, it returns that colouring's energy</span><br>
+        H<sub>C</sub>|011001⟩ = −6·|011001⟩ &nbsp;<span class="c">← the example from Step 2</span>
+      </div>
+      <p>6 qubits can hold all 64 colourings at once, in superposition. QAOA puts H<sub>C</sub> in its cost layer as exp(−iγH<sub>C</sub>). That layer turns the energy of each colouring into a phase (Section 3).</p>
+      <p><b>Limit:</b> H<sub>C</sub> only scores colourings. It does not find the best one. QAOA and the classical optimiser do the search (Sections 3 and 4).</p>
       <p class="more">Go deeper: <a href="QAOA/max-cut/maxcut_demo.html">MaxCut by hand</a> · <a href="QAOA/max-cut/maxcut_example_usecases.html">three real costumes</a> · <a href="QAOA/max-cut/qaoa_theory.html">from magnets to circuit</a></p>
     </div>
 
     <!-- partition QUBO -->
     <div class="topic" id="t-ising" data-label="Partition: QUBO → Ising">
       <div class="topic-head"><h3>Partition problem: QUBO → Ising, step by step</h3><span class="used">Lab 4b</span></div>
-      <p class="oneline"><b>The problem:</b> split numbers a₁ … aₙ into two groups with equal sums. Example: 3, 5, 7, 9, 11, 13 (total 48) → {3, 5, 7, 9} and {11, 13}, 24 each.</p>
-      <h4>1 · One 0/1 switch per number</h4>
+      <p class="oneline"><b>The partition problem:</b> split the numbers a₁ … aₙ into two groups with equal sums. Example: 3, 5, 7, 9, 11, 13 (total 48) → {3, 5, 7, 9} and {11, 13}, with 24 in each group.</p>
+
+      <h4>Step 1 · Give each number a 0/1 switch</h4>
       <div class="math">xᵢ = 0 → aᵢ in group 1, &nbsp;&nbsp;xᵢ = 1 → aᵢ in group 2</div>
-      <h4>2 · Write the imbalance</h4>
+      <p>Example: the split above has x = (0, 0, 0, 0, 1, 1). The numbers 11 and 13 are in group 2.</p>
+
+      <h4>Step 2 · Write the imbalance C</h4>
       <div class="math">
         group 2 sum = Σ aᵢxᵢ, &nbsp;&nbsp;group 1 sum = Σ aᵢ(1 − xᵢ)<br>
         C = group 2 − group 1 = Σ aᵢxᵢ − Σ aᵢ(1 − xᵢ) = Σ aᵢ(2xᵢ − 1)
       </div>
-      <h4>3 · Square it, so "smaller is better" holds for both signs</h4>
+      <p>Example, good split: group 2 sum = 11 + 13 = 24. Group 1 sum = 3 + 5 + 7 + 9 = 24. C = 24 − 24 = 0.</p>
+      <p>Example, bad split: all numbers in group 1. Group 2 sum = 0. Group 1 sum = 48. C = 0 − 48 = −48.</p>
+
+      <h4>Step 3 · Square the imbalance</h4>
+      <p>C can be negative or positive. The square C² is 0 for a perfect split, and positive for every other split.</p>
       <div class="math">minimise C² = (Σ aᵢ(2xᵢ − 1))² &nbsp;&nbsp;<span class="c">← 0 exactly when the sums are equal</span></div>
-      <p>Expanding C² gives terms with products xᵢxⱼ, with no other constraints: a <b>QUBO</b> (quadratic unconstrained binary optimisation).</p>
-      <h4>4 · Switch to spins ±1</h4>
+      <p>Example: the good split gives C² = 0. The bad split gives C² = (−48)² = 2,304.</p>
+      <p>When you multiply out C², you get terms with products xᵢxⱼ, and no other conditions. This form is a <b>QUBO</b> (quadratic unconstrained binary optimisation). "Quadratic" means it has products of two variables. "Unconstrained" means every 0/1 choice is allowed.</p>
+
+      <h4>Step 4 · Change the switches to spins ±1</h4>
       <div class="math">
         xᵢ = (1 − zᵢ)/2 &nbsp;→&nbsp; 2xᵢ − 1 = −zᵢ<br>
         C = −Σ aᵢzᵢ
       </div>
-      <h4>5 · Expand C² and drop what doesn't matter</h4>
+      <p>Check: xᵢ = 0 gives zᵢ = +1, and 2·0 − 1 = −1 = −zᵢ. xᵢ = 1 gives zᵢ = −1, and 2·1 − 1 = +1 = −zᵢ. Both cases agree.</p>
+
+      <h4>Step 5 · Multiply out C²</h4>
       <div class="math">
         C² = Σᵢ Σⱼ aᵢaⱼ zᵢzⱼ<br>
         &nbsp;&nbsp;&nbsp;= Σᵢ aᵢ² zᵢ² + Σ<sub>i≠j</sub> aᵢaⱼ zᵢzⱼ &nbsp;&nbsp;<span class="c">← split i = j from i ≠ j</span><br>
         &nbsp;&nbsp;&nbsp;= Σᵢ aᵢ² + 2 Σ<sub>i&lt;j</sub> aᵢaⱼ zᵢzⱼ &nbsp;&nbsp;<span class="c">← zᵢ² = 1; each pair appears twice</span>
       </div>
-      <p>The first part is a constant and the factor 2 is an overall scale; neither changes which split is best. Replace zᵢ by Zᵢ:</p>
+      <p>Example with the numbers 1, 2, 3 on qubits 0, 1, 2:</p>
+      <div class="math">
+        C² = (1·z₀ + 2·z₁ + 3·z₂)²<br>
+        &nbsp;&nbsp;&nbsp;= (1 + 4 + 9) + 2·(2·z₀z₁ + 3·z₀z₂ + 6·z₁z₂)<br>
+        &nbsp;&nbsp;&nbsp;= 14 + 2·(2·z₀z₁ + 3·z₀z₂ + 6·z₁z₂)
+      </div>
+      <p>Check with the split {1, 2} and {3}, so z = (+1, +1, −1). The bracket is 2 − 3 − 6 = −7. C² = 14 + 2 × (−7) = 0. This split is perfect.</p>
+
+      <h4>Step 6 · Remove what does not matter</h4>
+      <p>The term Σ aᵢ² is a constant. The factor 2 only changes the scale. Neither one changes which split is best, so remove both. Then replace each spin zᵢ with Zᵢ. The result is the <b>cost Hamiltonian</b> (defined in the MaxCut card):</p>
       <div class="math">H<sub>C</sub> = Σ<sub>i&lt;j</sub> aᵢaⱼ ZᵢZⱼ</div>
-      <p><b>Same as MaxCut:</b> this is the Ising energy of a <b>complete graph</b> with edge weights aᵢ × aⱼ, so minimising H<sub>C</sub> = cutting as much edge weight as possible. 6 numbers → 15 edges; 160 numbers → 12,720 edges.</p>
+      <p><b>The same as MaxCut:</b> this is the Ising energy of a <b>complete graph</b>, with the weight aᵢ × aⱼ on each edge. A complete graph has an edge between every pair of nodes. So the lowest H<sub>C</sub> is the split that cuts the most edge weight.</p>
+      <p><b>Limit:</b> the number of terms grows like n²/2. 6 numbers give 15 terms. 160 numbers give 12,720 terms. Each term costs gates (next card).</p>
     </div>
 
     <!-- implementation -->
-    <div class="topic" id="t-implement" data-label="Building H_C in code">
-      <div class="topic-head"><h3>Building H<sub>C</sub> in code, and in the circuit</h3><span class="used">Lab 4b · MaxCut</span></div>
-      <p class="oneline">Tiny example, numbers 1, 2, 3 on 3 qubits:</p>
+    <div class="topic" id="t-implement" data-label="Building H_C into the circuit">
+      <div class="topic-head"><h3>Building H<sub>C</sub> into the circuit</h3><span class="used">Lab 4b · MaxCut</span></div>
+      <p class="oneline">Each ZZ term of H<sub>C</sub> becomes one small block of gates. Example: the numbers 1, 2, 3 on 3 qubits give 3 terms:</p>
       <div class="math">H<sub>C</sub> = 2·Z₀Z₁ + 3·Z₀Z₂ + 6·Z₁Z₂ &nbsp;&nbsp;<span class="c">← weights 1×2, 1×3, 2×3</span></div>
-      <h4>As an operator (Qiskit)</h4>
-      <div class="math">
-        SparsePauliOp.from_sparse_list(<br>
-        &nbsp;&nbsp;[("ZZ", [i, j], a[i]*a[j]) for i, j in pairs], num_qubits=n)
-      </div>
-      <p>Lab 4b did the same in two library calls: build the weighted graph, then <code>Maxcut(graph).to_optimization_problem()</code> → <code>to_ising(...)</code>, which returns H<sub>C</sub> (up to scale) and a constant offset. <code>annotated_qaoa_ansatz(H, p)</code> then builds the QAOA circuit.</p>
-      <h4>As gates</h4>
+
+      <h4>One term as gates</h4>
       <div class="math">exp(−iγ·w·ZᵢZⱼ) = CNOT(i→j) · Rz<sub>j</sub>(2γw) · CNOT(i→j) &nbsp;&nbsp;<span class="c">← one block per term</span></div>
-      <p>So every ZZ term becomes CNOT, Rz, CNOT, with the angle set by its weight w and the dial γ.</p>
+      <ol>
+        <li>The first CNOT writes "do qubits i and j agree?" into qubit j.</li>
+        <li>Rz on qubit j turns that answer into a phase. The angle 2γw comes from the weight w and the QAOA dial γ.</li>
+        <li>The second CNOT puts qubit j back to its first value.</li>
+      </ol>
+
+      <h4>Example: the angles for γ = 0.5</h4>
+      <div class="math">
+        2·Z₀Z₁ → Rz(2 × 0.5 × 2) = Rz(2.0) on qubit 1<br>
+        3·Z₀Z₂ → Rz(2 × 0.5 × 3) = Rz(3.0) on qubit 2<br>
+        6·Z₁Z₂ → Rz(2 × 0.5 × 6) = Rz(6.0) on qubit 2
+      </div>
+      <p>One cost layer needs 3 blocks: 6 CNOTs and 3 Rz gates. The blocks can go in any order with the same result, because all ZZ terms commute.</p>
+
+      <h4>Limit: big problems need many gates</h4>
+      <ul>
+        <li>The partition problem with 160 numbers has 12,720 terms. That is 25,440 CNOTs in each cost layer.</li>
+        <li>A CNOT on hardware needs two qubits that are neighbours on the chip. If they are not neighbours, the compiler adds SWAP gates, and the circuit gets deeper.</li>
+      </ul>
       <p class="more">Go deeper: <a href="QAOA/max-cut/qaoa_C(x)_to_operator_proof.html">the phase gate proof</a></p>
     </div>
 
     <!-- PCE -->
     <div class="topic" id="t-pce" data-label="PCE: fewer qubits">
       <div class="topic-head"><h3>PCE: Pauli correlation encoding</h3><span class="used">Lab 4b</span></div>
-      <p class="oneline"><b>What:</b> instead of one qubit per number, give each number a <b>pair</b> of qubits read as XX, YY or ZZ. The <b>sign</b> of that pair's expectation value says which group the number is in.</p>
-      <h4>How</h4>
+      <p class="oneline"><b>PCE</b> stores each number on a <b>pair</b> of qubits, not on its own qubit. A <b>slot</b> is one qubit pair, read as XX, YY or ZZ. Each number gets one slot. The <b>sign</b> of the slot's expectation value gives the group of the number.</p>
+      <div class="diagram">
+        <img src="assets/recap/pce_overview.png" alt="PCE overview: a 9-node graph encoded on 3 qubits, each qubit pair carrying XX, YY and ZZ slots; a parameterised circuit trained in a classical loop; the solution read from measurements">
+        <div class="cap"><b>Left:</b> 9 nodes of a graph. <b>Middle:</b> the 9 nodes on 3 qubits (Q₁, Q₂, Q₃). Each of the 3 qubit pairs has an XX, a YY and a ZZ slot, so 3 × 3 = 9 slots. <b>Right:</b> a circuit with dials θ runs and is measured. A classical loop changes θ to lower the loss. Each node's group xᵢ comes from its slot. Figure from IBM's <a href="https://quantum.cloud.ibm.com/docs/tutorials/pauli-correlation-encoding-for-qaoa">PCE tutorial</a>, after Sciorilli et al., <i>Nature Communications</i> (2025).</div>
+      </div>
+
+      <h4>Example: 9 numbers on 3 qubits</h4>
       <ol>
-        <li><b>Count the slots.</b> q qubits have q(q − 1)/2 pairs, and each pair can be read 3 ways (XX, YY, ZZ): 3 × q(q − 1)/2 slots. Pick the smallest q with enough slots: q = ⌈(1 + √(1 + 8n/3)) / 2⌉. For n = 160: q = 11, giving 3 × 55 = 165 slots.</li>
-        <li><b>Assign a slot to each number.</b> The lab gave numbers 0–52 XX slots, 53–105 YY slots and 106–159 ZZ slots. Number i's slot is a Pauli string Πᵢ, e.g. X on qubits 0 and 1, I elsewhere.</li>
-        <li><b>Build a circuit with dials.</b> The lab used a QAOA-shaped circuit (2 layers) on the 11 qubits.</li>
-        <li><b>Measure every slot.</b> All XX slots can be read together, likewise all YY and all ZZ, so only <b>3 measurement settings</b> cover all 160 numbers (3 Estimator jobs).</li>
-        <li><b>Train.</b> Put the slot values into the partition score: each spin zᵢ is replaced by tanh(α·⟨Πᵢ⟩), a smooth version of its sign, plus a small penalty that pushes values away from 0. A classical optimiser tunes the dials to lower the score.</li>
-        <li><b>Read the answer.</b> Number i goes in group 1 if ⟨Πᵢ⟩ &gt; 0, group 2 if &lt; 0. A classical local search can then fix a few wrong signs.</li>
+        <li>3 qubits have 3 pairs: (0, 1), (0, 2) and (1, 2).</li>
+        <li>Each pair has 3 readings: XX, YY and ZZ. That gives 3 × 3 = 9 slots.</li>
+        <li>So 3 qubits hold 9 numbers. One qubit per number needs 9 qubits.</li>
+        <li>Suppose number 4 has the slot X₀X₂. In 1,000 shots, qubits 0 and 2 agree 700 times and disagree 300 times. ⟨X₀X₂⟩ = 0.7 − 0.3 = 0.4.</li>
+        <li>The sign is positive, so number 4 goes in group 1.</li>
       </ol>
-      <h4>Why it's useful</h4>
+
+      <h4>The general rule: how many qubits</h4>
+      <p>q qubits have q(q − 1)/2 pairs. Each pair gives 3 slots, so q qubits give 3 × q(q − 1)/2 slots. Pick the smallest q with at least n slots:</p>
+      <div class="math">
+        q = ⌈(1 + √(1 + 8n/3)) / 2⌉<br>
+        n = 9: &nbsp;&nbsp;(1 + √25) / 2 = 3 &nbsp;&nbsp;<span class="c">← 9 slots</span><br>
+        n = 160: (1 + √427.7) / 2 = 10.84 → 11 &nbsp;&nbsp;<span class="c">← 3 × 55 = 165 slots</span><br>
+        n = 1,600: → 34
+      </div>
+
+      <h4>How Lab 4b used it (160 numbers)</h4>
+      <ol>
+        <li><b>Assign a slot to each number.</b> Numbers 0–52 got XX slots, 53–105 got YY slots, and 106–159 got ZZ slots. The slot of number i is a Pauli string Πᵢ, for example X on qubits 0 and 1 and I on all other qubits.</li>
+        <li><b>Build a circuit with dials.</b> The dials are the adjustable angles of the circuit. The lab used a QAOA-shaped circuit with 2 layers on the 11 qubits.</li>
+        <li><b>Measure every slot.</b> One measurement setting reads all XX slots together. The same is true for YY and for ZZ. So <b>3 measurement settings</b> read all 160 numbers (details below).</li>
+        <li><b>Train.</b> Put the slot values into the partition cost. Replace each spin zᵢ with tanh(α·⟨Πᵢ⟩). The function tanh is a smooth version of the sign. A small extra term pushes the values away from 0. A classical optimiser turns the dials to lower the cost.</li>
+        <li><b>Read the answer.</b> If ⟨Πᵢ⟩ &gt; 0, number i goes in group 1. If ⟨Πᵢ⟩ &lt; 0, it goes in group 2. A classical local search can then correct a few wrong signs.</li>
+      </ol>
+
+      <h4>Why same-letter pairs (XX, YY, ZZ) and not mixed ones (XY, ZX …)?</h4>
+      <p>The chip measures only Z. To read ⟨XₐX<sub>b</sub>⟩, you rotate qubits a and b into the X basis just before you measure (Section 1).</p>
       <ul>
-        <li><b>Far fewer qubits:</b> qubits grow like √n. 160 → 11; 1,600 → 34. Problems that would need hundreds of qubits fit on a small corner of a chip.</li>
-        <li><b>Shallower circuits, so less noise,</b> and only 3 measurement settings regardless of n.</li>
-        <li>The PCE paper also reports that this encoding eases the flat-landscape problem (Section 4).</li>
+        <li><b>Same letter:</b> every XX slot needs the X rotation on its qubits. One rotation on all qubits serves every XX slot at once.</li>
+        <li><b>Mixed letters:</b> the slot XₐY<sub>b</sub> needs qubit a in the X basis. The slot YₐX<sub>c</sub> needs qubit a in the Y basis. One qubit cannot be in both bases in the same shot, so these slots need extra measurement settings.</li>
       </ul>
-      <div class="key caveat"><b>The catch.</b> The answer sits in the <b>signs of small expectation values</b>, which noise and shot noise easily flip. That's why Lab 4b needed mitigation, and why results must be checked for stability (Section 6).</div>
+      <p>Mixed pairs give more slots: 9 letter combinations for each pair, not 3. But they need many more settings. Same-letter slots keep the count at <b>3 settings, for any number of numbers</b>.</p>
+
+      <h4>How the measurement works, and why one reading does not disturb another</h4>
+      <ul>
+        <li><b>3 separate circuits:</b> each one is the same circuit with dials. It ends with an X-basis, Y-basis or Z-basis rotation. The Estimator ran them as 3 separate items. The order (XX first, then YY …) does not matter.</li>
+        <li><b>No disturbance:</b> each shot starts again from |0…0⟩, runs the circuit, and measures once. XX values and YY values come from <b>different runs</b>. So one measurement never changes the other.</li>
+        <li><b>One setting gives a whole group:</b> in the X-basis circuit, the chip measures all 11 qubits together. Every XX slot comes from the same bitstrings: ⟨XₐX<sub>b</sub>⟩ = average of (±1 reading of a) × (±1 reading of b).</li>
+        <li><b>How many runs:</b> each loss evaluation needs 3 circuits × 1,000 shots = <b>3,000 runs</b> without mitigation. Mitigation adds more runs. ZNE repeats each circuit at several noise levels. TREX adds calibration circuits.</li>
+      </ul>
+
+      <h4>Why it is useful</h4>
+      <ul>
+        <li><b>Far fewer qubits:</b> the qubit count grows like √n. 160 numbers need 11 qubits. 1,600 numbers need 34 qubits.</li>
+        <li><b>Smaller circuits:</b> 11 qubits, not 160, so the circuit has fewer gates and collects less noise. The number of measurement settings stays at 3 for any n.</li>
+        <li>The PCE paper also reports that this encoding reduces the flat-landscape problem (Section 4).</li>
+      </ul>
+      <div class="key caveat"><b>Limit.</b> The answer is in the <b>signs of small expectation values</b>. Noise and shot noise can flip those signs. For this reason, Lab 4b needed mitigation, and the results need a stability check (Section 6).</div>
     </div>
   </section>
 
@@ -379,69 +553,144 @@
   <section id="circuits" data-label="3 · Which quantum learning technique">
     <div class="sec-num">Section 3</div>
     <h2>Which quantum learning technique should we use?</h2>
-    <p class="sec-intro">Once the problem is on qubits, the quantum learning technique decides what circuit runs, what it measures and what the dials are.</p>
+    <p class="sec-intro">When the problem is on qubits, the quantum learning technique decides three things: which circuit runs, what the chip measures, and what the dials are. The <b>dials</b> are the adjustable angles in the circuit.</p>
 
     <div class="table-wrap"><table>
-      <thead><tr><th>Technique</th><th>Goal</th><th>What is measured</th><th>Dials?</th></tr></thead>
+      <thead><tr><th>Technique</th><th>Goal</th><th>What the chip measures</th><th>Dials?</th></tr></thead>
       <tbody>
-        <tr><td><a href="#t-qsvm">QSVM</a></td><td>Classify data</td><td>Overlap of two states (a kernel value)</td><td>No; a normal SVM is trained on the kernel</td></tr>
-        <tr><td><a href="#t-vqe">VQE</a></td><td>Lowest energy of a Hamiltonian</td><td>⟨H⟩</td><td>Yes</td></tr>
-        <tr><td><a href="#t-qaoa">QAOA</a></td><td>Best answer to an optimisation</td><td>⟨H<sub>C</sub>⟩ or bitstrings</td><td>Yes: γ, β per layer</td></tr>
+        <tr><td><a href="#t-qsvm">QSVM</a></td><td>Classify data</td><td>The overlap of two states (a kernel value)</td><td>No. A classical SVM trains on the kernel values.</td></tr>
+        <tr><td><a href="#t-vqe">VQE</a></td><td>Find the lowest energy of a Hamiltonian</td><td>⟨H⟩</td><td>Yes</td></tr>
+        <tr><td><a href="#t-qaoa">QAOA</a></td><td>Find a good answer to an optimisation</td><td>⟨H<sub>C</sub>⟩ or bitstrings</td><td>Yes: γ and β in each layer</td></tr>
       </tbody>
     </table></div>
 
+    <!-- QSVM -->
     <div class="topic" id="t-qsvm" data-label="SVM → quantum kernel">
       <div class="topic-head"><h3>SVM, and what QSVM changes</h3><span class="used">Basic ML · QSVM</span></div>
-      <h4>The SVM (support vector machine)</h4>
-      <ul>
-        <li>Finds the boundary between two classes with the <b>widest gap</b> (margin) to the nearest points. Those nearest points are the <b>support vectors</b>; only they decide the boundary.</li>
-        <li>When no straight line separates the classes, the <b>kernel trick</b> helps: the SVM only ever needs a similarity score K(a, b) between two points, and a curved similarity gives a curved boundary.</li>
-        <li>The standard choice is the <b>RBF kernel</b>, K(a, b) = exp(−γ·|a − b|²): close points score near 1, far points near 0.</li>
-      </ul>
-      <h4>What QSVM changes</h4>
-      <ul>
-        <li>Only the kernel. The similarity comes from a circuit: K(a, b) = |⟨φ(b)|φ(a)⟩|², the overlap of the two feature-map states.</li>
-        <li><b>How it's measured:</b> run U(a), then U(b) in reverse; K = probability of reading all zeros. Identical points come back to |0…0⟩ every time (K = 1).</li>
-        <li>The SVM itself is still trained on a normal computer.</li>
-        <li><b>The cost:</b> one circuit per <i>pair</i> of points, so the work grows like n². On real hardware we therefore used only 16 training and 8 test points.</li>
-      </ul>
+      <p class="oneline">An <b>SVM</b> (support vector machine) is a classical method that draws a boundary between two classes of data. QSVM keeps the SVM. It changes only how the similarity of two points is measured.</p>
+
+      <h4>Step 1 · The SVM draws the widest boundary</h4>
+      <p>Example: class A has points at x = 1 and x = 2. Class B has points at x = 5 and x = 6. The SVM puts the boundary at x = 3.5, halfway between 2 and 5. The gap (the <b>margin</b>) on each side is 1.5.</p>
+      <p>The points nearest to the boundary (2 and 5) are the <b>support vectors</b>. Only they set the boundary. If you move the point at x = 1 to x = 0, the boundary does not move.</p>
+
+      <h4>Step 2 · The kernel trick gives curved boundaries</h4>
+      <p>Sometimes no straight line separates the classes. The SVM needs only a similarity score K(a, b) for each pair of points. A <b>kernel</b> is the function that gives this score. A curved kernel gives a curved boundary.</p>
+      <p>The standard kernel is the <b>RBF kernel</b>. Its γ is a width setting, not the QAOA dial. Example with γ = 1:</p>
+      <div class="math">
+        K(a, b) = exp(−γ·|a − b|²)<br>
+        |a − b| = 0: &nbsp;K = exp(0) = 1 &nbsp;&nbsp;<span class="c">← the same point</span><br>
+        |a − b| = 1: &nbsp;K = exp(−1) = 0.37<br>
+        |a − b| = 3: &nbsp;K = exp(−9) = 0.0001 &nbsp;&nbsp;<span class="c">← far apart</span>
+      </div>
+
+      <h4>Step 3 · QSVM changes only the kernel</h4>
+      <div class="math">K(a, b) = |⟨φ(b)|φ(a)⟩|² &nbsp;&nbsp;<span class="c">← the overlap of the two feature-map states (Section 2)</span></div>
+      <p>To measure one kernel value on the chip:</p>
+      <ol>
+        <li>Start all qubits in |0…0⟩.</li>
+        <li>Apply the feature map U(a).</li>
+        <li>Apply U(b) in reverse, U(b)<sup>†</sup>.</li>
+        <li>Measure all qubits. Repeat for many shots.</li>
+        <li>Set K to the fraction of shots that read all zeros.</li>
+      </ol>
+      <p>Example: in 1,000 shots, 620 shots read 0…0. Then K ≈ 0.62. If a = b, U(b)<sup>†</sup> cancels U(a) exactly. Every shot reads all zeros, so K = 1.</p>
+      <p>The SVM still trains on a normal computer. It uses the table of K values from the chip.</p>
+
+      <h4>Limit: the work grows like n²</h4>
+      <p>The SVM needs one kernel value for each pair of points. The Titanic data has 711 training points and 178 test points:</p>
+      <div class="math">
+        training pairs: 711 × 710 / 2 = 252,405<br>
+        test pairs: &nbsp;&nbsp;&nbsp;&nbsp;178 × 711 = 126,558
+      </div>
+      <p>That is too many circuits for the hardware budget. So the hardware run used only 16 training points and 8 test points. That gives 16 × 15 / 2 = 120 training pairs and 8 × 16 = 128 test pairs.</p>
+
       <h4>What we saw</h4>
-      <p>On the full data, simulated QSVM scored 80.9% (linear) and 83.1% (full map) against 77.5% for an untuned classical RBF SVM on the same 7 features. On hardware, 62.5% on 8 test points, the same as the simulator on that subsample. Details and caveats in <a href="#r-ml">Section 6</a>.</p>
+      <p>On the full data, the simulated QSVM scored 80.9% with the linear map and 83.1% with the full map. An untuned classical RBF SVM scored 77.5% on the same 7 features. On hardware, QSVM scored 62.5% (5 of 8 test points). The simulator scored the same on that small sample. <a href="#r-ml">Section 6</a> has the details and caveats.</p>
     </div>
 
+    <!-- VQE -->
     <div class="topic" id="t-vqe" data-label="VQE">
       <div class="topic-head"><h3>VQE (variational quantum eigensolver)</h3><span class="used">VQE</span></div>
-      <p class="oneline">A circuit with dials (the <b>ansatz</b>) prepares a state; the chip measures its energy ⟨H⟩; a classical optimiser turns the dials to push the energy down. The lowest reachable energy approximates the ground-state energy.</p>
+      <p class="oneline"><b>VQE</b> finds the lowest energy of a Hamiltonian H. A circuit with dials (the <b>ansatz</b>) makes a state. The chip measures its energy ⟨H⟩. A classical optimiser turns the dials to lower the energy.</p>
+
+      <h4>Example: one qubit</h4>
       <ul>
-        <li>Our test: one qubit, ansatz Ry(θ) then Rz(φ) (any one-qubit state), H = 3X − 2Y + Z.</li>
-        <li>Exact answer: E₀ = −√(3² + 2² + 1²) = −√14 ≈ <b>−3.742</b>, so every run can be graded.</li>
+        <li><b>Hamiltonian:</b> H = 3X − 2Y + Z.</li>
+        <li><b>Ansatz:</b> Ry(θ), then Rz(φ). These two gates can make any one-qubit state.</li>
       </ul>
+      <p>The chip measures each term separately (Section 1). Then the computer adds the results with their coefficients:</p>
+      <div class="math">⟨H⟩ = 3⟨X⟩ − 2⟨Y⟩ + ⟨Z⟩</div>
+      <p>Example: at θ = 0, the state is |0⟩. Then ⟨X⟩ = 0, ⟨Y⟩ = 0 and ⟨Z⟩ = 1, so ⟨H⟩ = 3·0 − 2·0 + 1 = 1.</p>
+
+      <h4>The general rule: where the lowest energy is</h4>
+      <p>Two vectors give the energy:</p>
+      <ul>
+        <li>The <b>state vector</b> v = (⟨X⟩, ⟨Y⟩, ⟨Z⟩) is the <b>Bloch vector</b>. For a pure state, it ends on the surface of the Bloch sphere, so |v| = 1.</li>
+        <li>The <b>Hamiltonian vector</b> h = (3, −2, 1) holds the coefficients of H. Its length is |h| = √(3² + (−2)² + 1²) = √14.</li>
+      </ul>
+      <p>The energy is the dot product of the two vectors. The dot product depends on the angle θ between them:</p>
+      <div class="math">
+        ⟨H⟩ = h · v = |h|·|v|·cos θ = √14·cos θ<br>
+        θ = 0° &nbsp;&nbsp;(v points along h): &nbsp;&nbsp;&nbsp;&nbsp;⟨H⟩ = +√14 ≈ +3.742 &nbsp;&nbsp;<span class="c">← the highest energy</span><br>
+        θ = 180° (v points opposite to h): ⟨H⟩ = −√14 ≈ <b>−3.742</b> &nbsp;&nbsp;<span class="c">← the lowest energy, E₀</span>
+      </div>
+      <p>Check: the opposite direction is v = −h/√14 = (−0.8018, 0.5345, −0.2673). Then ⟨H⟩ = 3(−0.8018) − 2(0.5345) + (−0.2673) = −2.4054 − 1.0690 − 0.2673 = −3.7417 ≈ −3.742.</p>
+      <p>So VQE must turn the dials until the Bloch vector points opposite to (3, −2, 1).</p>
+      <p>We know the exact answer, so we can grade every run (Section 6).</p>
+      <p><b>Limit:</b> for many qubits, nobody knows the exact answer, so you cannot grade a run this way. Also, the ansatz must be able to make the lowest-energy state. If it cannot, VQE returns a higher energy.</p>
     </div>
 
+    <!-- QAOA -->
     <div class="topic" id="t-qaoa" data-label="QAOA">
       <div class="topic-head"><h3>QAOA (quantum approximate optimisation algorithm)</h3><span class="used">MaxCut · Lab 4b</span></div>
+      <p class="oneline"><b>QAOA</b> searches for a good answer to an optimisation problem. It repeats two layers: a <b>cost layer</b> made from H<sub>C</sub> (Section 2), and a <b>mixer layer</b>. A classical optimiser tunes the dials of each layer.</p>
+
+      <h4>Example: our MaxCut graph with one layer (p = 1)</h4>
+      <ol>
+        <li>Apply H to all 6 qubits. All 64 colourings now have the same amplitude.</li>
+        <li>Apply the cost layer with the dial γ. Each of the 8 edges gives one CNOT · Rz(2γ) · CNOT block. For γ = 1: 8 blocks with Rz(2.0), so 16 CNOTs.</li>
+        <li>Apply the mixer layer with the dial β: Rx(2β) on each qubit. For β = 1: Rx(2.0) on each of the 6 qubits.</li>
+        <li>Measure all qubits. Each shot gives one colouring.</li>
+        <li>Give the results to the classical optimiser. It changes γ and β, and the loop starts again at step 1.</li>
+      </ol>
+
+      <h4>The general rule</h4>
       <div class="math">
         |ψ(γ, β)⟩ = U<sub>M</sub>(β<sub>p</sub>) U<sub>C</sub>(γ<sub>p</sub>) … U<sub>M</sub>(β₁) U<sub>C</sub>(γ₁) H<sup>⊗n</sup>|0…0⟩<br>
         U<sub>C</sub>(γ) = exp(−iγH<sub>C</sub>) &nbsp;<span class="c">← cost layer: CNOT · Rz · CNOT per term</span><br>
         U<sub>M</sub>(β) = exp(−iβ Σ Xᵢ) &nbsp;<span class="c">← mixer layer: Rx(2β) on every qubit</span>
       </div>
-      <ul>
-        <li><b>p</b> = number of layers; each layer has two dials, γ and β, tuned by a classical optimiser.</li>
-        <li><b>More layers help</b> (MaxCut, exact simulation, best possible 7): p = 1 → 5.30, p = 2 → 6.06, p = 3 → 6.44, p = 5 → 6.72.</li>
-        <li><b>"Approximate"</b>: it aims for a good answer, not a guaranteed best one.</li>
-      </ul>
+      <p><b>p</b> is the number of layers. Each layer has 2 dials, γ and β, so p layers have 2p dials.</p>
+
+      <h4>More layers give better answers</h4>
+      <p>The table gives the expected cut (the average cut of the measured colourings) from exact simulation. The best possible cut is 7.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Layers p</th><th>1</th><th>2</th><th>3</th><th>5</th></tr></thead>
+        <tbody><tr><td>Expected cut</td><td>5.30</td><td>6.06</td><td>6.44</td><td>6.72</td></tr></tbody>
+      </table></div>
+      <p><b>Limit:</b> "approximate" means that QAOA aims for a good answer. It does not guarantee the best one. Each extra layer also adds gates, so on hardware it adds noise.</p>
     </div>
 
+    <!-- why QAOA works -->
     <div class="topic" id="t-whyqaoa" data-label="Why QAOA works">
       <div class="topic-head"><h3>Why QAOA works</h3><span class="used">MaxCut</span></div>
+      <p class="oneline">QAOA puts the score of each colouring into a phase. Then interference changes those phases into probabilities, so that good colourings become more likely.</p>
       <ol>
-        <li><b>Superposition:</b> Hadamards put all 64 colourings in the state at once, each with probability 1/64.</li>
-        <li><b>Cost as a phase:</b> the cost layer tags each colouring with a phase set by its own score. Probabilities don't change yet; the information is hidden in the phases.</li>
-        <li><b>Mixer turns phase into probability:</b> the X-rotations make the colourings interfere. Ones whose phases line up gain probability; others lose it. Even at untuned dials (γ = β = 1), the single most likely outcome was already the best split, with ~8% of the weight.</li>
-        <li><b>Repeat:</b> each extra layer reshapes the probabilities further towards the good answers.</li>
+        <li><b>Superposition.</b> After the H gates, each of the 64 colourings has probability 1/64 ≈ 1.6%.</li>
+        <li><b>Cost as a phase.</b> The cost layer multiplies each colouring z by the phase e<sup>−iγH<sub>C</sub>(z)</sup>. Example with γ = 1:
+          <div class="math">
+            011001: H<sub>C</sub> = −6 &nbsp;→ phase e<sup>+6i</sup> &nbsp;&nbsp;<span class="c">← a best colouring</span><br>
+            000000: H<sub>C</sub> = +8 &nbsp;→ phase e<sup>−8i</sup> &nbsp;&nbsp;<span class="c">← all one colour, no edge cut</span>
+          </div>
+          A phase does not change a probability, because |e<sup>iθ</sup>|² = 1. Each colouring still has probability 1/64. The score is now in the phase.</li>
+        <li><b>The mixer changes phase into probability.</b> The Rx gates mix the colourings, and their amplitudes add. If the phases line up, the amplitudes add up and the probability grows. If the phases are opposite, the amplitudes cancel. This effect is <b>interference</b>. Example: with untuned dials (γ = β = 1), the most likely single outcome was already a best colouring. Its probability was about 8%, about 5 times the 1.6% start.</li>
+        <li><b>Repeat.</b> Each extra layer moves more probability to the good colourings.</li>
       </ol>
-      <p><b>Where the recipe comes from:</b> the <b>adiabatic theorem</b> says that if you slowly turn a dial from an easy problem (the mixer, whose best state is the equal superposition) to the hard one (H<sub>C</sub>), the system stays in the best state all the way. QAOA imitates that slow turn with a few big alternating jumps, and lets the optimiser choose the jump sizes (γ, β).</p>
-      <div class="key">Classical brute force evaluates the cost 2ⁿ times, one colouring at a time. QAOA writes the same cost into phases once per layer and lets interference do the comparing. That's a different way to search, not a proven speed-up.</div>
+
+      <h4>Where the recipe comes from</h4>
+      <p>The <b>adiabatic theorem</b> is a physics result. Start a system in the lowest-energy state of an easy Hamiltonian. Change the Hamiltonian slowly into a hard one. The system stays in the lowest-energy state the whole time.</p>
+      <p>For QAOA, the easy Hamiltonian is the mixer. Its lowest-energy state (with the usual sign, −Σ Xᵢ) is the equal superposition. The hard Hamiltonian is H<sub>C</sub>. QAOA copies the slow change with a few large steps that alternate between the two layers. The optimiser picks the step sizes γ and β.</p>
+      <div class="key"><b>Limit.</b> A classical brute-force search computes the cost 2ⁿ times, once for each colouring. QAOA writes all the costs into phases once per layer, and interference compares them. This is a different way to search. It is not a proven speed-up.</div>
       <p class="more">Go deeper: <a href="QAOA/max-cut/classical_vs_quantum.html">classical vs quantum, side by side</a> · <a href="QAOA/max-cut/qaoa_theory.html">QAOA theory</a></p>
     </div>
   </section>
@@ -450,31 +699,60 @@
   <section id="training" data-label="4 · Which classical optimiser">
     <div class="sec-num">Section 4</div>
     <h2>Which classical optimiser should we use?</h2>
-    <p class="sec-intro">VQE and QAOA hand the dials to a classical optimiser running on a normal computer. Shot noise makes every measured value a little wrong, and that decides which optimiser works.</p>
+    <p class="sec-intro">VQE and QAOA give their dials to a <b>classical optimiser</b>, a program on a normal computer that changes the dials to lower a score. Shot noise makes every measured score a little wrong. That noise decides which optimiser works.</p>
 
     <div class="topic" id="t-optimisers" data-label="The optimisers">
       <div class="topic-head"><h3>The optimisers</h3><span class="used">VQE · MaxCut · Lab 4b</span></div>
+      <p class="oneline">We tried four optimisers. Some use slopes, and some only compare scores. Under shot noise, COBYLA needed the fewest circuit runs.</p>
 
       <h4>Gradient descent (finite difference)</h4>
-      <p>Estimate the slope of each dial as (f(θ + ε) − f(θ − ε)) / 2ε, then step downhill. Under shot noise, the division by 2ε <b>multiplies the noise by 1/(2ε)</b>: with ε = 10⁻⁶ that's ~500,000×, and the dials jump randomly. ε = 0.3 worked in VQE, but you can only choose ε if you already know the answer.</p>
+      <p><b>Gradient descent</b> measures the slope of the score for each dial, then moves each dial downhill. It estimates the slope from two nearby scores:</p>
+      <div class="math">slope ≈ (f(θ + ε) − f(θ − ε)) / 2ε</div>
+      <p>Example with 10,000 shots. Each score is off by about 0.01 (Section 1), so the difference of two scores is off by about 0.014.</p>
+      <div class="math">
+        ε = 10⁻⁶: &nbsp;slope error ≈ 0.014 / (2 × 10⁻⁶) ≈ 7,000 &nbsp;&nbsp;<span class="c">← the true slope is at most about 4</span><br>
+        ε = 0.3: &nbsp;&nbsp;slope error ≈ 0.014 / 0.6 ≈ 0.024 &nbsp;&nbsp;<span class="c">← small enough to work</span>
+      </div>
+      <p>The division by 2ε multiplies the noise by 1/(2ε). With ε = 10⁻⁶, the dials jump at random. With ε = 0.3, VQE worked.</p>
+      <p><b>Limit:</b> a large ε gives a less accurate slope. You can pick a good ε only if you already know the answer.</p>
 
       <h4>Nelder–Mead</h4>
-      <p>No slopes at all; it only <b>compares</b> scores. With 2 dials it keeps a triangle of 3 points (with d dials, d + 1 points) and each step reshapes it:</p>
+      <p><b>Nelder–Mead</b> uses no slopes. It only compares scores. With d dials, it keeps d + 1 points. With 2 dials, the 3 points make a triangle. Each step changes the triangle:</p>
       <ol>
         <li><b>Rank</b> the points: best, second-worst, worst.</li>
-        <li><b>Reflect</b> the worst point through the middle of the others (like flipping the triangle away from the bad corner).</li>
-        <li>If the reflected point is the new best, <b>expand</b> further in that direction.</li>
-        <li>If it's still bad, <b>contract</b> back towards the middle.</li>
-        <li>If even that fails, <b>shrink</b> the whole triangle towards the best point.</li>
+        <li><b>Reflect</b> the worst point through the middle of the other points.</li>
+        <li>If the reflected point is the new best, <b>expand</b>: try a point further in the same direction.</li>
+        <li>If the reflected point is still bad, <b>contract</b>: try a point nearer the middle.</li>
+        <li>If that also fails, <b>shrink</b> the whole triangle towards the best point.</li>
       </ol>
-      <p>The triangle walks downhill and shrinks around the minimum; its size is a real stopping signal. Under noise, it reports a slightly too-good score (VQE: −3.83 vs −3.742), because it keeps the luckiest noisy value it saw.</p>
+      <p>Example: the score is f = x² + y², which is lowest at (0, 0).</p>
+      <div class="math">
+        rank: &nbsp;&nbsp;&nbsp;A(1, 1) = 2 best, &nbsp;B(2, 0) = 4, &nbsp;C(3, 2) = 13 worst<br>
+        middle of A and B = (1.5, 0.5)<br>
+        reflect C: (2 × 1.5 − 3, 2 × 0.5 − 2) = (0, −1), &nbsp;f = 1 &nbsp;&nbsp;<span class="c">← new best</span><br>
+        expand: &nbsp;(1.5, 0.5) + 2 × ((1.5, 0.5) − (3, 2)) = (−1.5, −2.5), &nbsp;f = 8.5 &nbsp;&nbsp;<span class="c">← worse, keep (0, −1)</span><br>
+        new triangle: (1, 1), (2, 0), (0, −1), &nbsp;scores 2, 4, 1 &nbsp;&nbsp;<span class="c">← worst score fell from 13 to 4</span>
+      </div>
+      <p>The triangle moves downhill and shrinks around the lowest point. Its size gives a stopping signal: when the triangle is very small, stop.</p>
+      <p><b>Limit:</b> under noise, Nelder–Mead reports a score that is too good. It keeps the luckiest noisy value that it saw. In VQE it reported −3.83, but the true lowest energy is −3.742.</p>
 
       <h4>SPSA</h4>
-      <p>Nudges all dials at once in a random direction and uses 2 runs to estimate the slope along it. Cheap per step, but erratic on our MaxCut runs.</p>
+      <p><b>SPSA</b> moves all dials at once in one random direction. It uses 2 runs to estimate the slope along that direction.</p>
+      <p>Example with 20 dials: finite-difference gradient descent needs 2 × 20 = 40 runs for one slope. SPSA needs 2 runs.</p>
+      <p><b>Limit:</b> one random direction gives a rough slope. On our MaxCut runs, SPSA moved erratically.</p>
 
       <h4>COBYLA</h4>
-      <p>Constrained optimisation by linear approximation. Gradient-free: from d + 1 points it builds a simple flat (linear) model of the score inside a trust region, steps to that model's best point, then shrinks the region as it closes in.</p>
+      <p><b>COBYLA</b> (constrained optimisation by linear approximation) uses no slopes. From d + 1 points, it makes a flat (linear) model of the score. It moves only inside a <b>trust region</b>, a circle where it trusts the model.</p>
+      <p>Example with 2 dials and a trust region of radius 0.5:</p>
+      <div class="math">
+        scores: &nbsp;f(0, 0) = 5, &nbsp;f(1, 0) = 4, &nbsp;f(0, 1) = 6<br>
+        flat model: f ≈ 5 − x + y &nbsp;&nbsp;<span class="c">← a plane through the 3 points</span><br>
+        downhill direction: (1, −1)/√2<br>
+        step to the edge of the region: (0.35, −0.35), &nbsp;model score 5 − 0.35 − 0.35 = 4.29
+      </div>
+      <p>COBYLA then measures the true score at the new point and updates the model. It makes the trust region smaller as it gets near the lowest point.</p>
 
+      <h4>Comparison</h4>
       <div class="table-wrap"><table>
         <thead><tr><th>MaxCut, p = 1, 8,192 shots</th><th>Circuit runs needed</th></tr></thead>
         <tbody>
@@ -483,37 +761,50 @@
           <tr><td>COBYLA</td><td class="good">36</td></tr>
         </tbody>
       </table></div>
-      <div class="key"><b>Use COBYLA by default</b> for noisy quantum scores: no tiny step to tune, the fewest circuit runs (each run costs QPU time), and it's what IBM's Lab 4b uses. Add the tricks below to make it reliable.</div>
+      <div class="key"><b>Use COBYLA by default</b> for noisy quantum scores. It has no tiny step to tune. It needs the fewest circuit runs, and each run costs QPU time. IBM's Lab 4b also uses it. Add the tricks in the next card to make it reliable.</div>
     </div>
 
     <div class="topic" id="t-tricks" data-label="Tricks that help">
       <div class="topic-head"><h3>Tricks that make the optimiser reliable</h3><span class="used">MaxCut · Lab 4b</span></div>
+      <p class="oneline">Three tricks make COBYLA reliable under shot noise: a warm start, restarts and pretrained dials.</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Trick</th><th>What it is</th><th>Why it helps</th></tr></thead>
         <tbody>
-          <tr><td><b>Warm start</b></td><td>Start depth p + 1 from depth p's best dials (copying the last γ, β for the new layer)</td><td>Begins near a good answer instead of from scratch</td></tr>
-          <tr><td><b>Restarts</b></td><td>Run the optimiser 3 times from slightly jittered starting dials; keep the best</td><td>Escapes bad local minima and lucky/unlucky noise</td></tr>
-          <tr><td><b>Pretrained dials</b></td><td>Load dials trained earlier and skip training</td><td>Saves QPU time; training on hardware costs ~32 s per round</td></tr>
+          <tr><td><b>Warm start</b></td><td>Start depth p + 1 from the best dials of depth p. Copy the last γ and β for the new layer.</td><td>The search starts near a good answer.</td></tr>
+          <tr><td><b>Restarts</b></td><td>Run the optimiser 3 times from slightly different starting dials. Keep the best result.</td><td>It avoids bad local minima and lucky or unlucky noise.</td></tr>
+          <tr><td><b>Pretrained dials</b></td><td>Load dials from an earlier training run. Do not train again.</td><td>It saves QPU time. One training round on hardware costs about 24 to 32 s.</td></tr>
         </tbody>
       </table></div>
-      <p><b>Our results:</b> plain COBYLA under shot noise was erratic (MaxCut p = 6 scored only 5.42). With warm start + 3 restarts it climbed steadily, reaching ≈ 6.9 for p = 6–10 (best possible 7). Lab 4b used pretrained dials for both its 6- and 160-number runs.</p>
-      <div class="key caveat"><b>Training on hardware is slow.</b> At IBM's measured ~32 s per round (mostly fixed job overhead), our ~3,200-round MaxCut sweep would take ~22–29 hours; the free tier is 10 minutes a month.</div>
+      <h4>Our results</h4>
+      <p>Plain COBYLA under shot noise moved erratically. MaxCut at p = 6 scored only 5.42. With a warm start and 3 restarts, the score climbed steadily to about 6.9 for p = 6 to 10. The best possible score is 7. Lab 4b used pretrained dials for its runs with 6 and 160 numbers.</p>
+      <div class="key caveat"><b>Limit: training on hardware is slow.</b> One round on hardware costs about 24 to 32 s. Most of that time is fixed job overhead, not shots. Our MaxCut sweep used 3,219 rounds, so it needs about 22 to 29 hours. The free tier gives 10 minutes each month.</div>
     </div>
 
     <div class="topic" id="t-plateau" data-label="Why they can fail: flat landscapes">
       <div class="topic-head"><h3>Why optimisers can fail: flat landscapes</h3><span class="used">Haar · simulation only</span></div>
-      <p class="oneline"><b>Why this is in the optimiser section:</b> every optimiser above needs the score to <b>change</b> when the dials move. If the score is nearly the same everywhere (a <b>barren plateau</b>), no optimiser can find the way down. This experiment shows why that happens.</p>
+      <p class="oneline">Every optimiser above needs the score to <b>change</b> when the dials move. If the score is almost the same everywhere, no optimiser can find the way down. This flat region is a <b>barren plateau</b>.</p>
+
       <h4>What "Haar-random" means</h4>
-      <p>A <b>Haar-random state</b> is a quantum state picked completely at random, with no direction preferred. For one qubit, it's a point picked evenly over the whole Bloch sphere.</p>
+      <p>A <b>Haar-random state</b> is a quantum state picked fully at random, with no preferred direction. For one qubit, it is a point picked evenly over the whole Bloch sphere.</p>
+
       <h4>The test score</h4>
-      <p>We needed some energy H to measure on those states. We picked the simplest one: <b>H = the average of the Z readings</b> over n qubits, H = (Z₁ + … + Zₙ)/n. It's +1 for |00…0⟩, −1 for |11…1⟩, and 0 when half the qubits read each way. Think of it as a stand-in for "the score an optimiser sees".</p>
-      <h4>One qubit vs ten</h4>
+      <p>We used the simplest score: the average of the Z readings over n qubits.</p>
+      <div class="math">
+        H = (Z₁ + … + Zₙ)/n<br>
+        |00…0⟩: H = +1, &nbsp;&nbsp;|11…1⟩: H = −1, &nbsp;&nbsp;half 0 and half 1: H = 0
+      </div>
+      <p>This H stands in for the score that an optimiser sees.</p>
+
+      <h4>Example: one qubit, then ten qubits</h4>
       <ul>
-        <li><b>1 qubit:</b> ⟨Z⟩ of a random state is its height on the sphere, spread evenly from −1 to +1. Spread (standard deviation) = 0.58. Random states give very different scores.</li>
-        <li><b>10 qubits:</b> predicted spread 1/√(n(2ⁿ + 1)) ≈ 1/√(n·2ⁿ) = <b>0.00988</b>; measured over 5,000 random states: <b>0.00985</b>. ✓ Almost every random state scores ≈ 0.</li>
-        <li><b>The spread halves about every 2 qubits.</b> At 156 qubits it is ~10⁻²⁵, far below anything a measurement could detect.</li>
+        <li><b>1 qubit:</b> ⟨Z⟩ of a random state is its height on the sphere. The height is spread evenly from −1 to +1. The spread (standard deviation) is 1/√3 = 0.58. So random states give very different scores.</li>
+        <li><b>10 qubits:</b> the predicted spread is 1/√(n(2ⁿ + 1)) = 1/√(10 × 1,025) = <b>0.00988</b>. Over 5,000 random states, the measured spread was <b>0.00985</b>. Almost every random state scores about 0.</li>
       </ul>
-      <div class="key"><b>The lesson for optimisers:</b> a circuit flexible enough to reach "almost any state" behaves like a random state generator, so the score looks flat almost everywhere. Keep circuits structured (QAOA, PCE) rather than generic. Also: simple random circuits (random Ry, Rz + CZ layers) were not random enough even at 20 layers (spread 0.031, about 3× too wide).</div>
+
+      <h4>The general rule</h4>
+      <p>The spread is about 1/√(n·2ⁿ). It halves about every 2 qubits. At 156 qubits it is about 10⁻²⁵. No measurement can detect a change that small.</p>
+      <div class="key"><b>The lesson for optimisers:</b> a circuit that can reach almost any state acts like a random state generator. Its score is flat almost everywhere. Use circuits with a structure from the problem (QAOA, PCE), not generic circuits.</div>
+      <p><b>Limit:</b> simple random circuits (layers of random Ry and Rz, then CZ) were not random enough, even with 20 layers. Their spread was 0.031, about 3 times too wide. So the 1/√(n·2ⁿ) rule applies to fully random states, not to every deep circuit.</p>
     </div>
   </section>
 
@@ -521,17 +812,18 @@
   <section id="errors" data-label="5 · Handling errors">
     <div class="sec-num">Section 5</div>
     <h2>How do we handle errors?</h2>
-    <p class="sec-intro">Three families. <b>Suppression</b> runs on the backend and stops errors while the circuit runs. <b>Mitigation</b> keeps the noisy results and corrects the numbers afterwards. <b>Correction</b> fixes errors on the fly using extra qubits; we didn't use it.</p>
+    <p class="sec-intro">There are three families of methods. <b>Suppression</b> runs on the backend and reduces errors while the circuit runs. <b>Mitigation</b> keeps the noisy results and corrects the numbers after the run. <b>Correction</b> uses extra qubits to find and fix errors during the run. We did not use correction.</p>
 
     <div class="topic" id="t-kinds" data-label="Kinds of error">
       <div class="topic-head"><h3>First: what kind of error?</h3></div>
+      <p class="oneline">Each method works on one kind of error. Find the kind of error first, then pick the method.</p>
       <div class="table-wrap"><table>
-        <thead><tr><th>Error</th><th>What happens</th><th>Effect</th><th>Handled by</th><th>Why that works</th></tr></thead>
+        <thead><tr><th>Error</th><th>What happens</th><th>Effect</th><th>Method</th><th>Why the method works</th></tr></thead>
         <tbody>
-          <tr><td><b>Coherent</b></td><td>The same over-rotation on every gate, e.g. always +12°</td><td>Piles up; results swing like a wave</td><td>Pauli twirling</td><td>Random Paulis make each twist go forward or back at random, so the twists stop adding up</td></tr>
-          <tr><td><b>Stochastic</b> (random)</td><td>A random flip, different each time</td><td>Results shrink steadily towards 0</td><td>ZNE, PEA, PEC</td><td>Steady shrinking is predictable: ZNE extrapolates it away; PEC cancels it with learned weights</td></tr>
-          <tr><td><b>Idle drift</b></td><td>Waiting qubits slowly lose their state</td><td>Worse the longer they wait</td><td>DD</td><td>Flip-pairs reverse the drift halfway, so it undoes itself (an echo)</td></tr>
-          <tr><td><b>Readout</b></td><td>A 1 recorded as 0 or vice versa, often lopsided</td><td>All results pushed one way</td><td>M3, TREX</td><td>Misread rates can be measured on known states and divided out</td></tr>
+          <tr><td><b>Coherent</b></td><td>Every gate makes the same over-rotation, for example +12°.</td><td>The errors add up. Results swing like a wave.</td><td>Pauli twirling</td><td>Random Paulis make each twist go forward or back at random. So the twists do not add up.</td></tr>
+          <tr><td><b>Stochastic</b> (random)</td><td>A random flip, different in each shot.</td><td>Results shrink steadily towards 0.</td><td>ZNE, PEA, PEC</td><td>Steady shrinking is predictable. ZNE extrapolates it away. PEC cancels it with learned weights.</td></tr>
+          <tr><td><b>Idle drift</b></td><td>A waiting qubit slowly loses its state.</td><td>The longer it waits, the worse the error.</td><td>DD</td><td>Pairs of flips reverse the drift halfway, so the drift cancels itself (an echo).</td></tr>
+          <tr><td><b>Readout</b></td><td>The chip records a 1 as 0, or a 0 as 1. Often one direction is more likely.</td><td>All results move in one direction.</td><td>M3, TREX</td><td>You can measure the misread rates on known states, then divide them out.</td></tr>
         </tbody>
       </table></div>
     </div>
@@ -540,17 +832,29 @@
 
     <div class="topic" data-label="DD">
       <div class="topic-head"><h3>Dynamical decoupling (DD)</h3><span class="used">Lab 4b Ex 2</span></div>
-      <p class="oneline">While a qubit is idle waiting for others, give it pairs of quick flips (e.g. X then X). On paper they cancel; in practice the second flip makes slow drift run backwards, so it undoes itself, like turning a boat around so the current carries it back.</p>
+      <p class="oneline"><b>Dynamical decoupling</b> gives an idle qubit pairs of quick flips (for example X, then X). On paper, the two flips cancel. On the chip, they make slow drift cancel itself.</p>
+      <h4>Example</h4>
+      <ol>
+        <li>An idle qubit gains a phase of 5° in each microsecond. It waits 2 µs. Without DD, it gains 10°.</li>
+        <li>With DD, an X gate at 1 µs flips the qubit. The qubit has gained 5° so far.</li>
+        <li>After the flip, the next 5° of drift acts in the opposite direction. It removes the first 5°.</li>
+        <li>A second X gate at 2 µs flips the qubit back. The net phase is 5° − 5° = 0°.</li>
+      </ol>
+      <p><b>The general rule:</b> the second half of the wait undoes the first half. This effect is an <b>echo</b>.</p>
+      <p><b>Limit:</b> DD cancels only drift that stays the same during the wait. The flip gates also have small errors of their own.</p>
     </div>
 
     <div class="topic" data-label="Pauli twirling">
       <div class="topic-head"><h3>Pauli twirling (gates and measurement)</h3><span class="used">Lab 4b Ex 2, 4</span></div>
-      <p class="oneline">Put a random Pauli (I, X, Y or Z) before each noisy gate and the matching one after, so the ideal circuit is unchanged. Averaged over many random copies, a coherent twist becomes random flips. Measurement twirling does the same at readout and evens out lopsided readout errors.</p>
+      <p class="oneline"><b>Pauli twirling</b> puts a random Pauli gate (I, X, Y or Z) before each noisy gate, and the matching Pauli after it. The ideal circuit does not change. Over many random copies, a coherent twist becomes random flips.</p>
+      <h4>Example: a 12° over-rotation on each gate, after k gates</h4>
       <div class="math">
-        12° coherent error per gate, k gates:<br>
-        without twirling: ⟨Z⟩ = cos(k·12°) &nbsp;&nbsp;<span class="c">← 0.978, 0.809, 0.500 … −1 at k = 15</span><br>
-        with twirling: &nbsp;&nbsp;&nbsp;⟨Z⟩ = (cos 12°)ᵏ &nbsp;&nbsp;<span class="c">← 0.978, 0.936, 0.895 … smooth decay</span>
+        without twirling: ⟨Z⟩ = cos(k·12°) &nbsp;&nbsp;<span class="c">← k = 1, 3, 5: 0.978, 0.809, 0.500 … −1 at k = 15</span><br>
+        with twirling: &nbsp;&nbsp;&nbsp;⟨Z⟩ = (cos 12°)ᵏ &nbsp;&nbsp;<span class="c">← k = 1, 3, 5: 0.978, 0.936, 0.895 … smooth decay</span>
       </div>
+      <p>Without twirling, the twists add up: after 15 gates the total is 180°, and ⟨Z⟩ = −1. With twirling, each gate shrinks ⟨Z⟩ by the same factor, cos 12° = 0.978.</p>
+      <p><b>Measurement twirling</b> does the same at readout. It makes the two directions of readout error equally likely.</p>
+      <p><b>Limit:</b> twirling does not remove the error. It changes the error into a form that mitigation can correct (ZNE, PEA, PEC, TREX).</p>
       <p class="more">Go deeper: <a href="QAOA/partition-problem/ErrorMitigation/zne_and_twirling.html">Why Pauli twirling can make ZNE more effective</a></p>
     </div>
 
@@ -558,90 +862,114 @@
 
     <div class="topic" data-label="M3">
       <div class="topic-head"><h3>M3 (matrix-free measurement mitigation)</h3><span class="used">Lab 4b Ex 2 · Sampler counts</span></div>
-      <p class="oneline">Learn how often each qubit is misread, then work backwards from the counts you got to the counts you would have got.</p>
+      <p class="oneline"><b>M3</b> learns how often each qubit is misread. Then it works back from the measured counts to the true counts.</p>
       <ol>
-        <li><b>Calibrate:</b> prepare known states (all 0s, all 1s) and record how often each qubit is misread. Example qubit: a true 0 reads as 1 <b>2%</b> of the time; a true 1 reads as 0 <b>5%</b> of the time.</li>
-        <li><b>Write how misreading mixes the counts:</b>
+        <li><b>Calibrate.</b> Prepare known states (all 0s and all 1s). Record how often each qubit is misread. Example qubit: a true 0 reads as 1 in <b>2%</b> of shots. A true 1 reads as 0 in <b>5%</b> of shots.</li>
+        <li><b>Write how misreads mix the counts.</b>
           <div class="math">
             measured P(0) = 0.98·true P(0) + 0.05·true P(1)<br>
             measured P(1) = 0.02·true P(0) + 0.95·true P(1)
           </div></li>
-        <li><b>Solve backwards.</b> Measured 10% / 90% → true ≈ <b>5.4% / 94.6%</b> (check: 0.98 × 0.054 + 0.05 × 0.946 ≈ 0.10 ✓).</li>
-        <li><b>Do it for many qubits without a giant table.</b> A full table for n qubits has 2ⁿ × 2ⁿ entries. M3 ("matrix-free") combines the small per-qubit tables and solves only for the bitstrings that actually appeared in your counts, so it stays fast.</li>
+        <li><b>Solve for the true counts.</b> The measured result is 10% zeros and 90% ones.
+          <div class="math">
+            0.98·a + 0.05·(1 − a) = 0.10 &nbsp;&nbsp;<span class="c">← a = true P(0)</span><br>
+            0.93·a = 0.05 &nbsp;→&nbsp; a = 0.054<br>
+            true P(0) = 5.4%, &nbsp;true P(1) = 94.6%
+          </div></li>
+        <li><b>Do the same for many qubits.</b> A full table for n qubits has 2ⁿ × 2ⁿ entries. M3 ("matrix-free") uses the small table of each qubit. It solves only for the bitstrings that appear in your counts, so it stays fast.</li>
       </ol>
-      <p>The corrected result is a set of <b>quasi-probabilities</b>: they add to 1 but can be slightly negative, because the correction can overshoot.</p>
+      <p><b>Limit:</b> the result is a set of <b>quasi-probabilities</b>. They add to 1, but some can be slightly negative, because the correction can overshoot. M3 corrects only readout errors, not gate errors.</p>
     </div>
 
     <div class="topic" data-label="TREX">
       <div class="topic-head"><h3>TREX (twirled readout error extinction)</h3><span class="used">Lab 4b Ex 4 · Estimator values</span></div>
-      <p class="oneline">The Estimator's version of M3. Instead of un-mixing counts, it makes readout error shrink every expectation value by one known factor, then divides that factor out.</p>
+      <p class="oneline"><b>TREX</b> is the Estimator's version of M3. It makes readout error shrink every expectation value by one known factor. Then it divides that factor out.</p>
       <ol>
-        <li><b>Twirl the measurement:</b> before reading out, randomly flip some qubits with X, and flip the recorded bit back afterwards. A lopsided error (2% one way, 5% the other) becomes even: <b>3.5%</b> both ways on average.</li>
-        <li><b>Even errors only shrink ⟨Z⟩:</b> a symmetric flip rate p multiplies every ⟨Z⟩ by f = 1 − 2p. Here f = 1 − 0.07 = <b>0.93</b>. A true ⟨Z⟩ of 0.6 is measured as 0.558.</li>
-        <li><b>Measure f:</b> run a calibration circuit with a known answer (all qubits in |0⟩, ideal ⟨Z⟩ = 1), with the same twirling. It reads 0.93, which is f.</li>
-        <li><b>Divide it out:</b> 0.558 ÷ 0.93 = <b>0.6</b> ✓. For a multi-qubit observable like Z₁Z₂, the factor is measured for that observable in the same way.</li>
+        <li><b>Twirl the measurement.</b> Before readout, flip some qubits at random with X. After readout, flip the recorded bits back. An uneven error (2% one way, 5% the other way) becomes even: <b>3.5%</b> both ways, on average.</li>
+        <li><b>An even error only shrinks ⟨Z⟩.</b> A flip rate p in both directions multiplies every ⟨Z⟩ by f = 1 − 2p. Here f = 1 − 2 × 0.035 = <b>0.93</b>. A true ⟨Z⟩ of 0.6 reads as 0.6 × 0.93 = 0.558.</li>
+        <li><b>Measure f.</b> Run a calibration circuit with a known answer: all qubits in |0⟩, so the ideal ⟨Z⟩ = 1. Use the same twirling. The result is 0.93, which is f.</li>
+        <li><b>Divide f out.</b> 0.558 ÷ 0.93 = <b>0.6</b>, the true value.</li>
       </ol>
+      <p>For an observable on more qubits, such as Z₁Z₂, TREX measures the factor for that observable in the same way.</p>
+      <p><b>Limit:</b> TREX corrects only readout errors. Gate errors stay in the result.</p>
     </div>
 
     <div class="subhead" id="sub-gate" data-label="C · Gate-error mitigation">C · Mitigation of gate errors <span>after the run</span></div>
 
     <div class="topic" data-label="ZNE">
       <div class="topic-head"><h3>ZNE (zero-noise extrapolation)</h3><span class="used">Lab 4b Ex 4</span></div>
-      <p class="oneline">You can't switch noise off, but you can turn it <b>up</b>. Measure at several noise levels, find the trend, follow it back to zero noise.</p>
+      <p class="oneline"><b>ZNE</b> cannot turn noise off, but it can turn noise <b>up</b>. It measures at several noise levels, finds the trend, and follows the trend back to zero noise.</p>
       <ol>
-        <li><b>Amplify by folding:</b> replace each gate U with U · U† · U. On paper U†·U does nothing, so the answer is unchanged; on hardware there are 3 noisy gates instead of 1, so ≈ 3× the noise. Folding twice more gives ≈ 5×.</li>
+        <li><b>Amplify by folding.</b> Replace each gate U with U · U<sup>†</sup> · U. On paper, U<sup>†</sup>·U does nothing, so the answer does not change. On the chip, there are 3 noisy gates in place of 1, so the noise is about 3 times larger. Fold again for about 5 times the noise.</li>
         <li><b>Measure</b> the same expectation value at 1×, 3× and 5× noise.</li>
-        <li><b>Fit a curve</b> through the three points (e.g. exponential decay).</li>
-        <li><b>Extrapolate</b> the curve back to 0× noise. That's the estimate of the noise-free answer.</li>
+        <li><b>Fit a curve</b> through the three points, for example an exponential decay.</li>
+        <li><b>Extrapolate</b> the curve back to 0× noise. The result is the estimate of the noise-free value.</li>
       </ol>
+      <h4>Example: the 12° error from the twirling card (true value 1.000)</h4>
       <div class="table-wrap"><table>
-        <thead><tr><th>12° example (true answer 1.000)</th><th>⟨Z⟩ at 1×, 3×, 5×</th><th>Exponential fit at 0×</th></tr></thead>
+        <thead><tr><th>Circuit</th><th>⟨Z⟩ at 1×, 3×, 5×</th><th>Exponential fit at 0×</th></tr></thead>
         <tbody>
           <tr><td>Twirled (smooth decay)</td><td>0.978, 0.936, 0.895</td><td class="good">1.000 ✓</td></tr>
-          <tr><td>Untwirled (swinging)</td><td>0.978, 0.809, 0.500</td><td class="bad">≈ 1.21 ✗</td></tr>
+          <tr><td>Not twirled (swinging)</td><td>0.978, 0.809, 0.500</td><td class="bad">≈ 1.21 ✗</td></tr>
         </tbody>
       </table></div>
-      <div class="key">ZNE is only as good as its curve, so <b>pair it with twirling</b>, which makes the decay smooth. Following a curve back to 0 also magnifies wobble, so ZNE has wider error bars than TREX.</div>
+      <div class="key"><b>Limit.</b> ZNE is only as good as its curve. <b>Use it with twirling</b>, because twirling makes the decay smooth. The extrapolation also makes small wobbles larger, so ZNE has wider error bars than TREX.</div>
     </div>
 
     <div class="topic" data-label="PEA">
       <div class="topic-head"><h3>PEA (probabilistic error amplification)</h3><span class="used">option, not used</span></div>
-      <p class="oneline">ZNE with a better way of turning the noise up. Folding is crude: it makes the circuit 3× deeper, and real noise doesn't always triple exactly. PEA adds noise more precisely.</p>
+      <p class="oneline"><b>PEA</b> is ZNE with a more accurate way to turn the noise up. Folding makes the circuit 3 times deeper, and real noise does not always grow by exactly 3. PEA adds noise more accurately.</p>
       <ol>
-        <li><b>Learn the noise</b> of each layer of gates, as rates of random X, Y, Z flips (with twirling on, noise takes this form). E.g. "after this layer, qubit 2 gets an X flip 1% of the time".</li>
-        <li><b>Amplify by injecting more of the same:</b> for 2× noise, randomly insert extra flips at the learned rates, so the total noise doubles. The circuit doesn't get deeper; only cheap Pauli gates are added.</li>
+        <li><b>Learn the noise</b> of each layer of gates, as rates of random X, Y and Z flips. With twirling on, the noise has this form. Example: after this layer, qubit 2 gets an X flip in 1% of shots.</li>
+        <li><b>Inject more of the same noise.</b> For 2× noise, insert an extra X on qubit 2 in about 1% of shots. The total flip rate is then about 2%. The circuit does not get deeper. PEA adds only cheap Pauli gates.</li>
         <li><b>Measure</b> at several noise levels.</li>
-        <li><b>Extrapolate</b> back to 0, exactly as in ZNE.</li>
+        <li><b>Extrapolate</b> back to 0× noise, the same as in ZNE.</li>
       </ol>
-      <p>Gate twirling is always on with PEA, because the noise has to be in flip form. The cost is the extra noise-learning runs.</p>
+      <p><b>Limit:</b> PEA needs extra runs to learn the noise. Gate twirling must be on, because the noise must have the form of flips.</p>
     </div>
 
     <div class="topic" data-label="PEC">
       <div class="topic-head"><h3>PEC (probabilistic error cancellation)</h3><span class="used">Lab 4b Ex 4d · not run</span></div>
-      <p class="oneline">Noise can't be undone by a real gate, but it can be cancelled <b>on average</b> with weights that may be negative.</p>
+      <p class="oneline"><b>PEC</b> cancels noise <b>on average</b>. No real gate can undo the noise, but a weighted mix of circuits can, and some weights are negative.</p>
+      <h4>Example: one gate that flips the qubit in 10% of shots</h4>
       <div class="math">
-        noisy = 0.9·I + 0.1·X &nbsp;&nbsp;<span class="c">← gate flips the qubit 10% of the time</span><br>
-        undo &nbsp;= (9/8)·I − (1/8)·X &nbsp;&nbsp;<span class="c">← solve "noisy, then undo = I"; −1/8 can't be built</span><br>
-        ideal = (9/8)·(part 1) − (1/8)·(part 2) &nbsp;&nbsp;<span class="c">← part 1: noisy gate; part 2: noisy gate + extra X</span><br>
-        ⟨Z⟩ ideal = (9/8)(0.8) − (1/8)(−0.8) = 1 ✓ &nbsp;&nbsp;<span class="c">← weights apply to measured values</span>
+        noisy = 0.9·I + 0.1·X &nbsp;&nbsp;<span class="c">← the gate flips the qubit in 10% of shots</span><br>
+        undo &nbsp;= (9/8)·I − (1/8)·X &nbsp;&nbsp;<span class="c">← solve "noisy, then undo = I"; the −1/8 cannot be built as a gate</span><br>
+        ideal = (9/8)·(part 1) − (1/8)·(part 2) &nbsp;&nbsp;<span class="c">← part 1: the noisy gate; part 2: the noisy gate, then an extra X</span><br>
+        ⟨Z⟩ ideal = (9/8)(0.8) − (1/8)(−0.8) = 1 ✓ &nbsp;&nbsp;<span class="c">← the weights apply to the measured values</span>
       </div>
-      <ul>
-        <li><b>γ normalises the weights:</b> γ = 9/8 + 1/8 = 1.25; probabilities = size ÷ γ = 0.9, 0.1. Pick a part per gate by probability, flip the sign of part-2 results, average, multiply by γ.</li>
-        <li><b>On a real circuit:</b> PEC keeps your gates and only inserts extra Pauli gates (X, Y, Z) after noisy layers, picked by weight. It never adds U†U pairs; that is ZNE.</li>
-        <li><b>The cost:</b> γ multiplies gate by gate (10 gates: 1.25¹⁰ ≈ 9.3) and the shots needed grow as γ² (≈ 87×).</li>
-      </ul>
+      <h4>How to run it</h4>
+      <ol>
+        <li>Add up the sizes of the weights: γ = 9/8 + 1/8 = 1.25.</li>
+        <li>Divide each size by γ to get a probability: 0.9 for part 1, 0.1 for part 2.</li>
+        <li>For each gate in each shot, pick a part with these probabilities.</li>
+        <li>Change the sign of each result from part 2.</li>
+        <li>Average all results, then multiply by γ.</li>
+      </ol>
+      <p><b>On a real circuit:</b> PEC keeps your gates. It only inserts extra Pauli gates (X, Y, Z) after noisy layers, picked by weight. PEC never adds U<sup>†</sup>U pairs. Those belong to ZNE.</p>
+      <p><b>Limit:</b> γ multiplies gate by gate. For 10 gates, γ = 1.25¹⁰ ≈ 9.3. The number of shots needed grows like γ², so about 87 times more shots.</p>
       <p class="more">Go deeper: <a href="QAOA/partition-problem/ErrorMitigation/pec_step_by_step.html">PEC, step by step</a></p>
     </div>
 
     <div class="subhead" id="sub-correction" data-label="D · Correction">D · Correction</div>
     <div class="topic" data-label="Error correction">
       <div class="topic-head"><h3>Quantum error correction</h3><span class="used">not used here</span></div>
-      <p class="oneline">Spread each logical qubit over many physical qubits, detect errors as they happen and fix them during the run. It is the only approach that removes errors rather than reducing or averaging them out, but it needs far more qubits than these experiments, so all our work uses suppression and mitigation.</p>
+      <p class="oneline"><b>Quantum error correction</b> spreads each logical qubit over many physical qubits. It finds errors while the circuit runs and fixes them.</p>
+      <h4>Example: the 3-qubit bit-flip code</h4>
+      <ol>
+        <li>Store |0⟩ as |000⟩ and |1⟩ as |111⟩.</li>
+        <li>Suppose one qubit flips: |000⟩ becomes |010⟩.</li>
+        <li>Parity checks compare qubit pairs. They find the odd qubit, but they do not read the stored value.</li>
+        <li>An X gate on the odd qubit fixes the error.</li>
+      </ol>
+      <p><b>The general rule:</b> correction is the only approach that removes errors. Suppression and mitigation only reduce errors or average them out.</p>
+      <p><b>Limit:</b> correction needs many more qubits than these experiments had. So all our work used suppression and mitigation.</p>
     </div>
 
     <div class="subhead" id="sub-choose" data-label="E · Choosing and combining">E · Choosing and combining</div>
     <div class="topic" data-label="Choosing">
       <div class="topic-head"><h3>What each costs, and how they stack</h3></div>
+      <p class="oneline">The methods fix different errors, so you can use them together. The cost in QPU time is very different for each method.</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Method</th><th>Family</th><th>Fixes</th><th>Lab 4b QPU estimate</th></tr></thead>
         <tbody>
@@ -651,10 +979,13 @@
           <tr><td>PEC</td><td>Mitigation</td><td>Gate errors</td><td>4 min 26 s</td></tr>
         </tbody>
       </table></div>
-      <ul>
-        <li><b>They stack:</b> DD + twirling during the run, TREX for readout, then ZNE or PEC for gate errors.</li>
-        <li><b>Resilience levels</b> (Estimator shortcut): 0 = nothing, 1 = TREX, 2 = TREX + ZNE + gate twirling. The lab switched each option on by hand instead.</li>
-      </ul>
+      <h4>How to stack them</h4>
+      <ol>
+        <li>During the run, use DD and twirling.</li>
+        <li>For readout errors, use TREX (Estimator) or M3 (Sampler).</li>
+        <li>For gate errors, use ZNE or PEC.</li>
+      </ol>
+      <p><b>Resilience levels</b> are an Estimator shortcut: 0 = nothing, 1 = TREX, 2 = TREX + ZNE + gate twirling. The lab did not use them. It set each option by hand.</p>
     </div>
   </section>
 
@@ -662,22 +993,32 @@
   <section id="results" data-label="6 · Understanding results">
     <div class="sec-num">Section 6</div>
     <h2>How do we read and trust the results?</h2>
-    <p class="sec-intro">The chip returns counts or averages. Turning them into an answer, and deciding whether to believe it, is a separate skill. Each result below says what was compared, how to read it, and what it tells us.</p>
+    <p class="sec-intro">The chip returns counts or averages. You must change them into an answer, then decide whether to believe it. Each result card says what we compared, how to read the numbers, and what they tell us.</p>
 
     <div class="topic" id="t-readanswer" data-label="Turning outputs into answers">
       <div class="topic-head"><h3>Turning outputs into an answer</h3></div>
+      <p class="oneline">Each technique gives a different kind of output. Each kind of output has its own rule for reading the answer.</p>
       <ul>
-        <li><b>Most-measured bitstring</b> (Sampler, QAOA): take the bitstring that came up most often and decode it (which node or number goes where).</li>
-        <li><b>Sign of an expectation value</b> (Estimator, PCE): + puts a number in one group, − in the other.</li>
-        <li><b>The partition score ("loss"):</b> same group → add the edge weight aᵢaⱼ, different groups → subtract it. Lower is better; with 160 numbers, scores are in the tens of thousands.</li>
-        <li><b>Accuracy</b> (QSVM): train the SVM on the kernel values, then count correct test predictions.</li>
+        <li><b>Most-measured bitstring</b> (Sampler, QAOA): take the bitstring that appears most often. Then decode it: each bit says where one node or number goes.</li>
+        <li><b>Sign of an expectation value</b> (Estimator, PCE): a + sign puts a number in one group. A − sign puts it in the other group.</li>
+        <li><b>Accuracy</b> (QSVM): train the SVM on the kernel values. Then count the correct predictions on the test points.</li>
+        <li><b>The partition score</b> (the "loss"): for each pair of numbers, add the weight aᵢaⱼ if they are in the same group. Subtract it if they are in different groups. A lower score is better.</li>
       </ul>
+      <h4>Example: the partition score for 1, 2, 3</h4>
+      <div class="math">
+        split {1, 2} and {3}<br>
+        pair (1, 2): same group &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ +1×2 = +2<br>
+        pair (1, 3): different groups → −1×3 = −3<br>
+        pair (2, 3): different groups → −2×3 = −6<br>
+        score = 2 − 3 − 6 = −7 &nbsp;&nbsp;<span class="c">← the lowest possible score: this split is perfect (3 vs 3)</span>
+      </div>
+      <p><b>Limit:</b> the score has no fixed scale. With 160 numbers, scores are in the tens of thousands. Compare scores only for the same set of numbers.</p>
       <p class="more">Go deeper: <a href="QAOA/partition-problem/ErrorMitigation/reading_the_partition_score.html">Reading the partition score</a></p>
     </div>
 
     <div class="topic" id="r-ml" data-label="Results: machine learning">
       <div class="topic-head"><h3>Results: machine learning (Titanic)</h3><span class="used">Basic ML · QSVM</span></div>
-      <p class="meta"><b>Compared:</b> classical SVM vs QSVM with two feature maps, on a simulator (all data) and on ibm_fez (a 16 / 8 subsample). <b>Read:</b> % of test passengers classified correctly; higher is better.</p>
+      <p class="meta"><b>Compared:</b> a classical SVM and QSVM with two feature maps. QSVM ran on a simulator (all data) and on ibm_fez (16 training and 8 test points). <b>Read:</b> the percentage of test passengers that the model classified correctly. Higher is better.</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Setting</th><th>Data (train / test)</th><th>Accuracy</th></tr></thead>
         <tbody>
@@ -685,75 +1026,76 @@
           <tr><td>Classical SVM, RBF, 7 features (QSVM notebook)</td><td>711 / 178</td><td>77.5%</td></tr>
           <tr><td>QSVM simulator, ZZ linear</td><td>711 / 178</td><td>80.9%</td></tr>
           <tr><td>QSVM simulator, ZZ full</td><td>711 / 178</td><td>83.1%</td></tr>
-          <tr><td>QSVM simulator, subsample</td><td>16 / 8</td><td>62.5%</td></tr>
+          <tr><td>QSVM simulator, small sample</td><td>16 / 8</td><td>62.5%</td></tr>
           <tr><td>QSVM ibm_fez hardware, ZZ linear</td><td>16 / 8</td><td>62.5%</td></tr>
         </tbody>
       </table></div>
-      <p><b>Takeaway:</b> on the simulator, the quantum kernels beat an <i>untuned</i> classical SVM. On hardware, only the linear map finished, and 8 test points are too few to say more than "matched the simulator".</p>
+      <p><b>Takeaway:</b> on the simulator, the quantum kernels scored higher than an <i>untuned</i> classical SVM. On hardware, only the linear map finished. With 8 test points, we can say only that hardware matched the simulator.</p>
     </div>
 
     <div class="topic" id="r-vqe" data-label="Results: VQE optimisers">
       <div class="topic-head"><h3>Results: VQE, two optimisers with and without shot noise</h3><span class="used">VQE</span></div>
-      <p class="meta"><b>Compared:</b> gradient descent vs Nelder–Mead on the one-qubit VQE (H = 3X − 2Y + Z), each run twice: with <b>exact</b> energies (no noise) and with energies <b>estimated from 10,000 shots</b>. <b>Read:</b> the closer to the true lowest energy −3.742, the better. A value <i>below</i> −3.742 is impossible for a real energy, so it signals noise fooling the optimiser.</p>
+      <p class="meta"><b>Compared:</b> gradient descent and Nelder–Mead on the one-qubit VQE (H = 3X − 2Y + Z). Each ran twice: once with <b>exact</b> energies (no noise), and once with energies <b>estimated from 10,000 shots</b>. <b>Read:</b> a result nearer to the true lowest energy, −3.742, is better. A real energy cannot go <i>below</i> −3.742. A lower value shows that noise misled the optimiser.</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Optimiser</th><th>Exact energies</th><th>Shot-noise energies</th></tr></thead>
         <tbody>
-          <tr><td>Gradient descent</td><td>−3.742 ✓ (18 steps)</td><td>−3.761 with ε = 0.3; useless with ε = 10⁻⁶</td></tr>
-          <tr><td>Nelder–Mead</td><td>−3.742 ✓</td><td>−3.829 (reported too low; dials correct)</td></tr>
+          <tr><td>Gradient descent</td><td>−3.742 ✓ (18 steps)</td><td>−3.761 with ε = 0.3; no result with ε = 10⁻⁶</td></tr>
+          <tr><td>Nelder–Mead</td><td>−3.742 ✓</td><td>−3.829 (the value is too low; the dials are correct)</td></tr>
         </tbody>
       </table></div>
-      <p><b>Takeaway:</b> both find the answer without noise. With noise, gradient descent needs a hand-tuned step, and Nelder–Mead's reported value is too optimistic. Judge an optimiser by its dials, then re-measure the energy fresh.</p>
+      <p><b>Takeaway:</b> without noise, both optimisers find the answer. With noise, gradient descent needs a step size tuned by hand, and Nelder–Mead reports a value that is too good. Judge an optimiser by its final dials. Then measure the energy again with fresh shots.</p>
     </div>
 
     <div class="topic" id="r-maxcut" data-label="Results: MaxCut">
       <div class="topic-head"><h3>Results: MaxCut with QAOA</h3><span class="used">MaxCut · simulator</span></div>
-      <p class="meta"><b>Compared:</b> QAOA at depths p = 1 … 10, exact and with 8,192 shots, across optimisers. <b>Read:</b> the expectation value is the average cut of the circuit's output; the best possible is 7.</p>
+      <p class="meta"><b>Compared:</b> QAOA at depths p = 1 to 10, exact and with 8,192 shots, with several optimisers. <b>Read:</b> the expectation value is the average cut of the circuit's output. The best possible cut is 7.</p>
       <ul>
-        <li><b>Exact:</b> 5.30 → 6.06 → 6.44 → 6.69 → 6.72 for p = 1 … 5.</li>
-        <li><b>With shot noise:</b> only warm-started COBYLA with restarts climbed steadily, to ≈ 6.9.</li>
-        <li><b>Most-measured bitstring:</b> the true best split in 30 of 30 runs, even when the average was only 5.3, because the best cut is shared by just 2 bitstrings.</li>
+        <li><b>Exact:</b> 5.30, 6.06, 6.44, 6.69 and 6.72 for p = 1 to 5.</li>
+        <li><b>With shot noise:</b> only COBYLA with a warm start and restarts climbed steadily, to about 6.9.</li>
+        <li><b>Most-measured bitstring:</b> it was the true best split in 30 of 30 runs, even when the average was only 5.3. Only 2 of the 64 bitstrings give the best cut, so those 2 can be the most likely outcomes while the average stays low.</li>
       </ul>
-      <p><b>Takeaway:</b> the average score can look mediocre while the most likely answer is already right.</p>
+      <p><b>Takeaway:</b> the average score can look poor while the most likely answer is already correct.</p>
     </div>
 
     <div class="topic" id="r-part6" data-label="Results: partition, 6 numbers">
       <div class="topic-head"><h3>Results: partition, 6 numbers on real hardware</h3><span class="used">Lab 4b Ex 2</span></div>
-      <p class="meta"><b>Compared:</b> the same QAOA circuit (p = 1, pretrained dials) on ibm_marrakesh with 4 error settings, 1,000 shots each. <b>Read:</b> take the most likely bitstring, add up both groups; difference 0 is perfect (24 vs 24).</p>
+      <p class="meta"><b>Compared:</b> the same QAOA circuit (p = 1, pretrained dials) on ibm_marrakesh with 4 error settings, 1,000 shots each. <b>Read:</b> take the most likely bitstring and add up each group. A difference of 0 is perfect (24 and 24).</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Setting</th><th>Groups found</th><th>Difference</th></tr></thead>
         <tbody>
-          <tr><td>No mitigation</td><td>{3, 5, 13} = 21 vs {7, 9, 11} = 27</td><td>6</td></tr>
-          <tr><td>DD + twirling</td><td>{5, 11, 13} = 29 vs {3, 7, 9} = 19</td><td>10</td></tr>
-          <tr><td>M3</td><td>21 vs 27 (same as no mitigation)</td><td>6</td></tr>
-          <tr><td>M3 + DD + twirling</td><td>29 vs 19 (same as DD + twirling)</td><td>10</td></tr>
+          <tr><td>No mitigation</td><td>{3, 5, 13} = 21 and {7, 9, 11} = 27</td><td>6</td></tr>
+          <tr><td>DD + twirling</td><td>{5, 11, 13} = 29 and {3, 7, 9} = 19</td><td>10</td></tr>
+          <tr><td>M3</td><td>21 and 27 (the same as no mitigation)</td><td>6</td></tr>
+          <tr><td>M3 + DD + twirling</td><td>29 and 19 (the same as DD + twirling)</td><td>10</td></tr>
         </tbody>
       </table></div>
-      <p><b>Takeaway:</b> none found the perfect split. The most likely bitstring held only ~3.7% of shots, versus 1.6% for pure guessing (1/64), so the output was close to random. M3 only nudged the counts; it can't fix gate noise.</p>
+      <p><b>Takeaway:</b> no setting found the perfect split. The most likely bitstring had only about 3.7% of the shots. A random guess gives 1/64 = 1.6%. So the output was almost random. M3 changed the counts only a little, because it cannot fix gate noise.</p>
     </div>
 
     <div class="topic" id="r-part160" data-label="Results: partition, 160 numbers">
       <div class="topic-head"><h3>Results: partition, 160 numbers on 11 qubits</h3><span class="used">Lab 4b Ex 4</span></div>
-      <p class="meta"><b>Compared:</b> the PCE circuit (pretrained dials) on hardware through the Estimator, with 4 mitigation settings. <b>Read:</b> the score is lower-is-better; the group sums show how even the split is (ideal ≈ 3,926 each, total 7,853).</p>
+      <p class="meta"><b>Compared:</b> the PCE circuit (pretrained dials) on hardware through the Estimator, with 4 mitigation settings. <b>Read:</b> a lower score is better. The group sums show how even the split is. The total is 7,853, so the ideal is about 3,926 in each group.</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Setting</th><th>Score</th><th>Group sums</th><th>QPU estimate</th></tr></thead>
         <tbody>
-          <tr><td>No mitigation</td><td class="bad">+157,420</td><td>4,802 vs 3,051</td><td>12 s</td></tr>
-          <tr><td>TREX + twirling</td><td class="good">−27,422</td><td>3,773 vs 4,080</td><td>12 s</td></tr>
-          <tr><td>ZNE + twirling</td><td class="good">−23,652</td><td>3,857 vs 3,996</td><td>16 s</td></tr>
+          <tr><td>No mitigation</td><td class="bad">+157,420</td><td>4,802 and 3,051</td><td>12 s</td></tr>
+          <tr><td>TREX + twirling</td><td class="good">−27,422</td><td>3,773 and 4,080</td><td>12 s</td></tr>
+          <tr><td>ZNE + twirling</td><td class="good">−23,652</td><td>3,857 and 3,996</td><td>16 s</td></tr>
           <tr><td>PEC + twirling</td><td class="warnc">not run</td><td>—</td><td>4 min 26 s</td></tr>
         </tbody>
       </table></div>
-      <p><b>Takeaway:</b> mitigation turned a lopsided split into a nearly even one. But see the stability check below before calling either answer reliable.</p>
+      <p><b>Takeaway:</b> mitigation changed a very uneven split (difference 1,751) into an almost even one (difference 307 with TREX, 139 with ZNE). Read the stability check in the next card before you trust either answer.</p>
     </div>
 
     <div class="topic" id="t-trust" data-label="Before you trust a number">
       <div class="topic-head"><h3>Before you trust a number</h3></div>
-      <ul>
-        <li><b>Is the baseline fair?</b> Our classical SVM wasn't tuned, so QSVM's 83.1% vs 77.5% isn't an advantage claim. Good classical MaxCut solvers (Goemans–Williamson guarantees ≥ 87.8% of the best cut) handle thousands of nodes in seconds.</li>
-        <li><b>Is the sample big enough?</b> With 8 test points, one point is 12.5%.</li>
-        <li><b>Is the answer stable?</b> TREX and ZNE gave similar scores, yet put only about half (51%) of the 160 numbers in the same group, so the per-number choices were still mostly noise.</li>
-        <li><b>What did it cost?</b> Count QPU seconds, not just accuracy.</li>
-      </ul>
+      <p class="oneline">Ask four questions about each result before you believe it.</p>
+      <ol>
+        <li><b>Is the baseline fair?</b> We did not tune our classical SVM, so 83.1% against 77.5% is not a claim of quantum advantage. Good classical MaxCut methods solve thousands of nodes in seconds. The Goemans–Williamson method guarantees at least 87.8% of the best cut.</li>
+        <li><b>Is the sample large enough?</b> With 8 test points, one point changes the accuracy by 12.5%.</li>
+        <li><b>Is the answer stable?</b> TREX and ZNE gave similar scores. But they put only about half (51%) of the 160 numbers in the same group. So most of the choices for single numbers were still noise.</li>
+        <li><b>What did it cost?</b> Count the QPU seconds, not only the accuracy.</li>
+      </ol>
     </div>
   </section>
 
@@ -761,16 +1103,17 @@
   <section id="lessons" data-label="7 · Lessons to keep">
     <div class="sec-num">Section 7</div>
     <h2>Lessons to keep</h2>
+    <p class="sec-intro">Each lesson comes from a result on this page. The section in brackets has the numbers.</p>
     <div class="card">
       <ul>
-        <li><b>Baseline first.</b> Compare against a good classical method, not brute force. None of our projects, nor IBM's own lab, claims a quantum advantage.</li>
-        <li><b>Simulator first, hardware last.</b> Test the exact pipeline on a fake backend; hardware seconds are the scarce resource.</li>
-        <li><b>Encoding is a lever.</b> PCE fit 160 numbers on 11 qubits; circuit size decides what a real chip can do.</li>
-        <li><b>Use COBYLA, warm-started, with restarts.</b> Fewest circuit runs and reliable under shot noise.</li>
-        <li><b>Shot noise shapes everything.</b> 1/√N breaks tiny-step gradients and makes PEC expensive.</li>
-        <li><b>Know your error type.</b> Coherent errors swing, random errors shrink; twirling turns the first into the second, which most mitigation assumes.</li>
-        <li><b>Mitigation trades QPU time for accuracy.</b> TREX is nearly free, ZNE is moderate, PEC is the most principled and by far the most expensive.</li>
-        <li><b>Flat landscapes are real.</b> Circuits that can reach almost any state give almost the same score everywhere.</li>
+        <li><b>Compare with a good baseline first.</b> Compare with a good classical method, not with brute force. None of our projects claims a quantum advantage, and IBM's lab does not claim one either (Section 6).</li>
+        <li><b>Use the simulator first and hardware last.</b> Test the full pipeline on a fake backend. Hardware seconds are the scarce resource (Section 4).</li>
+        <li><b>The encoding sets the circuit size.</b> PCE put 160 numbers on 11 qubits. The circuit size decides what a real chip can do (Section 2).</li>
+        <li><b>Use COBYLA with a warm start and restarts.</b> It needs the fewest circuit runs, and it is reliable under shot noise (Section 4).</li>
+        <li><b>Shot noise affects everything.</b> The 1/√N rule breaks tiny-step gradients and makes PEC expensive (Sections 1, 4 and 5).</li>
+        <li><b>Know the kind of error.</b> Coherent errors swing, and random errors shrink. Twirling changes the first kind into the second kind, which most mitigation needs (Section 5).</li>
+        <li><b>Mitigation costs QPU time.</b> TREX is almost free, and ZNE costs a little more. PEC rests on the clearest theory, but it costs by far the most (Section 5).</li>
+        <li><b>Flat landscapes are real.</b> A circuit that can reach almost any state gives almost the same score everywhere (Section 4).</li>
       </ul>
     </div>
   </section>
@@ -778,10 +1121,10 @@
   <section id="pages" data-label="All detailed pages">
     <h2>All detailed pages</h2>
     <div class="card">
-      <p><a href="QAOA/max-cut/index.html"><b>MaxCut reading guide →</b></a> six pages from the by-hand demo to the conclusion.</p>
+      <p><a href="QAOA/max-cut/index.html"><b>MaxCut reading guide →</b></a> six pages, from the demo by hand to the conclusion.</p>
       <p><a href="QAOA/partition-problem/ErrorMitigation/lab4b_glossary.html"><b>Lab 4b glossary →</b></a> every Lab 4b term in plain English.</p>
-      <p><a href="QAOA/partition-problem/ErrorMitigation/pec_step_by_step.html"><b>PEC, step by step →</b></a> the full derivation from one noisy qubit.</p>
-      <p><a href="QAOA/partition-problem/ErrorMitigation/zne_and_twirling.html"><b>ZNE and Pauli twirling →</b></a> cos(k·θ) vs (cos θ)ᵏ, worked out.</p>
+      <p><a href="QAOA/partition-problem/ErrorMitigation/pec_step_by_step.html"><b>PEC, step by step →</b></a> the full derivation, from one noisy qubit.</p>
+      <p><a href="QAOA/partition-problem/ErrorMitigation/zne_and_twirling.html"><b>ZNE and Pauli twirling →</b></a> cos(k·θ) and (cos θ)ᵏ, worked out.</p>
       <p><a href="QAOA/partition-problem/ErrorMitigation/reading_the_partition_score.html"><b>Reading the partition score →</b></a> what the loss numbers mean.</p>
       <p><a href="Basic%20ML/backprop-workbook.html"><b>Backprop Workbook →</b></a> one small network, worked by hand.</p>
     </div>
@@ -790,6 +1133,96 @@
 </main>
 </div>
 
+<script>
+  // Collapsible sections and cards. Sections start open; cards start closed,
+  // showing only the title and the one-line summary.
+  (function () {
+    function setOpen(head, body, hint, open) {
+      head.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) body.removeAttribute('hidden'); else body.setAttribute('hidden', 'until-found');
+      if (hint) hint.style.display = open ? 'none' : '';
+      var card = head.closest('.topic');
+      if (card && head.classList.contains('topic-head')) card.classList.toggle('folded', !open);
+    }
+    function makeFold(head, nodes, startOpen, hintText) {
+      if (!nodes.length) return null;
+      var body = document.createElement('div');
+      body.className = 'fold-body';
+      nodes[0].parentNode.insertBefore(body, nodes[0]);
+      nodes.forEach(function (n) { body.appendChild(n); });
+      var hint = null;
+      if (hintText) {
+        hint = document.createElement('p');
+        hint.className = 'fold-hint';
+        hint.textContent = hintText;
+        body.parentNode.insertBefore(hint, body);
+        hint.addEventListener('click', function () { setOpen(head, body, hint, true); });
+      }
+      var chev = document.createElement('span');
+      chev.className = 'chev'; chev.textContent = '▾'; chev.setAttribute('aria-hidden', 'true');
+      var title = head.querySelector('h2, h3') || head;
+      title.insertBefore(chev, title.firstChild);
+      head.classList.add('fold-head');
+      head.setAttribute('role', 'button');
+      head.setAttribute('tabindex', '0');
+      function toggle(e) {
+        if (e.target.closest('a')) return;
+        setOpen(head, body, hint, head.getAttribute('aria-expanded') !== 'true');
+      }
+      head.addEventListener('click', toggle);
+      head.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(e); }
+      });
+      body.addEventListener('beforematch', function () { setOpen(head, body, hint, true); });
+      setOpen(head, body, hint, startOpen);
+      return { head: head, body: body, hint: hint };
+    }
+
+    var cards = [];
+    Array.prototype.forEach.call(document.querySelectorAll('.topic'), function (card) {
+      var head = card.querySelector(':scope > .topic-head');
+      if (!head) return;
+      var rest = [], n = head.nextElementSibling;
+      if (n && n.classList.contains('oneline')) n = n.nextElementSibling;
+      while (n) { rest.push(n); n = n.nextElementSibling; }
+      var f = makeFold(head, rest, false, 'Show the details ▸');
+      if (f) cards.push(f);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('section'), function (sec) {
+      var h2 = sec.querySelector(':scope > h2');
+      if (!h2 || !sec.querySelector(':scope > .sec-num')) return;
+      var rest = [], n = h2.nextElementSibling;
+      while (n) { rest.push(n); n = n.nextElementSibling; }
+      makeFold(h2, rest, true, null);
+    });
+
+    // Open every closed parent of an element, so a link always lands on visible text.
+    function reveal(el) {
+      while (el) {
+        if (el.classList && el.classList.contains('fold-body') && el.hasAttribute('hidden')) {
+          var head = el.parentNode.querySelector(':scope > .fold-head');
+          var hint = el.previousElementSibling && el.previousElementSibling.classList.contains('fold-hint') ? el.previousElementSibling : null;
+          setOpen(head, el, hint, true);
+        }
+        el = el.parentNode;
+      }
+    }
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      var t = document.getElementById(a.getAttribute('href').slice(1));
+      if (t) reveal(t);
+    }, true);
+    if (location.hash) { var t0 = document.getElementById(location.hash.slice(1)); if (t0) { reveal(t0); t0.scrollIntoView(); } }
+
+    document.getElementById('fold-bar').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      var open = b.getAttribute('data-fold') === 'open';
+      if (open) Array.prototype.forEach.call(document.querySelectorAll('section > .fold-body[hidden]'), reveal);
+      cards.forEach(function (f) { setOpen(f.head, f.body, f.hint, open); });
+    });
+  })();
+</script>
 <script>
   // Copy the left map into the phone menu, then highlight whichever part is being read.
   (function () {
@@ -810,7 +1243,7 @@
     function update() {
       var line = window.innerHeight * 0.3;
       var current = 0;
-      targets.forEach(function (t, i) { if (t && t.getBoundingClientRect().top <= line) current = i; });
+      targets.forEach(function (t, i) { if (t && t.offsetParent !== null && t.getBoundingClientRect().top <= line) current = i; });
       tocLinks.forEach(function (a, i) { a.classList.toggle('active', i === current); });
       mobileCurrent.textContent = targets[current].getAttribute('data-label') || tocLinks[current].textContent;
     }
