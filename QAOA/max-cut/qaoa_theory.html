@@ -154,6 +154,8 @@
     font-family: ui-monospace, monospace; font-size: 13px; background: var(--surface);
     border: 1px solid var(--surface-border); border-radius: 4px; padding: 1px 6px; color: var(--text);
   }
+  .act h3 { font-size: 18px; font-weight: 700; margin: 10px 0 0; color: var(--team-b); }
+  .formula.left { text-align: left; }
 </style>
 
 <div class="page">
@@ -224,6 +226,23 @@
       C(z) = (total pairs &minus; H(s)) / 2 = &Sigma;<sub>(i,j)&isin;E</sub> (1 &minus; z<sub>i</sub>z<sub>j</sub>) / 2
       <span class="translation">It didn't come from nowhere — it's just "solve the magnet equation for the number of cuts."</span>
     </div>
+    <h3>Where does the "1" in (1 &minus; z<sub>i</sub>z<sub>j</sub>) come from?</h3>
+    <p>The total pairs did not vanish. The formula moved them inside the sum, as one 1 for each edge. Here are the steps.</p>
+    <div class="formula left">
+      Step 1 &middot; Count the pairs as a sum of 1s:<br>
+      &nbsp;&nbsp;total pairs = &Sigma;<sub>(i,j)&isin;E</sub> 1 &nbsp;&nbsp;<span style="color:var(--text-dim)">&larr; add 1 for each edge</span><br><br>
+      Step 2 &middot; Put both sums into the formula (Act 3 renames s to z):<br>
+      &nbsp;&nbsp;C(z) = ( &Sigma;<sub>(i,j)&isin;E</sub> 1 &nbsp;&minus;&nbsp; &Sigma;<sub>(i,j)&isin;E</sub> z<sub>i</sub>z<sub>j</sub> ) / 2<br><br>
+      Step 3 &middot; Both sums run over the same edges, so join them:<br>
+      &nbsp;&nbsp;C(z) = &Sigma;<sub>(i,j)&isin;E</sub> (1 &minus; z<sub>i</sub>z<sub>j</sub>) / 2
+    </div>
+    <p>Now the formula scores one edge at a time:</p>
+    <table class="worked">
+      <tr><th>Edge</th><th>z<sub>i</sub>z<sub>j</sub></th><th>(1 &minus; z<sub>i</sub>z<sub>j</sub>) / 2</th><th>Meaning</th></tr>
+      <tr><td>same direction</td><td>+1</td><td>(1 &minus; 1) / 2 = 0</td><td>not cut</td></tr>
+      <tr><td>opposite directions</td><td>&minus;1</td><td class="hi">(1 + 1) / 2 = 1</td><td>cut</td></tr>
+    </table>
+    <p>Each edge adds 0 or 1. The sum of those 0s and 1s is the cut count.</p>
     <p>Check it on a tiny graph — three nodes, all pairwise touching (a triangle):</p>
     <table class="worked">
       <tr><th>Pair</th><th>s<sub>i</sub></th><th>s<sub>j</sub></th><th>s<sub>i</sub>s<sub>j</sub></th><th>same or cut?</th></tr>
@@ -376,6 +395,59 @@
         steps looks more like a ramp.
       </figcaption>
     </figure>
+
+    <h3>The dial as a formula: add the two Hamiltonians</h3>
+    <p>Call the dial position d, from 0 to 1. (Act 1 already uses s for the spins, so this page uses d.) The dial mixes the two Hamiltonians:</p>
+    <div class="formula">
+      H(d) = (1 &minus; d)&middot;B + d&middot;H<sub>C</sub>
+      <span class="translation">B is the mixer, B = &minus;&Sigma; X<sub>i</sub>. (The minus sign gives B its lowest energy at |+&hellip;+&rang;. In the circuit, it only changes the sign of &beta;.) H<sub>C</sub> = &Sigma; Z<sub>i</sub>Z<sub>j</sub> is the magnet energy from Act 1, made from Z operators. Its lowest energy is the biggest cut. (C from Act 2 is the same rule written as a cut count. The optimiser absorbs the change of sign and scale into &gamma;.)</span>
+    </div>
+    <table class="worked">
+      <tr><th>Dial d</th><th>H(d)</th><th>Lowest-energy state</th></tr>
+      <tr><td>0</td><td>1&middot;B + 0&middot;H<sub>C</sub> = B</td><td>|+&hellip;+&rang;, the equal superposition (the start)</td></tr>
+      <tr><td>0.5</td><td>0.5&middot;B + 0.5&middot;H<sub>C</sub></td><td>a blend of the two</td></tr>
+      <tr><td>1</td><td>0&middot;B + 1&middot;H<sub>C</sub> = H<sub>C</sub></td><td class="hi">the best colouring (the answer)</td></tr>
+    </table>
+    <p>Why add them? A sum is the simplest way to change one energy rule into another without a jump. Think of each Hamiltonian as a landscape. At d = 0, the landscape is one smooth bowl, with its lowest point at the start state. As d grows, the bowl slowly changes into the rugged landscape of H<sub>C</sub>. The landscape never jumps, so the system follows its lowest point. At d = 1, B is gone, and the system sits in the lowest valley of H<sub>C</sub>.</p>
+
+    <h3>Why B and H<sub>C</sub>, and not other operators?</h3>
+    <p><strong>H<sub>C</sub> is made from Z.</strong> Z gives +1 for |0&rang; and &minus;1 for |1&rang;. So each colouring |z&rang; is an eigenstate of H<sub>C</sub>, and its eigenvalue is its own energy. The answer is written directly in H<sub>C</sub>.</p>
+    <p><strong>B = &minus;&Sigma; X<sub>i</sub> has three properties that the method needs:</strong></p>
+    <ol style="margin:0; font-size:15.5px; line-height:1.68; max-width:62ch;">
+      <li><strong>Its lowest-energy state is easy to make.</strong> That state is |+&hellip;+&rang;. One H gate on each qubit makes it, with no knowledge of the graph.</li>
+      <li><strong>It does not commute with H<sub>C</sub>.</strong> X flips a bit: X|0&rang; = |1&rang;. So B moves amplitude from one colouring to another. Z never does this: Z|0&rang; = |0&rang;. If the mixer were made from Z, the state could never move between colourings.</li>
+      <li><strong>It has no bias.</strong> At the start, every colouring has the same probability, 1/2&#8319;. So no wrong answer gets a head start.</li>
+    </ol>
+
+    <h3>Why a sum becomes alternating gates</h3>
+    <p>A Hamiltonian gives a gate through an exponential: U = e<sup>&minus;iHt</sup>. For numbers, e<sup>a+b</sup> = e<sup>a</sup>&middot;e<sup>b</sup>. For B and H<sub>C</sub>, this rule fails, because XZ &ne; ZX. Example with one qubit, using X + Z:</p>
+    <table class="worked">
+      <tr><th>Step size t</th><th>Error of e<sup>&minus;iXt</sup>&middot;e<sup>&minus;iZt</sup> against e<sup>&minus;i(X+Z)t</sup></th></tr>
+      <tr><td>1</td><td>0.80</td></tr>
+      <tr><td>0.5</td><td>0.24</td></tr>
+      <tr><td>0.1</td><td class="hi">0.01</td></tr>
+    </table>
+    <p>The error shrinks quickly as the step gets smaller (10 times smaller step, about 100 times smaller error). So the rule is: cut the dial-turn into small slices, and in each slice apply a short H<sub>C</sub> gate, then a short B gate. This is the <strong>Trotter rule</strong>:</p>
+    <div class="formula">
+      e<sup>&minus;i[(1&minus;d)B + d&middot;H<sub>C</sub>]&Delta;t</sup> &nbsp;&asymp;&nbsp; e<sup>&minus;i&middot;d&middot;&Delta;t&middot;H<sub>C</sub></sup> &middot; e<sup>&minus;i&middot;(1&minus;d)&middot;&Delta;t&middot;B</sup>
+      <span class="translation">The first factor is U(C,&gamma;) with &gamma; = d&middot;&Delta;t. The second is U(B,&beta;) with &beta; = (1 &minus; d)&middot;&Delta;t. That is one QAOA layer.</span>
+    </div>
+    <p>Example: a slow dial in 3 slices, with &Delta;t = 1 and d at the middle of each slice:</p>
+    <table class="worked">
+      <tr><th>Layer</th><th>d</th><th>&gamma; = d&middot;&Delta;t</th><th>&beta; = (1 &minus; d)&middot;&Delta;t</th></tr>
+      <tr><td>1</td><td>1/6</td><td>0.17</td><td>0.83</td></tr>
+      <tr><td>2</td><td>1/2</td><td>0.50</td><td>0.50</td></tr>
+      <tr><td>3</td><td>5/6</td><td>0.83</td><td class="hi">0.17</td></tr>
+    </table>
+    <p>&gamma; grows and &beta; shrinks: the cost turns on and the mixer turns off. QAOA does not fix these values. It lets the optimiser pick them, so a few large steps can work as well as many small ones. The optimiser often finds a pattern like this ramp.</p>
+
+    <h3>If the goal is H<sub>C</sub>'s state, why does the circuit end with the mixer?</h3>
+    <p>Yes, the goal at d = 1 is the lowest-energy state of H<sub>C</sub>, the best colouring. But a final U(C,&gamma;) cannot help you reach it. U(C,&gamma;) is made only from Z, so it changes only the phase of each colouring:</p>
+    <div class="formula">
+      amplitude a &nbsp;&rarr;&nbsp; e<sup>&minus;i&gamma;&middot;cost</sup>&middot;a, &nbsp;&nbsp;&nbsp; probability |e<sup>&minus;i&gamma;&middot;cost</sup>&middot;a|&sup2; = |a|&sup2;
+      <span class="translation">A phase has size 1, so the probability of every colouring stays the same. A last cost layer has no effect on the measurement.</span>
+    </div>
+    <p>So the circuit must end with a mixer. The mixer makes the phases interfere, and that moves probability onto the best colouring. In the slow-dial picture, the last &beta; is small (0.17 in the table): near d = 1, the mixer is almost off, and the state settles into the lowest valley of H<sub>C</sub>.</p>
   </section>
 
   <div class="closing">
@@ -385,7 +457,7 @@
         <tr><th>Circuit piece</th><th>What it is</th><th>Why it's there</th></tr>
         <tr><td>H&#8855;n on |0&hellip;0&rang;</td><td>equal superposition</td><td>the mixer Hamiltonian's own easy resting state — dial position 0</td></tr>
         <tr><td>U(C,&gamma;)</td><td>e<sup>&minus;i&gamma;C</sup>, built from Z<sub>i</sub>Z<sub>j</sub> per edge</td><td>tags every coloring with a phase equal to its own cut score — a step toward "hard"</td></tr>
-        <tr><td>U(B,&beta;)</td><td>Rx(&beta;) on every qubit</td><td>lets those phase tags interfere and reshuffle probability — a step toward "easy," the other half of the dial</td></tr>
+        <tr><td>U(B,&beta;)</td><td>Rx(2&beta;) on every qubit</td><td>lets those phase tags interfere and reshuffle probability — a step toward "easy," the other half of the dial</td></tr>
         <tr><td>p repeats</td><td>alternate the two</td><td>approximates a slow continuous dial-turn with a few big discrete jumps</td></tr>
         <tr><td>(&gamma;,&beta;) optimizer</td><td>scipy Nelder&ndash;Mead</td><td>since we're not running the literal (impractically slow) schedule, search numerically for the jump sizes that work best</td></tr>
       </table>
