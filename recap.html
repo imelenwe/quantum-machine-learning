@@ -637,7 +637,43 @@
       <p>Check: the opposite direction is v = −h/√14 = (−0.8018, 0.5345, −0.2673). Then ⟨H⟩ = 3(−0.8018) − 2(0.5345) + (−0.2673) = −2.4054 − 1.0690 − 0.2673 = −3.7417 ≈ −3.742.</p>
       <p>So VQE must turn the dials until the Bloch vector points opposite to (3, −2, 1).</p>
       <p>We know the exact answer, so we can grade every run (Section 6).</p>
-      <p><b>Limit:</b> for many qubits, nobody knows the exact answer, so you cannot grade a run this way. Also, the ansatz must be able to make the lowest-energy state. If it cannot, VQE returns a higher energy.</p>
+      <h4>The VQE loop</h4>
+      <p>The ansatz is the circuit. H is not a circuit: it says which measurements to make and how to add them up.</p>
+      <ol>
+        <li>Pick starting dials, for example θ = 0 and φ = 0.</li>
+        <li>Run the ansatz. Measure each term of H: ⟨X⟩, ⟨Y⟩ and ⟨Z⟩. Each term needs its own basis rotation (Section 1).</li>
+        <li>Compute ⟨H⟩ = 3⟨X⟩ − 2⟨Y⟩ + ⟨Z⟩ on a normal computer. At θ = 0, ⟨H⟩ = 1.</li>
+        <li>Give ⟨H⟩ to the optimiser (gradient descent, Nelder–Mead or COBYLA). It changes the dials to lower ⟨H⟩.</li>
+        <li>Repeat steps 2 to 4 until ⟨H⟩ stops going down.</li>
+      </ol>
+      <p>"Lowest" means the smallest number on the number line: −3.742 is lower than −1. The loop gives two results: the lowest energy, and the ansatz with the final dials, which makes that lowest-energy state.</p>
+
+      <h4>Where H comes from</h4>
+      <p>You do not choose H. The problem gives it. You choose the ansatz and the optimiser.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Problem</th><th>Where H comes from</th></tr></thead>
+        <tbody>
+          <tr><td>Chemistry</td><td>The energy of the electrons in a molecule. A fixed mapping (for example Jordan–Wigner) changes it into a sum of Pauli strings. H₂ in the smallest basis gives 4 qubits and about 15 terms.</td></tr>
+          <tr><td>Physics models</td><td>The model's own energy rule, for example Σ ZᵢZⱼ + h·Σ Xᵢ for a magnet.</td></tr>
+          <tr><td>Optimisation</td><td>The cost function written as spins, H<sub>C</sub> (Section 2).</td></tr>
+          <tr><td>Our exercise</td><td>Made up for practice: small, all three Pauli letters, and a known answer.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h4>Why VQE is useful, and why our case is not</h4>
+      <p>For one qubit, VQE is not useful. H = 3X − 2Y + Z is a 2 × 2 matrix, and a formula gives its lowest energy at once. Our run taught the method on a problem with a known answer.</p>
+      <p>For n qubits, H is a 2ⁿ × 2ⁿ matrix. A normal computer must store a state of 2ⁿ numbers. The chip holds that state in n qubits:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Qubits n</th><th>Numbers in the state</th><th>Memory (16 bytes each)</th><th>Normal computer</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>2</td><td>32 bytes</td><td>instant</td></tr>
+          <tr><td>10</td><td>1,024</td><td>16 KB</td><td>instant</td></tr>
+          <tr><td>30</td><td>about 1 billion</td><td>about 17 GB</td><td>a large workstation</td></tr>
+          <tr><td>50</td><td>about 10¹⁵</td><td>about 18 PB</td><td class="bad">beyond the largest supercomputers</td></tr>
+        </tbody>
+      </table></div>
+      <p>The target uses are chemistry (the ground-state energy of molecules for catalysts, batteries and drugs) and materials (the lowest-energy state of quantum magnets).</p>
+      <p><b>Limit:</b> no VQE run has yet beaten the best classical methods (for example tensor networks and coupled cluster) on a useful problem. Noise grows with the depth of the ansatz. A molecule's H can have thousands of terms, and each term needs shots. A generic ansatz can give a flat landscape (Section 4). The ansatz must also be able to make the lowest-energy state; if it cannot, VQE returns a higher energy. For many qubits, nobody knows the exact answer, so you cannot grade a run against it.</p>
     </div>
 
     <!-- QAOA -->
