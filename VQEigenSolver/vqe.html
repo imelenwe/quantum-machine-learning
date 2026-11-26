@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VQE, Step by Step</title>
+<style>
+  :root {
+    --bg: #12151b; --surface: #1a1f28; --surface-2: #151a22; --surface-border: #2a3140;
+    --text: #eef1f6; --text-dim: #8b96a8;
+    --good: #4fc38f; --bad: #f26b5c; --accent: #6fb3f2; --warn: #f2a541;
+    --q: #b9a2f5; --c: #5fd0c8;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #eef1f5; --surface: #ffffff; --surface-2: #f6f8fb; --surface-border: #d8dee6;
+      --text: #1a1f28; --text-dim: #5b6472;
+      --good: #1f8f5f; --bad: #c43f2e; --accent: #1f6fb8; --warn: #a8650d;
+      --q: #6a4fc4; --c: #18867f;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f5; --surface: #ffffff; --surface-2: #f6f8fb; --surface-border: #d8dee6;
+    --text: #1a1f28; --text-dim: #5b6472;
+    --good: #1f8f5f; --bad: #c43f2e; --accent: #1f6fb8; --warn: #a8650d;
+    --q: #6a4fc4; --c: #18867f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.65; font-size: 16px;
+  }
+  main { max-width: 820px; margin: 0 auto; padding: 40px 16px 80px; }
+  .back { font-size: 14px; color: var(--accent); text-decoration: none; }
+  .eyebrow { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); margin-top: 18px; }
+  h1 { font-size: 32px; margin: 4px 0 8px; letter-spacing: -.01em; text-wrap: balance; }
+  .lede { color: var(--text-dim); font-size: 17px; margin: 0 0 8px; }
+  section { border-top: 1px solid var(--surface-border); margin-top: 36px; padding-top: 18px; }
+  .kicker { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); }
+  h2 { font-size: 23px; margin: 2px 0 12px; text-wrap: balance; }
+  h3 { font-size: 17px; margin: 22px 0 6px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .math {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 14.5px;
+    background: var(--surface); border: 1px solid var(--surface-border); border-radius: 10px;
+    padding: 12px 16px; margin: 0 0 14px; overflow-x: auto; white-space: pre; line-height: 1.7;
+  }
+  .math .c { color: var(--text-dim); }
+  .box {
+    background: var(--surface); border: 1px solid var(--surface-border); border-left: 4px solid var(--accent);
+    border-radius: 10px; padding: 14px 18px; margin: 16px 0;
+  }
+  .box.take { border-left-color: var(--good); }
+  .box.limit { border-left-color: var(--warn); }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .label { font-weight: 700; }
+  .table-wrap { overflow-x: auto; margin: 0 0 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 520px; }
+  th, td { border: 1px solid var(--surface-border); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); }
+  .good { color: var(--good); font-weight: 600; }
+  .bad { color: var(--bad); font-weight: 600; }
+  .warnc { color: var(--warn); font-weight: 600; }
+
+  /* the loop picture */
+  .loop { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; gap: 8px; margin: 8px 0 6px; }
+  .node { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 10px; padding: 10px 12px; text-align: center; font-size: 14px; }
+  .node b { display: block; font-size: 15px; }
+  .node.q { border-top: 3px solid var(--q); }
+  .node.c { border-top: 3px solid var(--c); }
+  .arrow { color: var(--text-dim); font-size: 20px; text-align: center; }
+  .back-arrow { text-align: center; color: var(--text-dim); font-size: 14px; margin-bottom: 10px; }
+  .legend { font-size: 13.5px; color: var(--text-dim); text-align: center; }
+  .legend .q { color: var(--q); font-weight: 700; }
+  .legend .c { color: var(--c); font-weight: 700; }
+  @media (max-width: 560px) {
+    .loop { grid-template-columns: 1fr; }
+    .arrow { transform: rotate(90deg); }
+  }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../index.html">← Quantum machine learning</a>
+  <div class="eyebrow">Variational methods · 1 qubit</div>
+  <h1>VQE, Step by Step</h1>
+  <p class="lede">VQE finds the lowest energy of a Hamiltonian. This page explains the idea, works one example by hand, and describes what was built and what it showed.</p>
+
+  <!-- 1. Picture -->
+  <section>
+    <div class="kicker">1 · The picture</div>
+    <h2>One loop between two computers</h2>
+    <div class="loop" role="img" aria-label="The VQE loop: dials go to the quantum chip, the chip returns an energy, the optimiser returns new dials.">
+      <div class="node c"><b>Dials θ</b>numbers for the gates</div>
+      <div class="arrow">→</div>
+      <div class="node q"><b>Quantum chip</b>makes the state |ψ(θ)⟩, measures the energy ⟨H⟩</div>
+      <div class="arrow">→</div>
+      <div class="node c"><b>Optimiser</b>picks new dials with a lower energy</div>
+    </div>
+    <div class="back-arrow">↺ the loop repeats until the energy stops going down</div>
+    <p class="legend"><span class="q">Purple</span> = quantum work. <span class="c">Teal</span> = classical work.</p>
+    <p>The quantum chip does only one job: it makes a state and measures its energy. A normal computer does all the "thinking". It decides how to turn the dials. This split is what "variational" and "hybrid" mean.</p>
+  </section>
+
+  <!-- 2. What it does -->
+  <section>
+    <div class="kicker">2 · What it does</div>
+    <h2>Why a lower number is always safe</h2>
+    <p>A <b>Hamiltonian</b> H is the energy rule of a system. Its smallest possible energy is the <b>ground energy</b>, E₀.</p>
+    <p>The <b>variational principle</b> says: any state has an energy equal to or above E₀.</p>
+    <div class="math">⟨ψ|H|ψ⟩ ≥ E₀      <span class="c">for every state |ψ⟩</span></div>
+    <p><span class="label">Concrete case.</span> Take H = 3X − 2Y + Z. Its ground energy is E₀ = −3.742. The state |0⟩ has energy 1 (worked out in Section 4). Then 1 ≥ −3.742, so the rule holds.</p>
+    <p><span class="label">Rule.</span> When the optimiser finds a lower energy, that energy is closer to E₀. The energy can only approach E₀ from above.</p>
+    <p><span class="label">Limit.</span> With shot noise, a measured energy can fall below E₀. A real energy cannot do this. So a value below E₀ tells you that noise is present (Section 6).</p>
+  </section>
+
+  <!-- 3. Four parts -->
+  <section>
+    <div class="kicker">3 · The four parts</div>
+    <h2>State, energy, optimiser, principle</h2>
+
+    <h3>Part 1: the state (the "ansatz")</h3>
+    <p>An <b>ansatz</b> is a circuit with dials. It starts from |0⟩ and makes a state |ψ(θ)⟩.</p>
+    <p>For one qubit, the ansatz is two gates: Ry(θ), then Rz(φ).</p>
+    <ul>
+      <li>Ry(θ) sets the "latitude" on the Bloch sphere: how much |0⟩ and how much |1⟩.</li>
+      <li>Rz(φ) sets the "longitude": the phase between |0⟩ and |1⟩.</li>
+    </ul>
+    <p>Together, these two dials reach every point on the Bloch sphere. So this ansatz can make every one-qubit state, including the ground state.</p>
+
+    <h3>Part 2: the energy, measured one Pauli term at a time</h3>
+    <p>H is a sum of <b>Pauli terms</b>: X, Y, Z, each with a number in front. The energy splits in the same way, because an average of a sum is the sum of the averages:</p>
+    <div class="math">⟨H⟩ = 3⟨X⟩ − 2⟨Y⟩ + 1⟨Z⟩</div>
+    <p>So the chip never measures H as one thing. It measures ⟨X⟩, ⟨Y⟩ and ⟨Z⟩ separately. Then the normal computer adds them with their numbers.</p>
+    <p>The chip can measure only along Z. To measure X or Y, rotate that axis onto Z first, then measure:</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>To measure</th><th>Rotate first with</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Z</td><td>nothing</td><td>the chip already measures along Z</td></tr>
+        <tr><td>X</td><td>Ry(−π/2)</td><td>moves the X axis onto the Z axis</td></tr>
+        <tr><td>Y</td><td>Rx(+π/2)</td><td>moves the Y axis onto the Z axis</td></tr>
+      </tbody>
+    </table></div>
+    <p>After the measurement, count the results. Outcome 0 counts +1. Outcome 1 counts −1.</p>
+    <div class="math">⟨Z⟩ = (N₀ − N₁) / shots</div>
+    <p><span class="label">Concrete case.</span> Measure ⟨X⟩ on |+⟩. Ry(−π/2) turns |+⟩ into |0⟩. All 1,000 shots give 0. So ⟨X⟩ = (1000 − 0)/1000 = 1. This is correct, because |+⟩ points along X.</p>
+    <p>For a term on many qubits, such as Z⊗Z, use the <b>parity</b> of the bitstring. An even number of 1s counts +1. An odd number counts −1.</p>
+
+    <h3>Part 3: the optimiser</h3>
+    <p>The optimiser is a normal program. It gets an energy for each set of dials. It must choose the next dials. Section 5 describes the two optimisers that were built.</p>
+
+    <h3>Part 4: the principle</h3>
+    <p>The variational principle (Section 2) makes the search meaningful. The lowest energy found is an upper bound on E₀.</p>
+  </section>
+
+  <!-- 4. Worked example -->
+  <section>
+    <div class="kicker">4 · Worked by hand</div>
+    <h2>One qubit, H = 3X − 2Y + Z</h2>
+    <p><span class="label">Step 1. Energy of |0⟩.</span> For |0⟩: ⟨X⟩ = 0, ⟨Y⟩ = 0, ⟨Z⟩ = 1.</p>
+    <div class="math">⟨H⟩ = 3·0 − 2·0 + 1·1 = 1</div>
+    <p><span class="label">Step 2. Write the energy as a dot product.</span> Two vectors give the energy:</p>
+    <ul>
+      <li>The <b>Bloch vector</b> v = (⟨X⟩, ⟨Y⟩, ⟨Z⟩). For a pure state, its length is 1.</li>
+      <li>The <b>Hamiltonian vector</b> h = (3, −2, 1). Its length is √(9 + 4 + 1) = √14 ≈ 3.742.</li>
+    </ul>
+    <div class="math">⟨H⟩ = h · v = |h|·|v|·cos(angle) = √14 · cos(angle)</div>
+    <p><span class="label">Step 3. Find the lowest energy.</span> cos(angle) is smallest, −1, when v points opposite to h.</p>
+    <div class="math">v points along h:     ⟨H⟩ = +√14 ≈ +3.742   <span class="c">← highest energy</span>
+v points opposite h:  ⟨H⟩ = −√14 ≈ −3.742   <span class="c">← lowest energy, E₀</span></div>
+    <p><span class="label">Step 4. Check.</span> The opposite direction is v = −h/√14 = (−0.8018, 0.5345, −0.2673).</p>
+    <div class="math">⟨H⟩ = 3(−0.8018) − 2(0.5345) + (−0.2673)
+    = −2.4054 − 1.0690 − 0.2673
+    = −3.7417</div>
+    <div class="box take">
+      <p><span class="label">Takeaway.</span> For one qubit, VQE has one job: turn the two dials until the Bloch vector points opposite to (3, −2, 1). The answer E₀ = −3.742 is known exactly, so every run can be graded.</p>
+    </div>
+  </section>
+
+  <!-- 5. What was built -->
+  <section>
+    <div class="kicker">5 · What was built</div>
+    <h2>Two ways to get the energy, two optimisers</h2>
+
+    <h3>Two ways to get the energy</h3>
+    <ul>
+      <li><b>Exact.</b> Calculate ⟨ψ|H|ψ⟩ directly from the state. There is no noise. This gives the reference value.</li>
+      <li><b>Measured.</b> Do the rotate-then-count method of Part 2, with 10,000 shots for each term. Each energy then has a small random error, called <b>shot noise</b> (about ±0.01 to ±0.02 here).</li>
+    </ul>
+    <p>Both optimisers use the same energy method, so the comparison is fair.</p>
+
+    <h3>Optimiser 1: gradient descent (walk downhill)</h3>
+    <p><b>Gradient descent</b> finds the slope of the energy for each dial, then steps against the slope.</p>
+    <p>The chip cannot give the slope directly. So the method nudges one dial up by a small amount ε, then down by ε, and compares the two energies:</p>
+    <div class="math">slope for θ ≈ [ E(θ + ε) − E(θ − ε) ] / (2ε)
+new θ = θ − (step size) × slope</div>
+    <p>With two dials, each step needs 4 energies: θ ± ε and φ ± ε.</p>
+    <p><span class="label">The weak spot.</span> The slope is a difference of two noisy numbers, divided by a small number.</p>
+    <div class="math">noise in slope ≈ 0.01 / (2 × 10⁻⁶) = 5,000</div>
+    <p>The true slope was only about 2. So with ε = 10⁻⁶, the noise is 2,500 times larger than the true slope. Each "step" jumps hundreds of radians, in a random direction.</p>
+
+    <h3>Optimiser 2: Nelder–Mead (a crawling triangle)</h3>
+    <p><b>Nelder–Mead</b> uses no slopes. With two dials, it keeps a triangle of 3 points on the energy landscape. In each round, it moves the worst point:</p>
+    <ol>
+      <li><b>Reflect.</b> Flip the worst point to the other side of the other two.</li>
+      <li><b>Expand.</b> If the flipped point is the new best, go further in that direction.</li>
+      <li><b>Contract.</b> If the flipped point is still bad, pull it back toward the middle.</li>
+      <li><b>Shrink.</b> If nothing helps, pull the whole triangle toward the best point.</li>
+    </ol>
+    <p>The triangle crawls downhill and becomes smaller near the minimum. A small triangle is a clear signal to stop.</p>
+    <p>One small idea does all four moves. Each move is "go from one point toward another by some factor". A negative factor gives the flip.</p>
+  </section>
+
+  <!-- 6. Results -->
+  <section>
+    <div class="kicker">6 · What it showed</div>
+    <h2>Results, with and without shot noise</h2>
+    <p>Problem: one qubit, H = 3X − 2Y + Z. The true lowest energy is −3.742.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Optimiser</th><th>Energies</th><th>Final energy</th><th>Error</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td>Gradient descent</td><td>exact</td><td>−3.742</td><td>0.000</td><td class="good">correct (18 steps)</td></tr>
+        <tr><td>Gradient descent, ε = 0.3</td><td>10,000 shots</td><td>−3.761</td><td>−0.019</td><td class="good">close</td></tr>
+        <tr><td>Gradient descent, ε = 10⁻⁶</td><td>10,000 shots</td><td>—</td><td>—</td><td class="bad">fails: the dials jump at random</td></tr>
+        <tr><td>Nelder–Mead</td><td>exact</td><td>−3.742</td><td>0.000</td><td class="good">correct</td></tr>
+        <tr><td>Nelder–Mead</td><td>10,000 shots</td><td>−3.829</td><td>−0.087</td><td class="warnc">too low; the dials are correct</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Four lessons</h3>
+    <ol>
+      <li><b>Without noise, both optimisers work.</b> Both reach −3.742 exactly.</li>
+      <li><b>With noise, gradient descent depends on ε.</b> ε = 0.3 works. ε = 10⁻⁶ fails completely. On a real problem, E₀ is not known, so you cannot tell which ε is safe.</li>
+      <li><b>With noise, gradient descent never stops by itself.</b> The energy jitters by about 0.02 forever, so the "stop when the change is small" test never passes.</li>
+      <li><b>An energy below E₀ is noise.</b> Both noisy runs report a value below −3.742, which no real state can have. Each reported value is one noisy reading. Nelder–Mead keeps its lowest reading, and that reading is the luckiest one. The dials are correct, so measure the energy again with fresh shots.</li>
+    </ol>
+    <div class="box take">
+      <p><span class="label">Takeaway.</span> On a noisy chip, prefer an optimiser that needs no slopes, such as Nelder–Mead, COBYLA or SPSA. Judge a run by its final dials, then measure the energy again with fresh shots.</p>
+    </div>
+  </section>
+
+  <!-- 7. VQE vs QAOA -->
+  <section>
+    <div class="kicker">7 · Do not mix them up</div>
+    <h2>VQE and QAOA</h2>
+    <p>Both use the same loop (Section 1). They differ in the problem and in the shape of the circuit.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th></th><th>VQE</th><th>QAOA</th></tr></thead>
+      <tbody>
+        <tr><td>Problem</td><td>the ground energy of a molecule or a spin system</td><td>an optimisation problem, such as MaxCut</td></tr>
+        <tr><td>Circuit</td><td>any ansatz with dials</td><td>a fixed pattern: cost step, then mixer step, repeated p times</td></tr>
+        <tr><td>Dials</td><td>any number</td><td>2 per layer (γ, β)</td></tr>
+        <tr><td>Built on</td><td>the variational principle</td><td>slow (adiabatic) change, cut into steps</td></tr>
+        <tr><td>Output</td><td>an energy</td><td>a bitstring (the best answer)</td></tr>
+      </tbody>
+    </table></div>
+    <p>For the QAOA side, see <a href="../QAOA/max-cut/qaoa_theory.html">QAOA theory: from magnets to circuit</a>.</p>
+  </section>
+
+  <!-- 8. Limits -->
+  <section>
+    <div class="kicker">8 · Limits</div>
+    <h2>Where VQE becomes hard</h2>
+    <div class="box limit">
+      <ul>
+        <li><b>The ansatz must reach the ground state.</b> If it cannot, VQE returns a higher energy. Ry and Rz on separate qubits cannot make entangled states. A two-qubit ansatz needs an entangling gate such as CNOT. That two-qubit case was not done yet.</li>
+        <li><b>Barren plateaus.</b> For deep or very general circuits, the slopes become exponentially small in the number of qubits. Then the optimiser cannot find a direction.</li>
+        <li><b>Many terms.</b> A molecule's H can have thousands of Pauli terms. Each term needs its own shots.</li>
+        <li><b>No guarantee.</b> In general, finding a ground energy is hard even for a quantum computer (the problem is QMA-complete). VQE is a practical method, not a proof.</li>
+        <li><b>No exact answer to grade against.</b> For one qubit, E₀ = −√14 is known. For many qubits, nobody knows E₀.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+</body>
+</html>
